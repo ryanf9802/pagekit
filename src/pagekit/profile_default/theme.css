@@ -188,6 +188,9 @@ p { margin: 0 0 12px; }
 .pk-contents ol { margin: 0; padding: 0; list-style: none; }
 .pk-contents ol ol { padding-left: 1.2em; }
 .pk-contents li { margin-top: 2px; }
+/* Every entry is a link, so an underline on each would make the list busy. */
+.pk-contents a { text-decoration: none; }
+.pk-contents a:hover { text-decoration: underline; }
 .pk-footer-meta { display: flex; gap: 8px; min-width: 0; white-space: nowrap; }
 .pk-footer-meta > span:empty { display: none; }
 .pk-footer-meta > span:not(:empty) ~ span::before { content: "/"; margin-right: 8px; color: var(--pk-border); }
