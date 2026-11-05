@@ -60,6 +60,25 @@ pagekit refuses a two slice pie.
   values to the axis and the table.
 - Bars are at most 24 units thick with a rounded end, lines are 2px, and the chart scales down to a phone's width.
 
+## Side by side
+
+Put two or three charts in the grid component to show them in a row. They sit side by side when there is room, and
+stack on a phone:
+
+```html
+<div class="pk-grid">
+  <pk-chart src="assets/builds.json"></pk-chart>
+  <pk-chart src="assets/failures.json"></pk-chart>
+</div>
+```
+
+Each chart needs its own data file, because the file name makes the chart's element id.
+
+## Printing and PDFs
+
+A chart stays whole on a printed sheet, with its title, legend, and data table, and moves to the next sheet when it
+does not fit. Its heading goes with it. The legend sits directly under the drawing, in the same column.
+
 ## How it works
 
 The build reads the file, checks it, and draws the chart in Python, with no browser. A mistake stops the build with a

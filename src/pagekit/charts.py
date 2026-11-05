@@ -499,7 +499,7 @@ def draw_chart(name: str, spec: dict, extra: str = "", note: str = "") -> str:
     return (
         f'<figure class="{_esc(f"pk-chart {kind} {extra}".strip())}" id="chart-{chart_id}">'
         f"<figcaption>{_esc(spec['title'])}</figcaption><!-- Chart data: assets/{name} -->"
-        f"{svg}{_legend(spec)}{_table(spec)}{note}</figure>"
+        f'<div class="pk-chart-plot">{svg}{_legend(spec)}</div>{_table(spec)}{note}</figure>'
     )
 
 

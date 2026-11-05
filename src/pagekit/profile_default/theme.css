@@ -496,8 +496,12 @@ td > .pk-choices, th > .pk-choices { margin: -3px 0; }
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
-.pk-chart-svg { display: block; width: 100%; max-width: 520px; height: auto; margin: 0 auto; font-family: var(--pk-font); font-size: 13px; }
-.pk-chart-of-pie .pk-chart-svg { max-width: 220px; }
+/* The drawing and its legend share one column, so the legend stays under the chart however wide the card is. */
+.pk-chart-plot { max-width: 520px; margin: 0 auto; }
+.pk-chart-of-pie .pk-chart-plot { max-width: 360px; }
+.pk-chart-svg { display: block; width: 100%; height: auto; font-family: var(--pk-font); font-size: 13px; }
+.pk-chart-of-pie .pk-chart-svg { max-width: 220px; margin: 0 auto; }
+.pk-chart-of-pie .pk-chart-legend { justify-content: center; }
 .pk-chart-tick, .pk-chart-axis-title { fill: var(--pk-muted); font-size: 12px; }
 .pk-chart-tick { font-variant-numeric: tabular-nums; }
 .pk-chart-value { fill: var(--pk-text); font-size: 12px; font-variant-numeric: tabular-nums; }
@@ -759,6 +763,9 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
   /* Scales with each diagram, so a tall simple chain does not take over a sheet. */
   .pk-diagram svg { max-height: min(8.5cm, calc(var(--pk-diagram-h, 8.5cm) * 0.72)); }
   .pk-diagram-note { margin-top: 4px; font-size: 0.75rem; }
+  /* A chart stays on one sheet with its title, legend, and data table, as a diagram does. */
+  .pk-chart { padding: 6px 8px 8px; break-inside: avoid; }
+  .pk-chart figcaption { margin-bottom: 3px; break-after: avoid; }
   .pk-section { margin-top: 20px; }
   h1 { font-size: 1.625rem; }
   h2 { font-size: 1.125rem; }

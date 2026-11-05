@@ -51,12 +51,14 @@ KINDS = {
 }
 
 
-def build(spec: dict | str, body: str = '<pk-chart src="assets/c.json"></pk-chart>') -> str:
-    """Build a page with one chart and return the document, after checking the page has no errors."""
+def build(spec: dict | str, body: str = '<pk-chart src="assets/c.json"></pk-chart>', more: dict[str, dict] | None = None) -> str:
+    """Build a page with a chart (and any more data files) and return the document, after checking it has no errors."""
     profile = load_profile()
     page, _ = new_page(profile, "demo", "Demo", "One line", "slots")
     text = spec if isinstance(spec, str) else json.dumps(spec)
     (page.assets / "c.json").write_text(text, encoding="utf-8")
+    for filename, other in (more or {}).items():
+        (page.assets / filename).write_text(json.dumps(other), encoding="utf-8")
     page.content.write_text(body, encoding="utf-8")
     build_page(profile, page)
     assert check_page(profile, page).errors == []
@@ -121,6 +123,30 @@ def test_a_legend_names_two_or_more_series_and_a_single_series_has_none(home: Pa
     legend = re.search(r'<ul class="pk-chart-legend">.*?</ul>', figure(build(LINE)), re.DOTALL)
     assert legend and "Median" in legend.group(0) and "Slowest" in legend.group(0)
     assert "pk-chart-s2" in legend.group(0)
+
+
+@pytest.mark.parametrize("kind", ["bar", "line", "pie"])
+def test_the_legend_shares_a_column_with_its_drawing_so_they_stay_together(home: Path, kind: str) -> None:
+    # A bar or line chart only has a legend with two series.
+    spec = PIE if kind == "pie" else {**KINDS[kind], "labels": LINE["labels"], "series": LINE["series"]}
+    chart = figure(build(spec))
+    assert re.search(r'<div class="pk-chart-plot"><svg .*?</svg><ul class="pk-chart-legend">.*?</ul></div>', chart, re.DOTALL)
+    # The data table is outside that column, so it can use the card's full width.
+    assert chart.index("</ul></div>") < chart.index('<details class="pk-chart-data">')
+
+
+def test_charts_sit_side_by_side_in_a_grid_and_keep_their_own_ids(home: Path) -> None:
+    body = '<div class="pk-grid"><pk-chart src="assets/c.json"></pk-chart><pk-chart src="assets/d.json"></pk-chart></div>'
+    document = build(BAR, body, more={"d.json": {**LINE, "type": "area", "series": LINE["series"][:1]}})
+    assert re.search(r'<div class="pk-grid"><figure class="pk-chart.*</figure><figure class="pk-chart.*</figure></div>', document, re.DOTALL)
+    assert 'id="chart-c"' in document and 'id="chart-d"' in document
+
+
+def test_the_theme_keeps_a_chart_whole_on_a_printed_sheet_and_its_legend_with_it() -> None:
+    theme = resources.files("pagekit").joinpath("profile_default/theme.css").read_text(encoding="utf-8")
+    assert re.search(r"@media print \{.*?\.pk-chart \{[^}]*break-inside: avoid", theme, re.DOTALL)
+    assert re.search(r"@media print \{.*?\.pk-chart figcaption \{[^}]*break-after: avoid", theme, re.DOTALL)
+    assert ".pk-chart-plot { max-width: 520px; margin: 0 auto; }" in theme
 
 
 def test_a_pie_legend_gives_each_slice_its_amount_and_share(home: Path) -> None:
