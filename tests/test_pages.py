@@ -381,6 +381,22 @@ def test_builtin_pages_carry_the_pagekit_brand(home: Path) -> None:
     assert "Made with pagekit" in document
 
 
+def test_a_read_only_profile_hides_the_copy_button_and_comments(home: Path) -> None:
+    repo, _ = _profile_in(home, "interactive = false")
+    profile = load_profile(repo)
+    page = make(profile, body='<span class="pk-id">D-01</span>')
+    document = page.index.read_text()
+    assert 'id="pk-export" class="pk-button" hidden>' in document
+    assert '"readonly": true' in document
+    assert not check_page(profile, page).errors
+
+
+def test_pages_are_interactive_by_default(home: Path) -> None:
+    document = make(load_profile()).index.read_text()
+    assert 'id="pk-export" class="pk-button">' in document
+    assert '"readonly"' not in document
+
+
 def test_builtin_pages_embed_their_font(home: Path) -> None:
     document = make(load_profile()).index.read_text()
     assert 'font-family: "IBM Plex Sans";' in document and "data:font/woff2;base64," in document

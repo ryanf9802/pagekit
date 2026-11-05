@@ -437,7 +437,7 @@
   /* With no copy yet, the baseline is the page as it was built. */
   copiedState = currentState();
   restore();
-  initComments();
+  if (!meta.readonly) initComments();
   try {
     copiedState = localStorage.getItem(COPIED_KEY) || copiedState;
   } catch (err) {

@@ -75,6 +75,7 @@ drawn as outlines. Source files for other uses are in [`docs/brand/`](brand/), a
 | `copyright` | Adds a copyright notice for this holder to the footer |
 | `ascii_only` | Treat non-ASCII characters as an error |
 | `allowed_hosts` | Hosts a page may load external resources from |
+| `interactive` | Set to `false` for pages sent to outside readers: no Copy state button and no comments on item IDs |
 | `pdf_margin` | Margins for [generated PDFs](printing.md#bookmarked-pdfs) |
 | `[save]` | Where saved pages go, [below](#saving) |
 | `[send]` | How `pagekit send` shares a page, [below](#send) |

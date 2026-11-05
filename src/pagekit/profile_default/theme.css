@@ -224,6 +224,7 @@ p { margin: 0 0 12px; }
   cursor: pointer;
   transition: filter 120ms ease;
 }
+.pk-button[hidden] { display: none; }
 .pk-button svg { flex: none; width: 14px; height: 14px; }
 .pk-button:hover { filter: brightness(1.12); }
 .pk-button-done { background: var(--pk-success); }

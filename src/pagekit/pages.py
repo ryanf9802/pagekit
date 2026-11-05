@@ -322,6 +322,9 @@ def build_page(profile: Profile, page: Page) -> None:
         # Keys saved answers: a style-only rebuild keeps them, a content change resets them.
         "rev": hashlib.sha256(page.content.read_bytes()).hexdigest()[:12],
     }
+    interactive = profile.config.get("interactive", True) is not False
+    if not interactive:
+        export_meta["readonly"] = True
     meta_json = json.dumps(export_meta).replace("<", "\\u003c")
     source = add_image_sizes(page.content.read_text(encoding="utf-8"), page.dir)
     component_css = library_css_for(source)
@@ -347,7 +350,7 @@ def build_page(profile: Profile, page: Page) -> None:
         f"{copyright_html}"
         f"<span>Updated {_display_date(built)}</span></div>\n"
         '<span id="pk-export-status" class="pk-visually-hidden" role="status"></span>\n'
-        f'<button type="button" id="pk-export" class="pk-button">{COPY_ICON}'
+        f'<button type="button" id="pk-export" class="pk-button"{"" if interactive else " hidden"}>{COPY_ICON}'
         '<span id="pk-export-label">Copy state</span></button></div>\n'
         '</footer>\n<div class="pk-print-spacer" aria-hidden="true"><div></div></div>'
         f"\n<script>\n{_asset_text('export.js')}\n</script>"
@@ -515,6 +518,8 @@ def check_page(profile: Profile, page: Page) -> CheckResult:
                 errors.append(f"non-ASCII character {bad!r} on line {number} of index.html")
                 break
 
+    if profile.config.get("interactive", True) is False and (scan.unnamed or scan.singles):
+        warnings.append("form controls on a read-only page: this profile sets interactive = false, so answers cannot be copied")
     for control in scan.unnamed:
         errors.append(f"{control} has no name or id, so it cannot be exported")
     for name, count in scan.singles.items():
