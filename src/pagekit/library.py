@@ -194,7 +194,8 @@ def library_css_for(document: str, profile: Profile) -> str:
     parts = []
     for component in list_components(profile):
         if component.css and css_classes(component.css.read_text(encoding="utf-8")) & used:
-            parts.append(f"/* component: {component.name} */\n{component.css.read_text(encoding="utf-8").strip()}")
+            css = component.css.read_text(encoding="utf-8").strip()
+            parts.append(f"/* component: {component.name} */\n{css}")
     return "\n".join(parts)
 
 
