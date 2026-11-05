@@ -689,6 +689,12 @@
     stage.classList.toggle("pk-preview-drawing", item.tagName !== "IMG");
     stage.replaceChildren(copy);
     stage.scrollTo(0, 0);
+    /* A chart's legend sits beside its drawing on the page, so it comes along. */
+    var legend = preview.querySelector(".pk-preview-legend");
+    var plot = item.closest(".pk-chart-plot");
+    var list = plot && plot.querySelector(".pk-chart-legend");
+    legend.replaceChildren();
+    if (list) legend.appendChild(list.cloneNode(true));
     preview.querySelector(".pk-preview-caption").textContent = previewCaption(item);
     preview.querySelector(".pk-preview-count").textContent = previewItems.length > 1 ? previewIndex + 1 + " of " + previewItems.length : "";
     preview.classList.toggle("pk-preview-single", previewItems.length < 2);
@@ -718,6 +724,7 @@
       '<div class="pk-preview-bar"><span class="pk-preview-count"></span>' +
       '<button type="button" class="pk-preview-close" aria-label="Close preview"><i data-icon="x"></i></button></div>' +
       '<div class="pk-preview-stage"></div>' +
+      '<div class="pk-preview-legend"></div>' +
       '<button type="button" class="pk-preview-nav pk-preview-prev" aria-label="Previous image"><i data-icon="chevron-left"></i></button>' +
       '<button type="button" class="pk-preview-nav pk-preview-next" aria-label="Next image"><i data-icon="chevron-right"></i></button>' +
       '<p class="pk-preview-caption"></p>';
@@ -762,7 +769,9 @@
 
   function openPreview(item) {
     if (!preview) buildPreview();
-    previewItems = Array.prototype.slice.call(document.querySelectorAll(PREVIEWABLE)).filter(function (el) {
+    hideTip();
+    /* A chart opens from its own button, since a tap on a chart shows a tooltip. It joins the others here. */
+    previewItems = Array.prototype.slice.call(document.querySelectorAll(PREVIEWABLE + ", .pk-chart-svg")).filter(function (el) {
       return !el.closest("a");
     });
     showPreviewItem(Math.max(previewItems.indexOf(item), 0));
@@ -788,6 +797,10 @@
   document.addEventListener("click", function (event) {
     var item = previewableFrom(event.target);
     if (item) openPreview(item);
+    var expand = event.target.closest && event.target.closest(".pk-chart-expand");
+    var figure = expand && expand.closest(".pk-chart");
+    var chart = figure && figure.querySelector(".pk-chart-svg");
+    if (chart) openPreview(chart);
   });
   document.addEventListener("keydown", function (event) {
     var item = (event.key === "Enter" || event.key === " ") && previewableFrom(event.target);
@@ -798,6 +811,137 @@
   });
   window.addEventListener("beforeprint", function () {
     if (preview && preview.open) preview.close();
+  });
+
+  /* Chart tooltips. The build writes each tooltip's text into the chart as data-tip, so this only shows it:
+     on hover, on a tap, and with the arrow keys while a chart has focus. A chart still reads without it. */
+  var tip = null;
+  var tipTarget = null;
+
+  function tipSwatch(number) {
+    var key = document.createElement("span");
+    key.className = "pk-tip-key pk-chart-s" + number;
+    key.setAttribute("aria-hidden", "true");
+    return key;
+  }
+
+  function tipElement() {
+    if (!tip) {
+      tip = document.createElement("div");
+      tip.className = "pk-tip";
+      tip.setAttribute("role", "status");
+      tip.setAttribute("data-pk-ignore", "");
+      tip.hidden = true;
+    }
+    /* A modal dialog sits above everything else, so a tooltip over a full-screen chart must live inside it. */
+    var host = document.querySelector("dialog.pk-preview[open]") || document.body;
+    if (tip.parentNode !== host) host.appendChild(tip);
+    return tip;
+  }
+
+  function fillTip(el, data) {
+    el.textContent = "";
+    var title = document.createElement("div");
+    title.className = "pk-tip-title";
+    if (data.s) title.appendChild(tipSwatch(data.s));
+    title.appendChild(document.createTextNode(data.t));
+    el.appendChild(title);
+    (data.r || []).forEach(function (row) {
+      var line = document.createElement("div");
+      var name = document.createElement("span");
+      var value = document.createElement("span");
+      line.className = "pk-tip-row";
+      name.className = "pk-tip-name";
+      value.className = "pk-tip-value";
+      if (row[2]) name.appendChild(tipSwatch(row[2]));
+      name.appendChild(document.createTextNode(row[0]));
+      value.textContent = row[1];
+      line.appendChild(name);
+      line.appendChild(value);
+      el.appendChild(line);
+    });
+  }
+
+  function markTip(target) {
+    var old = tipTarget && (tipTarget.closest(".pk-chart-point") || tipTarget);
+    if (old) old.classList.remove("pk-chart-on");
+    tipTarget = target;
+    var now = target && (target.closest(".pk-chart-point") || target);
+    if (now) now.classList.add("pk-chart-on");
+  }
+
+  function placeTip(x, y) {
+    var box = tip.getBoundingClientRect();
+    var margin = 8;
+    var left = x + 14;
+    var top = y + 14;
+    if (left + box.width + margin > window.innerWidth) left = x - box.width - 14;
+    if (top + box.height + margin > window.innerHeight) top = y - box.height - 14;
+    tip.style.left = Math.max(margin, left) + "px";
+    tip.style.top = Math.max(margin, top) + "px";
+  }
+
+  function showTip(target, x, y) {
+    var el = tipElement();
+    if (target !== tipTarget || el.hidden) {
+      var data;
+      try {
+        data = JSON.parse(target.getAttribute("data-tip"));
+      } catch (err) {
+        return;
+      }
+      fillTip(el, data);
+      markTip(target);
+      el.hidden = false;
+    }
+    placeTip(x, y);
+  }
+
+  function hideTip() {
+    if (tip) tip.hidden = true;
+    markTip(null);
+  }
+
+  function tipTargetFrom(node) {
+    return node && node.closest ? node.closest("[data-tip]") : null;
+  }
+
+  /* A mouse follows the pointer; a finger or pen shows the tip where it lands and keeps it until the next tap. */
+  document.addEventListener("pointermove", function (event) {
+    if (event.pointerType !== "mouse") return;
+    var target = tipTargetFrom(event.target);
+    if (target) showTip(target, event.clientX, event.clientY);
+    else if (tipTarget) hideTip();
+  });
+  document.addEventListener("pointerdown", function (event) {
+    if (event.pointerType === "mouse") return;
+    var target = tipTargetFrom(event.target);
+    if (target) showTip(target, event.clientX, event.clientY);
+    else hideTip();
+  });
+  document.addEventListener("pointerout", function (event) {
+    if (event.pointerType === "mouse" && !event.relatedTarget) hideTip();
+  });
+  window.addEventListener("scroll", hideTip, { passive: true });
+  document.addEventListener("focusout", function (event) {
+    if (event.target.closest && event.target.closest(".pk-chart-svg")) hideTip();
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") hideTip();
+    var chart = event.target.closest && event.target.closest(".pk-chart-svg");
+    var steps = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+    if (!chart || !(event.key in steps || event.key === "Home" || event.key === "End")) return;
+    var targets = chart.querySelectorAll("[data-tip]");
+    if (!targets.length) return;
+    var at = Array.prototype.indexOf.call(targets, tipTarget);
+    var next;
+    if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = targets.length - 1;
+    else if (at < 0) next = steps[event.key] > 0 ? 0 : targets.length - 1;
+    else next = Math.min(targets.length - 1, Math.max(0, at + steps[event.key]));
+    event.preventDefault();
+    var box = targets[next].getBoundingClientRect();
+    showTip(targets[next], box.left + box.width / 2, box.top + Math.min(box.height / 2, 40));
   });
 
   /* The header shows the page title once the main heading has scrolled away. */

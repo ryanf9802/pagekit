@@ -273,6 +273,22 @@ def _key(index: int) -> str:
     return f"pk-chart-s{index + 1}"
 
 
+def _tip(title: str, rows: list[tuple[str, str, int]], swatch: int = 0) -> str:
+    """The text a tooltip shows, as the data-tip attribute that the page script reads.
+
+    Each row is a name, a value, and the series number whose color marks it (0 for none). The script only
+    displays this, so a page without it, in print or a PDF, shows the plain chart.
+    """
+    data: dict = {"t": title, "r": [list(row) for row in rows]}
+    if swatch:
+        data["s"] = swatch
+    return f' data-tip="{_esc(json.dumps(data, separators=(",", ":"), ensure_ascii=False))}"'
+
+
+def _hit(css: str, x: float, y: float, width: float, height: float, tip: str) -> str:
+    return f'<rect class="{css}" x="{_f(x)}" y="{_f(y)}" width="{_f(width)}" height="{_f(height)}"{tip}/>'
+
+
 def _range(spec: dict, zero: bool) -> tuple[float, float]:
     values = [v for s in spec["series"] for v in s["values"]]
     low, high = min(values), max(values)
@@ -309,6 +325,14 @@ def _draw_columns(spec: dict) -> tuple[str, int]:
     if spec["x_label"]:
         out.append(_label((x0 + x1) / 2, _H - 4, spec["x_label"], "pk-chart-axis-title"))
 
+    # One band for each label, over the whole plot, so the reader never has to hit a thin bar or a small dot.
+    hits = []
+    for i, label in enumerate(labels):
+        rows = [(item["name"], plain(item["values"][i]) + unit, j + 1) for j, item in enumerate(series)]
+        cross = "" if kind == "bar" else _line("pk-chart-cross", x0 + slot * (i + 0.5), y0, x0 + slot * (i + 0.5), y1)
+        band = _hit("pk-chart-hit", x0 + slot * i, y0 - _HEADROOM, slot, y1 - y0 + _HEADROOM, _tip(label, rows))
+        hits.append(f'<g class="pk-chart-point">{cross}{band}</g>')
+
     if kind == "bar":
         thick = min(_BAR_MAX, (slot * 0.72 - _GAP * (len(series) - 1)) / len(series))
         group = len(series) * thick + _GAP * (len(series) - 1)
@@ -322,7 +346,7 @@ def _draw_columns(spec: dict) -> tuple[str, int]:
                 out.append(f'<path class="pk-chart-bar {_key(j)}" d="{column_path(x, at(0), at(value), thick)}"/>')
                 if labelled:
                     out.append(_label(x + thick / 2, at(value) - 5 if value > 0 else at(value) + 15, short(value, unit), "pk-chart-value"))
-        return "".join(out), _H
+        return "".join(out + hits), _H
 
     dots = []
     for j, item in enumerate(series):
@@ -334,7 +358,7 @@ def _draw_columns(spec: dict) -> tuple[str, int]:
         out.append(f'<polyline class="pk-chart-line {_key(j)}" points="{path}"/>')
         shown = points if len(points) <= 12 else points[-1:]
         dots += [f'<circle class="pk-chart-dot {_key(j)}" cx="{_f(x)}" cy="{_f(y)}" r="4"/>' for x, y in shown]
-    return "".join(out + dots), _H
+    return "".join(out + dots + hits), _H
 
 
 def _draw_rows(spec: dict) -> tuple[str, int]:
@@ -365,9 +389,13 @@ def _draw_rows(spec: dict) -> tuple[str, int]:
     out.append(_line("pk-chart-axis", base, y0, base, y1))
     if spec["x_label"]:
         out.append(_label((x0 + x1) / 2, height - 4, spec["x_label"], "pk-chart-axis-title"))
+    hits = []
     for i, label in enumerate(shown):
         top_of_row = y0 + slot * i + 7
         group = len(series) * _BAR_H + _GAP * (len(series) - 1)
+        rows = [(item["name"], plain(item["values"][i]) + unit, j + 1) for j, item in enumerate(series)]
+        band = _hit("pk-chart-hit", x0, y0 + slot * i, _W - x0, slot, _tip(labels[i], rows))
+        hits.append(f'<g class="pk-chart-point">{band}</g>')
         out.append(_label(x0 - 8, top_of_row + group / 2 + 4, label, "pk-chart-tick", "end"))
         for j, item in enumerate(series):
             value = item["values"][i]
@@ -377,7 +405,7 @@ def _draw_rows(spec: dict) -> tuple[str, int]:
             if labelled:
                 tip, anchor = (at(value) + 6, "start") if value >= 0 else (at(value) - 6, "end")
                 out.append(_label(tip, y + _BAR_H / 2 + 4, short(value, unit), "pk-chart-value", anchor))
-    return "".join(out), round(height)
+    return "".join(out + hits), round(height)
 
 
 def _draw_scatter(spec: dict) -> tuple[str, int]:
@@ -411,15 +439,26 @@ def _draw_scatter(spec: dict) -> tuple[str, int]:
         out += [
             f'<circle class="pk-chart-dot {_key(j)}" cx="{_f(at_x(x))}" cy="{_f(at_y(y))}" r="4.5"/>' for x, y in item["points"]
         ]
+    # A larger target around each dot, drawn last so it is on top.
+    for j, item in enumerate(series):
+        for x, y in item["points"]:
+            tip = _tip(item["name"], [("X", plain(x), 0), ("Y", plain(y) + unit, 0)], swatch=j + 1)
+            out.append(f'<circle class="pk-chart-hit pk-chart-hit-dot {_key(j)}" cx="{_f(at_x(x))}" cy="{_f(at_y(y))}" r="10"{tip}/>')
     return "".join(out), _H
 
 
 def _draw_pie(spec: dict) -> tuple[str, int]:
-    values = spec["series"][0]["values"]
+    values, unit = spec["series"][0]["values"], spec["unit"]
     total, centre, radius = sum(values), 100, 98
     drawn = [(i, v) for i, v in enumerate(values) if v > 0]
+
+    def tip(i: int, value: float) -> str:
+        rows = [(spec["series"][0]["name"], plain(value) + unit, i + 1), ("Share", _share(value, total), 0)]
+        return _tip(spec["labels"][i], rows)
+
     if len(drawn) == 1:
-        return f'<circle class="pk-chart-slice {_key(drawn[0][0])}" cx="{centre}" cy="{centre}" r="{radius}"/>', 200
+        i, value = drawn[0]
+        return f'<circle class="pk-chart-slice {_key(i)}" cx="{centre}" cy="{centre}" r="{radius}"{tip(i, value)}/>', 200
     out, angle = [], -math.pi / 2
     for i, value in drawn:
         sweep = value / total * 2 * math.pi
@@ -427,7 +466,7 @@ def _draw_pie(spec: dict) -> tuple[str, int]:
         x2, y2 = centre + radius * math.cos(angle + sweep), centre + radius * math.sin(angle + sweep)
         big = 1 if sweep > math.pi else 0
         path = f"M{centre},{centre} L{_f(x1)},{_f(y1)} A{radius},{radius} 0 {big} 1 {_f(x2)},{_f(y2)} Z"
-        out.append(f'<path class="pk-chart-slice {_key(i)}" d="{path}"/>')
+        out.append(f'<path class="pk-chart-slice {_key(i)}" d="{path}"{tip(i, value)}/>')
         angle += sweep
     return "".join(out), 200
 
@@ -501,13 +540,15 @@ def draw_chart(name: str, spec: dict, extra: str = "", note: str = "") -> str:
     inner, height, width = _draw(spec)
     kind = f"pk-chart-of-{spec['type']}"
     svg = (
-        f'<svg class="pk-chart-svg" viewBox="0 0 {width} {height}" role="img" '
+        f'<svg class="pk-chart-svg" viewBox="0 0 {width} {height}" role="img" tabindex="0" '
         f'aria-labelledby="{chart_id}-t {chart_id}-d"><title id="{chart_id}-t">{_esc(spec["title"])}</title>'
         f'<desc id="{chart_id}-d">{_esc(spec["desc"])}</desc>{inner}</svg>'
     )
     return (
         f'<figure class="{_esc(f"pk-chart {kind} {extra}".strip())}" id="chart-{chart_id}">'
         f"<figcaption>{_esc(spec['title'])}</figcaption><!-- Chart data: assets/{name} -->"
+        '<button type="button" class="pk-chart-expand" aria-label="Open the chart full screen">'
+        '<i data-icon="maximize-2"></i></button>'
         f'<div class="pk-chart-plot">{svg}{_legend(spec)}</div>{_table(spec)}{note}</figure>'
     )
 

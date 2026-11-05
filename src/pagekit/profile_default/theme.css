@@ -524,6 +524,56 @@ td > .pk-choices, th > .pk-choices { margin: -3px 0; }
 .pk-chart-key { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 2px; background: var(--pk-chart-color); }
 .pk-chart-legend-value { margin-left: 6px; color: var(--pk-muted); font-variant-numeric: tabular-nums; }
 .pk-chart-data { margin-top: 10px; font-size: 0.875rem; }
+
+/* Hover and focus. The targets are transparent until pointed at, so a chart is the plain drawing without the script. */
+.pk-chart { position: relative; }
+/* A click or tap focuses the chart too, and the browser would box it. Only keyboard focus gets the ring. */
+.pk-chart-svg:focus { outline: none; }
+.pk-chart-svg:focus-visible { outline: 2px solid var(--pk-accent); outline-offset: 2px; border-radius: var(--pk-radius-small); }
+.pk-chart-hit { fill: transparent; stroke: none; }
+.pk-chart-cross { stroke: var(--pk-muted); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: 0; pointer-events: none; }
+.pk-chart-point.pk-chart-on .pk-chart-hit { fill: var(--pk-text); fill-opacity: 0.06; }
+.pk-chart-point.pk-chart-on .pk-chart-cross { opacity: 1; }
+.pk-chart-hit-dot.pk-chart-on { fill: var(--pk-chart-color); fill-opacity: 0.2; stroke: var(--pk-chart-color); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.pk-chart-slice[data-tip].pk-chart-on { opacity: 0.85; }
+.pk-chart-expand {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  color: var(--pk-muted);
+  cursor: pointer;
+}
+.pk-chart-expand:hover { background: var(--pk-surface-2); color: var(--pk-text); }
+.pk-chart-expand .pk-icon { width: 18px; height: 18px; }
+.pk-tip {
+  position: fixed;
+  z-index: 30;
+  max-width: 260px;
+  padding: 8px 10px;
+  background: var(--pk-surface);
+  color: var(--pk-text);
+  border: 1px solid var(--pk-border);
+  border-radius: var(--pk-radius-small);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 18%);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  pointer-events: none;
+}
+.pk-tip[hidden] { display: none; }
+.pk-tip-title { margin-bottom: 4px; font-weight: 600; }
+.pk-tip-row { display: flex; justify-content: space-between; gap: 14px; }
+.pk-tip-name { color: var(--pk-muted); }
+.pk-tip-value { font-variant-numeric: tabular-nums; font-weight: 600; }
+.pk-tip-key { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 2px; background: var(--pk-chart-color); }
 .pk-diagram-marker { fill: var(--pk-muted); stroke: var(--pk-muted); stroke-dasharray: none; }
 .pk-diagram-marker.pk-diagram-cross { stroke-width: 1; }
 .pk-diagram-edgeLabel rect { fill: var(--pk-surface); stroke: none; opacity: 1; }
@@ -655,6 +705,14 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
 .pk-preview-zoomed { align-items: flex-start; justify-content: flex-start; }
 .pk-preview-zoomed .pk-preview-item { max-width: none; max-height: none; margin: 0; cursor: zoom-out; }
 .pk-preview-zoomed svg.pk-preview-item { width: 220%; height: auto; max-width: none; }
+/* A chart is drawn small and scales up, so a full-screen one stops growing before its text gets huge. */
+.pk-preview-stage svg.pk-chart-svg.pk-preview-item { max-width: 960px; }
+.pk-preview-zoomed svg.pk-chart-svg.pk-preview-item { max-width: none; }
+.pk-preview-drawing :is(.pk-chart-tick, .pk-chart-axis-title) { fill: var(--pk-muted); }
+.pk-preview-legend { flex: none; padding: 10px 16px 0; color: #c7cad1; }
+.pk-preview-legend:empty { display: none; }
+.pk-preview-legend .pk-chart-legend { justify-content: center; margin: 0; }
+.pk-preview-legend .pk-chart-legend-value { color: #9aa0ab; }
 .pk-preview-nav { position: absolute; top: 50%; width: 44px; height: 44px; margin-top: -22px; background: rgb(0 0 0 / 45%) !important; }
 .pk-preview-prev { left: 8px; }
 .pk-preview-next { right: 8px; }
@@ -766,6 +824,7 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
   /* A chart stays on one sheet with its title, legend, and data table, as a diagram does. */
   .pk-chart { padding: 6px 8px 8px; break-inside: avoid; }
   .pk-chart figcaption { margin-bottom: 3px; break-after: avoid; }
+  .pk-chart-expand, .pk-tip { display: none; }
   .pk-section { margin-top: 20px; }
   h1 { font-size: 1.625rem; }
   h2 { font-size: 1.125rem; }
