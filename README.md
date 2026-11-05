@@ -26,7 +26,7 @@ whether I want the local server.
 Tested on Linux, WSL, and Windows. Any agent that can run commands can follow it. Pages carry the pagekit brand until
 you [set up a profile](#set-up-a-profile).
 
-## Ask for a "page"
+## Ask for a page
 
 **The word "page" is what tells your agent to use pagekit**, so use it when you want one:
 
