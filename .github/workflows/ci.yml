@@ -2,6 +2,8 @@ name: CI
 
 on:
   pull_request:
+    # ready_for_review runs the checks when a draft is marked ready, since drafts skip them.
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
 
@@ -10,6 +12,7 @@ permissions:
 
 jobs:
   lint:
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -17,6 +20,7 @@ jobs:
       - run: uv run --locked --group dev ruff check
 
   test:
+    if: github.event.pull_request.draft != true
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -30,7 +34,7 @@ jobs:
 
   # The one check that main requires, so changing the matrix needs no change to the ruleset.
   ci:
-    if: always()
+    if: always() && github.event.pull_request.draft != true
     needs: [lint, test]
     runs-on: ubuntu-latest
     steps:

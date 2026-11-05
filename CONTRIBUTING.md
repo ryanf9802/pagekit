@@ -31,6 +31,8 @@ To try your changes as the `pagekit` command, run `uv run pagekit`, or `uv tool 
    For anything that changes how a page looks or behaves, build a page and look at it, including at phone width, in dark
    mode, and in print.
 4. **Open a pull request** to `main`, and link the issue with `Fixes #42`.
+   CI does not run on a draft pull request. It runs when you mark the pull request ready for review, and on every push
+   after that.
 5. **Merge** once CI passes. Pull requests are squash merged, and the branch is deleted automatically.
 
 Direct pushes to `main` are refused, for everyone.
