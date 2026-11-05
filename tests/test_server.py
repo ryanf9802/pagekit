@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from pagekit.pages import build_page, new_page, pages_root
+from pagekit.pages import PageError, build_page, new_page, pages_root, set_public_url
 from pagekit.profiles import load_profile
 from pagekit.server import make_server
 
@@ -94,3 +94,27 @@ def test_saved_copies_are_listed_and_served(home: Path, port: int) -> None:
     assert entry["title"] == "Kept & safe" and entry["expires"] is None
     status, body, _ = request(port, entry["url"])
     assert status == 200 and b"Kept" in body
+
+
+def test_public_address_is_refused_until_set_up_then_only_that_name(home: Path, port: int) -> None:
+    host = "pages.example.ts.net"
+    assert request(port, "/api/pages", {"Host": host})[0] == 403
+    set_public_url(f"https://{host}/")
+    assert request(port, "/api/pages", {"Host": host})[0] == 200
+    assert request(port, "/api/pages", {"Host": host, "Origin": f"https://{host}"})[0] == 200
+    assert request(port, "/api/pages", {"Host": "127.0.0.1:8766", "Origin": f"https://{host}"})[0] == 200
+    assert request(port, "/api/pages", {"Host": "other.example.ts.net"})[0] == 403
+    assert request(port, "/api/pages", {"Host": host, "Origin": "https://evil.example"})[0] == 403
+
+
+@pytest.mark.parametrize("url", ["http://pages.example.ts.net", "pages.example.ts.net", "https://host/path"])
+def test_public_url_must_be_plain_https(home: Path, url: str) -> None:
+    with pytest.raises(PageError, match="public URL"):
+        set_public_url(url)
+
+
+def test_page_reports_a_phone_link_only_when_set_up(home: Path) -> None:
+    page = built_page(home)
+    assert page.phone_url() == ""
+    set_public_url("https://pages.example.ts.net")
+    assert page.phone_url() == "https://pages.example.ts.net/p/default/demo/"

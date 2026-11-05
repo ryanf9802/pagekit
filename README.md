@@ -29,6 +29,16 @@ restart the shared master (`ssh -O exit <host>`). Without the server, `pagekit s
 hands a page to [dropbucket](https://github.com/ryanf9802/dropbucket), and
 `pagekit pack` writes one file to share however you like.
 
+To open pages from another of your own devices, give the server a private address and tell pagekit:
+
+```bash
+tailscale serve --bg 8766
+pagekit install-service --public-url https://HOST.TAILNET.ts.net
+```
+
+The server then accepts that one extra name, and builds print a `phone:` link. Use `tailscale serve`, never
+`funnel`, which is public. The server still listens on localhost only.
+
 ## Profiles
 
 The profile comes from where the agent works, never from an account. pagekit walks up

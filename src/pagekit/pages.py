@@ -74,6 +74,27 @@ def server_running(port: int | None = None) -> bool:
         return sock.connect_ex(("127.0.0.1", port or server_port())) == 0
 
 
+def server_settings_file() -> Path:
+    return Path.home() / ".pagekit" / "server.toml"
+
+
+def public_url() -> str:
+    """The address another device reaches this server at, such as a private tailnet name."""
+    try:
+        return str(tomllib.loads(server_settings_file().read_text()).get("public_url", "")).rstrip("/")
+    except (OSError, tomllib.TOMLDecodeError):
+        return ""
+
+
+def set_public_url(url: str) -> None:
+    parts = urlsplit(url)
+    if parts.scheme != "https" or not parts.netloc or parts.path.strip("/"):
+        raise PageError(f"public URL must look like https://host, not {url!r}")
+    path = server_settings_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"public_url = {json.dumps(url.rstrip('/'))}\n")
+
+
 def default_session() -> str:
     name = os.environ.get("PAGEKIT_SESSION", "").strip()
     if not name and os.environ.get("CLAUDE_JOB_DIR"):
@@ -130,6 +151,10 @@ class Page:
 
     def url(self) -> str:
         return f"http://localhost:{server_port()}{self.url_path}"
+
+    def phone_url(self) -> str:
+        base = public_url()
+        return f"{base}{self.url_path}" if base else ""
 
     def write_meta(self) -> None:
         lines = []

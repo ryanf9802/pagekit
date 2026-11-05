@@ -29,6 +29,7 @@ from .pages import (
     save_page,
     send_page,
     server_running,
+    set_public_url,
 )
 from .pdf import render_pdf
 from .profiles import (
@@ -68,6 +69,8 @@ def _print_location(page: Page) -> None:
         print(f"url: {page.url()}")
     else:
         print(f"url: {page.url()} (server not running: pagekit serve, or share with pagekit send)")
+    if page.phone_url():
+        print(f"phone: {page.phone_url()}")
 
 
 def _report_check(profile: Profile, page: Page) -> int:
@@ -246,6 +249,8 @@ WantedBy=default.target
 
 
 def cmd_install_service(args) -> int:
+    if args.public_url:
+        set_public_url(args.public_url)
     unit = Path.home() / ".config" / "systemd" / "user" / "pagekit.service"
     unit.parent.mkdir(parents=True, exist_ok=True)
     unit.write_text(_UNIT.format(python=sys.executable, port=args.port))
@@ -330,6 +335,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("install-service", help="install and start a systemd user service")
     p.add_argument("--port", type=int, default=DEFAULT_PORT)
+    p.add_argument("--public-url", help="also accept this private https address, such as a tailscale serve name")
     p.set_defaults(fn=cmd_install_service)
     return parser
 

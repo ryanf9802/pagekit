@@ -12,7 +12,7 @@ from importlib import resources
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from .pages import SAVED_DIR, PageError, iter_pages, list_saved, load_page_dir, pages_root, prune_pages
+from .pages import SAVED_DIR, PageError, iter_pages, list_saved, load_page_dir, pages_root, prune_pages, public_url
 from .pdf import find_chrome, render_pdf
 from .profiles import builtin_dir
 
@@ -76,11 +76,13 @@ def make_handler():
         def _guard(self) -> bool:
             """Block DNS rebinding and cross-site reads."""
             host = self.headers.get("Host", "")
-            if not _LOCAL_HOST.match(host):
+            # The one extra name the user set up. Everything else stays localhost only.
+            public_host = urlsplit(public_url()).netloc
+            if not _LOCAL_HOST.match(host) and host != public_host:
                 self._json(403, {"error": "forbidden host"})
                 return False
             origin = self.headers.get("Origin")
-            if origin and urlsplit(origin).netloc != host:
+            if origin and urlsplit(origin).netloc not in {host, public_host}:
                 self._json(403, {"error": "forbidden origin"})
                 return False
             return True
