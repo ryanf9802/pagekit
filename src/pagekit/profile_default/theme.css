@@ -41,6 +41,8 @@
 
 * { box-sizing: border-box; }
 html {
+  /* The canvas shows past the page's ends and in a phone's safe areas, so it matches the page. */
+  background: var(--pk-bg);
   -webkit-text-size-adjust: 100%;
   scroll-padding-block: calc(var(--pk-bar-height) + 16px);
 }
@@ -480,7 +482,7 @@ details > :last-child { margin-bottom: 0; }
 @media print {
   :root { color-scheme: light; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   /* Sizes are in rem, so this one root scales all printed text from 14px. */
-  html { font-size: 14px; scroll-padding-block: 0; }
+  html { background: #fff; font-size: 14px; scroll-padding-block: 0; }
   body {
     display: table;
     width: 100%;
