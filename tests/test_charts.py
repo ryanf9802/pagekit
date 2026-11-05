@@ -181,6 +181,16 @@ def test_text_from_the_file_is_escaped(home: Path) -> None:
     assert "A &lt;b&gt; &amp; B" in chart and "&lt;i&gt;" in chart and "<b>" not in chart and "<i>" not in chart
 
 
+def test_a_long_name_is_clipped_with_ascii_dots_so_the_page_still_passes_its_checks(home: Path) -> None:
+    long_name = "A very long component name that the axis has to clip"
+    spec = {**KINDS["horizontal"], "labels": [long_name, "b", "c"]}
+    chart = figure(build(spec))  # build() fails if the page check finds a non-ASCII character
+    clipped = re.search(r'class="pk-chart-tick" [^>]*text-anchor="end">(A very[^<]*)</text>', chart).group(1)
+    assert clipped.endswith("...") and len(clipped) <= 24 and clipped.isascii()
+    # Nothing is lost: the data table beside the chart has the whole name.
+    assert f"<td>{long_name}</td>" in chart
+
+
 def test_a_horizontal_chart_grows_with_its_rows(home: Path) -> None:
     def height(count: int) -> int:
         spec = {**KINDS["horizontal"], "labels": [f"Row {i}" for i in range(count)]}

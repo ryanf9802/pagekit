@@ -227,7 +227,8 @@ def _width(text: str) -> float:
 
 
 def _clip(text: str, limit: int) -> str:
-    return text if len(text) <= limit else text[: limit - 1].rstrip() + "\u2026"
+    """Cut a long name short with three dots. They are ASCII, because a page's own text must be (ascii_only)."""
+    return text if len(text) <= limit else text[: limit - 3].rstrip() + "..."
 
 
 # --- shapes ----------------------------------------------------------------------------------------------
