@@ -35,3 +35,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: test "${{ needs.lint.result }}" = success && test "${{ needs.test.result }}" = success
+
+  # Users update to releases, so a merge reaches them only once the merged commit has passed every check above.
+  release:
+    if: github.event_name == 'push'
+    needs: [ci]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: release
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Tag and publish the next release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "$(git tag --list 'v[0-9]*' --points-at "$GITHUB_SHA")" ]; then
+            echo "This commit is already released."
+            exit 0
+          fi
+          latest=$(git tag --list 'v[0-9]*' --sort=-version:refname | head -n 1)
+          if [ -z "$latest" ]; then
+            next=v0.1.0
+          else
+            # A run for an older commit can finish after a newer one: never release backwards.
+            if git merge-base --is-ancestor "$GITHUB_SHA" "$latest"; then
+              echo "$latest already includes this commit."
+              exit 0
+            fi
+            IFS=. read -r major minor patch <<< "${latest#v}"
+            next="v$major.$minor.$((patch + 1))"
+          fi
+          gh release create "$next" --target "$GITHUB_SHA" --title "$next" --generate-notes --latest

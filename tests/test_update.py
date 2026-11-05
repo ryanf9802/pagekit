@@ -27,6 +27,11 @@ def commit(repo: Path, relative: str, text: str, message: str) -> None:
     git(repo, "commit", "-q", "-m", message)
 
 
+def release(repo: Path, tag: str) -> None:
+    git(repo, "tag", tag)
+    git(repo, "push", "-q", "origin", tag)
+
+
 @pytest.fixture
 def repos(tmp_path: Path, monkeypatch) -> tuple[Path, Path]:
     origin = tmp_path / "origin.git"
@@ -37,6 +42,7 @@ def repos(tmp_path: Path, monkeypatch) -> tuple[Path, Path]:
     git(author, "switch", "-q", "-c", "main")
     commit(author, "pyproject.toml", "[project]\n", "first")
     git(author, "push", "-q", "origin", "main")
+    release(author, "v0.1.0")
     git(tmp_path, "clone", "-q", str(origin), str(clone))
     monkeypatch.setattr(update_module, "clone_dir", lambda: clone)
     monkeypatch.setattr(update_module, "server_running", lambda: False)
@@ -52,6 +58,7 @@ def test_check_lists_changes_without_pulling(repos, capsys) -> None:
     author, clone = repos
     commit(author, "a.txt", "x", "add a feature")
     git(author, "push", "-q", "origin", "main")
+    release(author, "v0.1.1")
     before = git(clone, "rev-parse", "HEAD")
     assert main(["update", "--check"]) == 0
     assert "add a feature" in capsys.readouterr().out
@@ -62,9 +69,10 @@ def test_update_pulls_and_names_changes_and_new_skills(repos, capsys) -> None:
     author, clone = repos
     commit(author, "src/pagekit/skills/new-one/SKILL.md", "x", "add a skill")
     git(author, "push", "-q", "origin", "main")
+    release(author, "v0.1.1")
     assert main(["update"]) == 0
     out = capsys.readouterr().out
-    assert "add a skill" in out and f"link it for your agent: {clone / 'src/pagekit/skills/new-one'}" in out
+    assert "updated pagekit to v0.1.1" in out and "add a skill" in out and f"link it for your agent: {clone / 'src/pagekit/skills/new-one'}" in out
     assert "reinstalled" not in out
     assert (clone / "src/pagekit/skills/new-one/SKILL.md").is_file()
 
@@ -73,6 +81,7 @@ def test_changed_dependencies_reinstall(repos, monkeypatch) -> None:
     author, clone = repos
     commit(author, "pyproject.toml", "[project]\nname = 'x'\n", "add a dependency")
     git(author, "push", "-q", "origin", "main")
+    release(author, "v0.1.1")
     calls = []
     real_run = subprocess.run
 
@@ -92,6 +101,7 @@ def test_uncommitted_changes_stop_the_update_and_stay(repos) -> None:
     author, clone = repos
     commit(author, "a.txt", "x", "add a feature")
     git(author, "push", "-q", "origin", "main")
+    release(author, "v0.1.1")
     (clone / "pyproject.toml").write_text("mine")
     before = git(clone, "rev-parse", "HEAD")
     with pytest.raises(UpdateError, match="uncommitted"):
@@ -103,6 +113,7 @@ def test_untracked_files_such_as_agent_worktrees_do_not_stop_the_update(repos) -
     author, clone = repos
     commit(author, "a.txt", "x", "add a feature")
     git(author, "push", "-q", "origin", "main")
+    release(author, "v0.1.1")
     (clone / ".claude" / "worktrees").mkdir(parents=True)
     (clone / ".claude" / "worktrees" / "note.txt").write_text("keep")
     assert update().commits == ["add a feature"]
@@ -120,9 +131,10 @@ def test_diverged_clone_is_not_overwritten(repos) -> None:
     author, clone = repos
     commit(author, "a.txt", "x", "theirs")
     git(author, "push", "-q", "origin", "main")
+    release(author, "v0.1.1")
     commit(clone, "b.txt", "y", "mine")
     before = git(clone, "rev-parse", "HEAD")
-    with pytest.raises(UpdateError, match="pull failed"):
+    with pytest.raises(UpdateError, match="merge failed"):
         update()
     assert git(clone, "rev-parse", "HEAD") == before
 
@@ -131,6 +143,7 @@ def test_server_restart_uses_the_service_or_says_so(repos, monkeypatch, capsys) 
     author, _ = repos
     commit(author, "a.txt", "x", "change")
     git(author, "push", "-q", "origin", "main")
+    release(author, "v0.1.1")
     monkeypatch.setattr(update_module, "server_running", lambda: True)
     monkeypatch.setattr(update_module.shutil, "which", lambda name: None)
     assert main(["update"]) == 0
@@ -145,3 +158,57 @@ def test_an_install_with_no_clone_says_so(repos, monkeypatch) -> None:
 
 def test_this_install_finds_its_clone() -> None:
     assert clone_dir() == Path(update_module.__file__).resolve().parents[2]
+
+
+def test_unreleased_commits_on_main_are_not_installed(repos, capsys) -> None:
+    author, clone = repos
+    commit(author, "a.txt", "x", "not released yet")
+    git(author, "push", "-q", "origin", "main")
+    before = git(clone, "rev-parse", "HEAD")
+    assert main(["update", "--check"]) == 0
+    assert "up to date" in capsys.readouterr().out
+    assert main(["update"]) == 0
+    assert "up to date" in capsys.readouterr().out
+    assert git(clone, "rev-parse", "HEAD") == before
+
+
+def test_main_flag_follows_main(repos, capsys) -> None:
+    author, clone = repos
+    commit(author, "a.txt", "x", "not released yet")
+    git(author, "push", "-q", "origin", "main")
+    assert main(["update", "--check", "--main"]) == 0
+    assert "not released yet" in capsys.readouterr().out
+    assert update(follow_main=True).commits == ["not released yet"]
+    assert (clone / "a.txt").is_file()
+
+
+def test_newest_release_wins_by_version_not_by_name(repos) -> None:
+    author, clone = repos
+    commit(author, "a.txt", "x", "nine")
+    release(author, "v0.1.9")
+    commit(author, "b.txt", "y", "ten")
+    git(author, "push", "-q", "origin", "main")
+    release(author, "v0.1.10")
+    assert update().commits == ["ten", "nine"]
+    assert git(clone, "rev-parse", "HEAD") == git(author, "rev-parse", "v0.1.10")
+
+
+def test_a_clone_ahead_of_the_release_is_not_moved_back(repos, capsys) -> None:
+    author, clone = repos
+    commit(author, "a.txt", "x", "not released yet")
+    git(author, "push", "-q", "origin", "main")
+    update(follow_main=True)
+    before = git(clone, "rev-parse", "HEAD")
+    assert main(["update"]) == 0
+    assert "up to date" in capsys.readouterr().out
+    assert git(clone, "rev-parse", "HEAD") == before
+
+
+def test_no_release_yet_points_to_the_main_flag(repos, tmp_path, monkeypatch, capsys) -> None:
+    git(tmp_path / "origin.git", "tag", "-d", "v0.1.0")
+    fresh = tmp_path / "fresh"
+    git(tmp_path, "clone", "-q", str(tmp_path / "origin.git"), str(fresh))
+    monkeypatch.setattr(update_module, "clone_dir", lambda: fresh)
+    assert main(["update"]) == 1
+    err = capsys.readouterr().err
+    assert "no release has been published yet" in err and "--main" in err

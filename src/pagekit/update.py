@@ -1,4 +1,4 @@
-"""Update pagekit from its clone: pull, refresh the install if needed, and restart the server."""
+"""Update pagekit from its clone: move to the newest release, refresh the install if needed, and restart the server."""
 
 from __future__ import annotations
 
@@ -10,6 +10,8 @@ from pathlib import Path
 from .pages import server_running
 
 BRANCH = "main"
+# Every release is a tag like v0.1.7, made by CI once a merge to main has passed.
+RELEASE_TAGS = "v[0-9]*"
 SERVICE = "pagekit.service"
 _GIT_TIMEOUT_SECONDS = 60
 
@@ -20,6 +22,8 @@ class UpdateError(Exception):
 
 @dataclass
 class UpdateResult:
+    # The release moved to, or "" when following main.
+    version: str = ""
     commits: list[str] = field(default_factory=list)
     new_skills: list[Path] = field(default_factory=list)
     reinstalled: bool = False
@@ -59,11 +63,22 @@ def _require_clone(root: Path | None) -> Path:
     return root
 
 
-def pending_commits(root: Path | None = None) -> list[str]:
+def _fetch_target(clone: Path, follow_main: bool) -> tuple[str, str]:
+    """Fetches, and names what to move to: the newest release, or origin/main. Returns (ref, release name or "")."""
+    _git(clone, "fetch", "--tags", "origin", BRANCH)
+    if follow_main:
+        return f"origin/{BRANCH}", ""
+    releases = _lines(_git(clone, "tag", "--list", RELEASE_TAGS, "--sort=-version:refname"))
+    if not releases:
+        raise UpdateError("no release has been published yet: run pagekit update --main to follow main instead")
+    return releases[0], releases[0]
+
+
+def pending_commits(root: Path | None = None, follow_main: bool = False) -> list[str]:
     """Fetches, and lists what an update would bring in. Changes nothing else."""
     clone = _require_clone(root or clone_dir())
-    _git(clone, "fetch", "origin", BRANCH)
-    return _lines(_git(clone, "log", "--format=%s", f"HEAD..origin/{BRANCH}"))
+    target, _ = _fetch_target(clone, follow_main)
+    return _lines(_git(clone, "log", "--format=%s", f"HEAD..{target}"))
 
 
 def _restart_server() -> str:
@@ -79,7 +94,7 @@ def _restart_server() -> str:
     return "restart by hand"
 
 
-def update(root: Path | None = None) -> UpdateResult:
+def update(root: Path | None = None, follow_main: bool = False) -> UpdateResult:
     clone = _require_clone(root or clone_dir())
     # Untracked files are left alone by a pull, and agent worktrees often sit inside a clone.
     if _git(clone, "status", "--porcelain", "--untracked-files=no"):
@@ -87,12 +102,14 @@ def update(root: Path | None = None) -> UpdateResult:
     branch = _git(clone, "rev-parse", "--abbrev-ref", "HEAD")
     if branch != BRANCH:
         raise UpdateError(f"{clone} is on {branch}: switch it to {BRANCH}, then update again")
+    target, version = _fetch_target(clone, follow_main)
     before = _git(clone, "rev-parse", "HEAD")
-    _git(clone, "pull", "--ff-only", "origin", BRANCH)
+    # A clone already ahead of the release stays where it is, so an update never moves backwards.
+    _git(clone, "merge", "--ff-only", target)
     after = _git(clone, "rev-parse", "HEAD")
     if before == after:
         return UpdateResult()
-    result = UpdateResult(commits=_lines(_git(clone, "log", "--format=%s", f"{before}..{after}")))
+    result = UpdateResult(version=version, commits=_lines(_git(clone, "log", "--format=%s", f"{before}..{after}")))
     added = _git(clone, "diff", "--name-only", "--diff-filter=A", before, after, "--", "src/pagekit/skills")
     result.new_skills = [clone / Path(name).parent for name in _lines(added) if Path(name).name == "SKILL.md"]
     # An editable install follows the clone, so only new dependencies need a reinstall.

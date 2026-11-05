@@ -321,19 +321,20 @@ WantedBy=default.target
 def cmd_update(args) -> int:
     try:
         if args.check:
-            commits = pending_commits()
+            commits = pending_commits(follow_main=args.main)
             for commit in commits:
                 print(f"  {commit}")
             print(f"{len(commits)} update(s) available: run pagekit update" if commits else "pagekit is up to date")
             return 0
-        result = update()
+        result = update(follow_main=args.main)
     except UpdateError as exc:
         print(f"pagekit: {exc}", file=sys.stderr)
         return 1
     if not result.commits:
         print("pagekit is up to date")
         return 0
-    print(f"updated pagekit with {len(result.commits)} change(s):")
+    target = f" to {result.version}" if result.version else ""
+    print(f"updated pagekit{target} with {len(result.commits)} change(s):")
     for commit in result.commits:
         print(f"  {commit}")
     if result.reinstalled:
@@ -443,8 +444,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--profile", help=profile_help)
     p.set_defaults(fn=cmd_icons)
 
-    p = sub.add_parser("update", help="update pagekit from its clone, and restart the server if needed")
+    p = sub.add_parser("update", help="update pagekit to the newest release, and restart the server if needed")
     p.add_argument("--check", action="store_true", help="list what an update would bring in, and change nothing")
+    p.add_argument("--main", action="store_true", help="follow the main branch instead of the newest release")
     p.set_defaults(fn=cmd_update)
 
     p = sub.add_parser("serve", help="run the optional page index")
