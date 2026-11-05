@@ -149,7 +149,7 @@ def test_index_uses_the_same_chrome_as_a_page(home: Path, port: int) -> None:
     for document in (page, index):
         assert '<header class="pk-header"><div class="pk-bar">' in document
         assert '<span class="pk-header-title">' in document
-        assert "Made with pagekit" in document and "window.pagekit" in document
+        assert "Made with <a href=\"https://github.com/ryanf9802/pagekit\"" in document and "window.pagekit" in document
         assert 'id="pk-export" class="pk-button" hidden' in document
     # Only the shared theme sizes the logo, and the index's own inputs are not state to copy.
     assert ".pk-header .pk-logo" not in index and ".pk-header .pk-wordmark" not in index
