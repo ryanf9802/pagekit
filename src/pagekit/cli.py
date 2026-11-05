@@ -13,6 +13,7 @@ from .icons import search_icons
 from .library import ComponentError, add_component, find_component, list_components
 from .pages import (
     DEFAULT_PORT,
+    CheckResult,
     PHONE_WIDTH_PX,
     Page,
     PageError,
@@ -72,7 +73,10 @@ def _print_location(page: Page) -> None:
 
 
 def _report_check(profile: Profile, page: Page) -> int:
-    result = check_page(profile, page)
+    return _print_check(check_page(profile, page))
+
+
+def _print_check(result: CheckResult) -> int:
     for error in result.errors:
         print(f"error: {error}")
     for warning in result.warnings:
@@ -100,9 +104,20 @@ def cmd_build(args) -> int:
     prune_if_due()
     profile = _profile(args)
     page = load_page(profile, args.slug)
+    previous = page.index.read_bytes() if page.index.is_file() else None
     build_page(profile, page)
+    result = check_page(profile, page)
+    if result.hook_failed:
+        # A page the profile refuses never becomes the live version.
+        if previous is None:
+            page.index.unlink()
+        else:
+            page.index.write_bytes(previous)
+        _print_check(result)
+        print("not updated: the profile's check refused this build")
+        return 1
     _print_location(page)
-    return _report_check(profile, page)
+    return _print_check(result)
 
 
 def cmd_check(args) -> int:

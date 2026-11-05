@@ -40,6 +40,8 @@ CSS_EXTERNAL_RE = re.compile(r"""(?:url\(\s*["']?|@import\s+["'])((?:https?:)?//
 WIDE_FIXED_RE = re.compile(r"(?<![-\w])(?:min-)?width\s*:\s*(\d{3,})px")
 PLACEHOLDER_RE = re.compile(r"\{\{(\w+)\}\}")
 PHONE_WIDTH_PX = 390
+CHECK_TIMEOUT_SECONDS = 120
+MAX_CHECK_LINES = 40
 COPY_ICON = (
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">'
     '<rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/>'
@@ -433,10 +435,39 @@ class _Scanner(HTMLParser):
 class CheckResult:
     errors: list[str]
     warnings: list[str]
+    # The profile's own check refused the page, so a build keeps the last good version.
+    hook_failed: bool = False
 
     @property
     def ok(self) -> bool:
         return not self.errors
+
+
+def run_profile_check(profile: Profile, page: Page) -> list[str]:
+    """The profile's own check, if it names one. It runs without a shell, on every build and check."""
+    command = profile.config.get("checks", {}).get("command")
+    if not command:
+        return []
+    if not isinstance(command, list) or not all(isinstance(part, str) for part in command):
+        return ['profile check: [checks] command must be a list, like ["python3", "lint.py"]']
+    try:
+        result = subprocess.run(
+            [*command, str(page.index), str(page.dir)],
+            cwd=page.dir,
+            capture_output=True,
+            text=True,
+            stdin=subprocess.DEVNULL,
+            timeout=CHECK_TIMEOUT_SECONDS,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return [f"profile check could not run: {exc}"]
+    if result.returncode == 0:
+        return []
+    lines = [line for line in f"{result.stdout}\n{result.stderr}".splitlines() if line.strip()]
+    shown = lines[:MAX_CHECK_LINES]
+    if len(lines) > len(shown):
+        shown.append(f"... and {len(lines) - len(shown)} more lines")
+    return [f"profile check: {line}" for line in shown] or [f"profile check failed with exit code {result.returncode}"]
 
 
 def check_page(profile: Profile, page: Page) -> CheckResult:
@@ -499,7 +530,8 @@ def check_page(profile: Profile, page: Page) -> CheckResult:
             break
     if page.meta.get("mode") != "free":
         warnings.extend(consistency_warnings(profile, page.content.read_text()))
-    return CheckResult(errors, warnings)
+    hook_errors = run_profile_check(profile, page)
+    return CheckResult(errors + hook_errors, warnings, hook_failed=bool(hook_errors))
 
 
 def pack_page(page: Page) -> Path:

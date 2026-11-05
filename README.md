@@ -119,6 +119,21 @@ measure text, and caches the result beside the page. The output is plain inline 
 styling or script, so colors follow the theme and the page stays offline. A build needs Chrome only
 when a diagram has changed. `pagekit component show diagram` has the full rules.
 
+## Profile checks
+
+A profile can require its own check on every `pagekit build` and `pagekit check`:
+
+```toml
+[checks]
+command = ["python3", "/path/to/lint.py"]
+```
+
+The command runs without a shell, in the page's folder, with the built `index.html` and the page folder
+as its last two arguments. A non-zero exit prints its output as errors and fails the command. A failed
+build keeps the page's last good version, or leaves no page if it is new, and `pagekit save` refuses
+a page that fails. Because this runs a command the profile names, read a profile before building
+with it in a repo you do not trust.
+
 ## Agent workflow
 
 ```text
