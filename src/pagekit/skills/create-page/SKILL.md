@@ -60,13 +60,19 @@ fields:
   D-01.notes: |
     Multi-line notes are indented
     under the name.
+comments:
+  S-05: what happened here?
 ```
 ````
 
+`comments:` appears only when there are some. The user can click any `pk-id` item ID on the
+page to comment on it, so wrap every ID in `<span class="pk-id">`. Treat each comment as a
+question or instruction about that item.
+
 Empty values mean unanswered, not "no". `source` is the page: read `content.html` beside it
 for what each name refers to. Act only on what the answers say, and rebuild the same slug to
-show the result. Changing `content.html` clears answers the user has not exported, so collect
-them first. A rebuild with unchanged content keeps them.
+show the result. Changing `content.html` clears answers and comments the user has not exported,
+so collect them first. A rebuild with unchanged content keeps them.
 
 ## Sharing and keeping
 

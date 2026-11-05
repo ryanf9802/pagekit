@@ -86,7 +86,12 @@
       line("source", meta.source),
       line("built", meta.built),
       "fields:" + (fields.length ? "" : " none"),
-    ].concat(fields.map(function (f) { return "  " + line(f[0], f[1]); })).join("\n");
+    ].concat(fields.map(function (f) { return "  " + line(f[0], f[1]); }));
+    var ids = commentedIds();
+    if (ids.length) {
+      body = body.concat("comments:", ids.map(function (id) { return "  " + line(id, comments[id]); }));
+    }
+    body = body.join("\n");
     var longest = (body.match(/`+/g) || []).reduce(function (n, run) { return Math.max(n, run.length); }, 2);
     var fence = new Array(longest + 2).join("`");
     return fence + "pagekit-response\n" + body + "\n" + fence;
@@ -136,7 +141,13 @@
   function copied() {
     var count = collect().length;
     var fields = count + (count === 1 ? " field" : " fields");
-    status("Copied " + fields + ". Paste it into Claude Code.", "Copied " + fields + ", paste into Claude", true);
+    var notes = commentedIds().length;
+    if (!notes) {
+      status("Copied " + fields + ". Paste it into Claude Code.", "Copied " + fields + ", paste into Claude", true);
+      return;
+    }
+    var both = fields + ", " + notes + (notes === 1 ? " comment" : " comments");
+    status("Copied " + both + ". Paste it into Claude Code.", "Copied " + both, true);
   }
 
   function copy() {
@@ -202,6 +213,174 @@
     });
   }
 
+  /* Comments on item IDs: any .pk-id opens a floating box. Stored like answers, so changed
+     content resets them too. The same ID appearing twice shares one comment. */
+  var COMMENT_KEY = STORE_KEY + ":comments";
+  var comments = {};
+  var commentBox = null;
+  var commentArea = null;
+  var commentTitle = null;
+  var commentAnchor = null;
+  var commentCount = null;
+
+  function idMarks() {
+    return Array.prototype.slice.call(document.querySelectorAll(".pk-id"));
+  }
+
+  function idOf(el) {
+    return el.textContent.trim();
+  }
+
+  function commentedIds() {
+    var ordered = [];
+    idMarks().forEach(function (el) {
+      var id = idOf(el);
+      if (comments[id] && ordered.indexOf(id) === -1) ordered.push(id);
+    });
+    return ordered;
+  }
+
+  function refreshComments() {
+    idMarks().forEach(function (el) {
+      var has = !!comments[idOf(el)];
+      el.classList.toggle("pk-has-comment", has);
+      el.setAttribute("aria-label", (has ? "Edit comment on " : "Comment on ") + idOf(el));
+    });
+    if (!commentCount) return;
+    var count = commentedIds().length;
+    commentCount.hidden = !count;
+    commentCount.textContent = count + (count === 1 ? " comment" : " comments");
+  }
+
+  function saveComments() {
+    try {
+      localStorage.setItem(COMMENT_KEY, JSON.stringify(comments));
+    } catch (err) {
+      /* Storage can be blocked; comments still export until the page closes. */
+    }
+  }
+
+  function closeComment(returnFocus) {
+    if (!commentBox || commentBox.hidden) return;
+    commentBox.hidden = true;
+    if (returnFocus && commentAnchor) commentAnchor.focus();
+  }
+
+  function buildCommentBox() {
+    commentBox = document.createElement("div");
+    commentBox.className = "pk-comment";
+    commentBox.hidden = true;
+    commentBox.setAttribute("data-pk-ignore", "");
+    commentBox.setAttribute("role", "dialog");
+    var head = document.createElement("div");
+    head.className = "pk-comment-head";
+    commentTitle = document.createElement("span");
+    commentTitle.className = "pk-comment-title";
+    var done = document.createElement("button");
+    done.type = "button";
+    done.className = "pk-comment-done";
+    done.textContent = "Done";
+    done.addEventListener("click", function () { closeComment(true); });
+    head.appendChild(commentTitle);
+    head.appendChild(done);
+    commentArea = document.createElement("textarea");
+    commentArea.placeholder = "Add a comment";
+    commentArea.addEventListener("input", function () {
+      var id = idOf(commentAnchor);
+      var value = commentArea.value.trim();
+      if (value) comments[id] = value;
+      else delete comments[id];
+      saveComments();
+      refreshComments();
+    });
+    commentArea.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" || (event.key === "Enter" && (event.ctrlKey || event.metaKey))) {
+        event.preventDefault();
+        closeComment(true);
+      }
+    });
+    commentBox.appendChild(head);
+    commentBox.appendChild(commentArea);
+    document.body.appendChild(commentBox);
+  }
+
+  function openComment(el) {
+    if (!commentBox) buildCommentBox();
+    commentAnchor = el;
+    var id = idOf(el);
+    commentTitle.textContent = "Comment on " + id;
+    commentBox.setAttribute("aria-label", "Comment on " + id);
+    commentArea.value = comments[id] || "";
+    commentBox.hidden = false;
+    var rect = el.getBoundingClientRect();
+    var width = commentBox.offsetWidth;
+    var height = commentBox.offsetHeight;
+    var maxLeft = document.documentElement.clientWidth - width - 8;
+    var top = rect.bottom + 6;
+    /* The footer bar covers the bottom of the window, so flip above when there is no room. */
+    if (top + height > window.innerHeight - 64) top = Math.max(rect.top - height - 6, 8);
+    commentBox.style.setProperty("--pk-x", Math.max(8, Math.min(rect.left, maxLeft)) + window.scrollX + "px");
+    commentBox.style.setProperty("--pk-y", top + window.scrollY + "px");
+    commentArea.focus();
+  }
+
+  function nextCommented() {
+    var marks = idMarks().filter(function (el, index, all) {
+      var id = idOf(el);
+      return comments[id] && all.findIndex(function (other) { return idOf(other) === id; }) === index;
+    });
+    if (!marks.length) return;
+    var el = marks[(marks.indexOf(commentAnchor) + 1) % marks.length];
+    var parent = el.closest("details");
+    if (parent) parent.open = true;
+    el.scrollIntoView({ block: "center" });
+    openComment(el);
+  }
+
+  function initComments() {
+    try {
+      comments = JSON.parse(localStorage.getItem(COMMENT_KEY) || "{}") || {};
+    } catch (err) {
+      comments = {};
+    }
+    idMarks().forEach(function (el) {
+      el.setAttribute("role", "button");
+      el.setAttribute("tabindex", "0");
+    });
+    var exportButton = document.getElementById("pk-export");
+    if (exportButton) {
+      commentCount = document.createElement("button");
+      commentCount.type = "button";
+      commentCount.className = "pk-comment-count";
+      commentCount.hidden = true;
+      commentCount.addEventListener("click", function (event) {
+        event.stopPropagation();
+        nextCommented();
+      });
+      exportButton.parentNode.insertBefore(commentCount, exportButton);
+    }
+    refreshComments();
+    document.addEventListener("click", function (event) {
+      if (commentBox && commentBox.contains(event.target)) return;
+      var mark = event.target.closest(".pk-id");
+      if (!mark) {
+        closeComment(false);
+        return;
+      }
+      /* An ID inside a label or link must not also toggle or navigate. */
+      event.preventDefault();
+      openComment(mark);
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") closeComment(true);
+      var mark = event.target.closest && event.target.closest(".pk-id");
+      if (mark && (event.key === "Enter" || event.key === " ")) {
+        event.preventDefault();
+        openComment(mark);
+      }
+    });
+  }
+
   window.pagekit = {
     /* For bespoke widgets: pagekit.register("order", function () { return ids; }). */
     register: function (name, getter) { custom[name] = getter; },
@@ -211,6 +390,7 @@
   };
 
   restore();
+  initComments();
   document.addEventListener("input", persist);
   document.addEventListener("change", persist);
   document.addEventListener("toggle", persist, true);

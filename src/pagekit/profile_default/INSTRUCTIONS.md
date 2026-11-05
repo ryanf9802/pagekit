@@ -8,6 +8,8 @@
   to the item it belongs to (`F-01.decision`, `F-01.notes`). Answers come back to
   you by that name in a `pagekit-response` block when the user presses the footer
   button. Radio buttons and checkbox groups share one `name`.
+- Wrap every item ID in `<span class="pk-id">`. That makes it clickable, so the user can
+  comment on the item, and the comment comes back under `comments:` keyed by the ID.
 - A bespoke widget reports its state with
   `pagekit.register("name", function () { return value; })`.
 - A page shows its current state only. Update it in place by keeping the slug.

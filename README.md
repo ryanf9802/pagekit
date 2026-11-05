@@ -106,11 +106,17 @@ built: 2026-11-04T18:02:11Z
 fields:
   F-01.fix: true
   D-01.choice: option-b
+comments:
+  S-05: what happened here?
 ```
 ````
 
+Any item ID marked `<span class="pk-id">` is clickable: it opens a floating comment box, stays
+marked once commented, and reopens on another click. Comments are copied under `comments:`,
+keyed by ID, and the footer shows a count that steps through them. They do not print.
+
 Password and hidden inputs are never exported. Answers survive a reload and a style-only
-rebuild in `localStorage`, and reset when `content.html` changes.
+rebuild in `localStorage`, and reset when `content.html` changes. Comments behave the same way.
 
 ## Printing
 

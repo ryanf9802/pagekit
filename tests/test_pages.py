@@ -103,6 +103,12 @@ def test_print_layout_repeats_without_relying_on_page_margins(home: Path) -> Non
     assert "counter(pages)" in document
 
 
+def test_built_page_carries_item_comments_that_do_not_print(home: Path) -> None:
+    document = make(load_profile(), body='<span class="pk-id">D-01</span>').index.read_text()
+    assert '"comments:"' in document and ".pk-comment" in document
+    assert re.search(r"@media print \{.*\.pk-comment,", document, re.DOTALL)
+
+
 def test_title_is_escaped(home: Path) -> None:
     profile = load_profile()
     page, _ = new_page(profile, "x", "<script>alert(1)</script>", None, "slots")
