@@ -100,6 +100,7 @@ Pages you have already built keep their look until you rebuild them.
 | [Components](docs/components.md) | The core set and your growing library |
 | [Icons](docs/icons.md) | Lucide icons, tones, and adding your own |
 | [Diagrams](docs/diagrams.md) | Mermaid flowcharts that follow your theme |
+| [Charts](docs/charts.md) | Bar, line, area, scatter, and pie charts from a data file |
 | [Answers and comments](docs/answers.md) | Getting input back from readers |
 | [Printing and PDFs](docs/printing.md) | Print layout and bookmarked PDFs |
 | [Serving pages](docs/serving.md) | The page index, SSH, and your other devices |

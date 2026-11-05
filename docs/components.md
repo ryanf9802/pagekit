@@ -2,7 +2,7 @@
 
 Components keep pages consistent. There are three layers, and each has one job:
 
-- **Core** ships with pagekit: callout, divider, diagram, table, grid, tile row, status, collapsed section,
+- **Core** ships with pagekit: callout, divider, diagram, chart, table, grid, tile row, status, collapsed section,
   figure, before and after, finding card, and decision card. These change only by deliberate choice.
 - **Bundled** components also ship with pagekit, for longer documents: contents card, document status, at a
   glance, in short, details layer, rule list, rule table, field map, checklist, and page break. Like the library,
