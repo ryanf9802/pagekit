@@ -16,6 +16,7 @@ from .pages import Page, PageError
 _CHROME_NAMES = ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "chrome", "msedge")
 _MAC_CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 _TIMEOUT_SECONDS = 120
+DEFAULT_PDF_MARGIN = "6mm 7.5mm"
 
 
 def find_chrome() -> str | None:
@@ -44,10 +45,13 @@ def render_pdf(page: Page, target: Path, state: dict | None = None) -> Path:
         raise PageError("no Chrome or Chromium found: set PAGEKIT_CHROME to its path")
     if not page.index.is_file():
         raise PageError(f"not built: run pagekit build {page.slug}")
-    document = page.index.read_text()
+    margin = str(page.meta.get("pdf_margin") or DEFAULT_PDF_MARGIN)
+    # Last in the head, so it wins over the profile's Ctrl+P margins.
+    additions = f"<style>@page {{ margin: {margin}; }}</style>"
     if state:
         payload = json.dumps(state).replace("<", "\\u003c")
-        document = document.replace("</head>", f"<script>window.pagekitPrintState = {payload};</script>\n</head>", 1)
+        additions += f"<script>window.pagekitPrintState = {payload};</script>"
+    document = page.index.read_text().replace("</head>", f"{additions}\n</head>", 1)
     # Beside the original, so its relative asset links still resolve.
     working = page.dir / f".print-{uuid.uuid4().hex}.html"
     output = target.with_name(f".{target.name}.{uuid.uuid4().hex}")

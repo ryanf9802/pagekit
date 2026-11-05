@@ -10,7 +10,7 @@ import pytest
 
 from pagekit.pages import PageError, build_page, new_page
 from pagekit.pdf import find_chrome, render_pdf
-from pagekit.profiles import load_profile
+from pagekit.profiles import init_profile, load_profile
 from pagekit.server import make_server
 
 # Writes the argument after --print-to-pdf=, and keeps what it was asked to render.
@@ -53,6 +53,27 @@ def test_render_asks_for_bookmarks_and_leaves_no_temp_files(chrome: Path, tmp_pa
     assert "--generate-pdf-document-outline" in Path(f"{chrome}.args").read_text()
     assert not list(page.dir.glob(".print-*"))
     assert not list(tmp_path.glob(".out.pdf.*"))
+
+
+def test_generated_pdfs_use_their_own_margins_and_ctrl_p_keeps_its_own(chrome: Path, tmp_path: Path) -> None:
+    page = built_page()
+    render_pdf(page, tmp_path / "out.pdf")
+    rendered = Path(f"{chrome}.html").read_text()
+    assert "@page { margin: 6mm 7.5mm; }" in rendered
+    assert rendered.index("margin: 12mm 15mm") < rendered.index("margin: 6mm 7.5mm")
+    assert "margin: 6mm 7.5mm; }" not in page.index.read_text()
+
+
+def test_a_profile_can_set_its_own_pdf_margin(chrome: Path, tmp_path: Path, home: Path) -> None:
+    repo = home / "repo"
+    directory = repo / ".pagekit" / "profile"
+    init_profile(directory, "acme", "builtin", "Acme")
+    (directory / "profile.toml").write_text('name = "acme"\nextends = "builtin"\npdf_margin = "1in"\n')
+    profile = load_profile(repo)
+    page, _ = new_page(profile, "x", "X", None, "slots")
+    build_page(profile, page)
+    render_pdf(page, tmp_path / "out.pdf")
+    assert "@page { margin: 1in; }" in Path(f"{chrome}.html").read_text()
 
 
 def test_answers_reach_the_render_safely(chrome: Path, tmp_path: Path) -> None:

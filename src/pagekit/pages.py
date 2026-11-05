@@ -274,6 +274,9 @@ def build_page(profile: Profile, page: Page) -> None:
     built = _now_iso()
     page.meta["updated"] = built
     page.meta["profile"] = profile.name
+    # Read back when generating a PDF, which has only the page to go on.
+    if profile.config.get("pdf_margin"):
+        page.meta["pdf_margin"] = str(profile.config["pdf_margin"])
     page.write_meta()
     title = html.escape(page.meta.get("title", page.slug))
     summary = page.meta.get("summary", "")
