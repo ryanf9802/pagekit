@@ -492,6 +492,27 @@
   var button = document.getElementById("pk-export");
   if (button) button.addEventListener("click", copy);
 
+  /* A link to something inside a collapsed section opens that section, then scrolls to it. */
+  function revealLinkTarget() {
+    var target = null;
+    try {
+      target = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    } catch (err) {
+      return;
+    }
+    if (!target) return;
+    var opened = false;
+    for (var node = target; node; node = node.parentElement) {
+      if (node.tagName === "DETAILS" && !node.open) {
+        node.open = true;
+        opened = true;
+      }
+    }
+    if (opened) target.scrollIntoView();
+  }
+  window.addEventListener("hashchange", revealLinkTarget);
+  window.addEventListener("load", revealLinkTarget);
+
   /* A heading row becomes a real <thead>, so it repeats on every printed sheet. */
   Array.prototype.forEach.call(document.querySelectorAll("table"), function (table) {
     var first = table.rows[0];
