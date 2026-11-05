@@ -714,5 +714,4 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
   /* Paper cannot scroll, so printed answers show in full. */
   textarea { max-height: none; overflow: visible; }
   .pk-figure img { max-height: 180mm; width: auto; }
-  .pk-main a[href^="http"]::after { content: " (" attr(href) ")"; color: var(--pk-muted); font-size: 0.85em; overflow-wrap: anywhere; }
 }
