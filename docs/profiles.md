@@ -30,7 +30,7 @@ personal one. Use `--extends builtin` to start clean.
 | --- | --- | --- |
 | `profile.toml` | Settings, listed below | Deep merge |
 | `theme.css` | `--pk-*` tokens and styles, redefined for light and dark | Concatenated |
-| `fonts.css` | `@font-face` rules with embedded static fonts, so pages work offline and PDFs stay small | Concatenated, without the built-in font once a profile has its own |
+| `fonts.css` | `@font-face` rules with embedded static fonts, added with `pagekit font add`, so pages work offline and PDFs stay small | Concatenated, without the built-in font once a profile has its own |
 | `head.html` | Extra head tags | Concatenated |
 | `INSTRUCTIONS.md` | Content and voice rules, printed by `pagekit new` | Concatenated |
 | `template.html` | Page shell with `{{head}}`, `{{logo}}`, `{{brand}}`, `{{title}}`, `{{summary}}`, `{{content}}`, and `{{footer}}` | Nearest wins |
@@ -80,6 +80,7 @@ drawn as outlines. Source files for other uses are in [`docs/brand/`](brand/), a
 | `[save]` | Where saved pages go, [below](#saving) |
 | `[send]` | How `pagekit send` shares a page, [below](#send) |
 | `[checks]` | A check every build must pass, [below](#checks) |
+| `[[banned]]` | Words a page may not use, [below](#banned-wording) |
 
 ## Saving
 
@@ -119,6 +120,18 @@ command = ["python3", "/path/to/lint.py"]
 The command runs without a shell, in the page's folder, with the built `index.html` and the page folder as its
 last two arguments. A non-zero exit prints its output as errors and fails the command. A failed build keeps
 the page's last good version, or leaves no page if it is new, and `pagekit save` refuses a page that fails.
+
+## Banned wording
+
+A profile can list words its pages must never use, with no script. Each `pattern` is a regular expression, matched
+against the words a reader sees, ignoring case unless `case_sensitive = true`. A match fails the build, and `why`
+appears in the message.
+
+```toml
+[[banned]]
+pattern = "\\bTBD\\b"
+why = "state what is true now"
+```
 
 ## Commands in profiles
 

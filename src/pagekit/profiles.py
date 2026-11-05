@@ -21,6 +21,9 @@ NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,80}$")
 RESERVED_NAMES = {"saved"}
 TOKEN_RE = re.compile(r"(--pk-[a-z0-9-]+)\s*:")
 FONT_TOKEN_RE = re.compile(r"--pk-font\s*:")
+BRAND_FILE_LIMIT_BYTES = 40 * 1024
+FONTS_LIMIT_BYTES = 200 * 1024
+_SLIM_ADVICE = {False: "use a simpler file", True: "embed fewer weights"}
 BRAND_FILES = ("logo.svg", "logo-dark.svg", "wordmark.svg", "logo-print.png", "favicon.svg")
 
 
@@ -169,6 +172,26 @@ class Profile:
         if path and path.parent == self.dirs[0] and self.has_own_brand():
             return None
         return path
+
+    def brand_weights(self) -> list[tuple[str, int]]:
+        """What each brand file adds to every page, in bytes, once embedded."""
+        weights = []
+        for name in BRAND_FILES:
+            path = self.brand_file(name)
+            if path:
+                weights.append((name, path.stat().st_size * 4 // 3))
+        fonts = self.fonts()
+        if fonts:
+            weights.append(("fonts.css", len(fonts.encode())))
+        return weights
+
+    def brand_warnings(self) -> list[str]:
+        warnings = []
+        for name, size in self.brand_weights():
+            limit = FONTS_LIMIT_BYTES if name == "fonts.css" else BRAND_FILE_LIMIT_BYTES
+            if size > limit:
+                warnings.append(f"{name} adds {size // 1024} KB to every page (limit {limit // 1024} KB): {_SLIM_ADVICE[name == 'fonts.css']}")
+        return warnings
 
     def read(self, relative: str, default: str = "") -> str:
         path = self.file(relative)

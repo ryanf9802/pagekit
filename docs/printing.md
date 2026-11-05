@@ -35,6 +35,8 @@ since physical printers often cannot print that close to the edge.
 
 ## Keeping PDFs small
 
-- Embed static fonts in `fonts.css`. Variable fonts embed as much larger Type 3 fonts.
+- Embed static fonts with `pagekit font add`. It refuses variable fonts, which embed as much larger Type 3 fonts.
+- Run `pagekit profile` to see what each brand file adds to every page. A build warns about any logo over 40 KB, or
+  fonts over 200 KB.
 - Add `logo-print.png` to a profile, since a vector logo is redrawn on every sheet.
 - Add `NAME-print.png` for [complex icons](icons.md#size-in-pdfs) used many times.

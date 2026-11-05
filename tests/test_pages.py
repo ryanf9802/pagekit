@@ -446,6 +446,39 @@ def test_a_mistake_in_a_tag_stops_the_build(home: Path, body: str, message: str)
         make(load_profile(), body=body)
 
 
+def test_the_default_brand_stays_under_the_weight_limits(home: Path) -> None:
+    assert load_profile().brand_warnings() == []
+
+
+def test_a_heavy_logo_warns_on_build(home: Path) -> None:
+    repo, directory = _profile_in(home, "")
+    (directory / "logo.svg").write_text("<svg>" + "x" * 60_000 + "</svg>")
+    profile = load_profile(repo)
+    warnings = check_page(profile, make(profile)).warnings
+    assert any("logo.svg adds 78 KB to every page" in w for w in warnings)
+
+
+def test_banned_wording_fails_with_the_line_and_reason(home: Path) -> None:
+    repo, _ = _profile_in(home, '[[banned]]\npattern = "\\\\bTBD\\\\b"\nwhy = "state what is true now"\n')
+    profile = load_profile(repo)
+    page = make(profile, body="<p>Fine.</p>\n<p>Date is tbd.</p>")
+    errors = check_page(profile, page).errors
+    assert errors == ["banned wording 'tbd' on line 2 of content.html (state what is true now)"]
+
+
+def test_banned_wording_ignores_markup_and_comments_and_can_match_case(home: Path) -> None:
+    repo, _ = _profile_in(home, '[[banned]]\npattern = "secret"\ncase_sensitive = true\n')
+    profile = load_profile(repo)
+    body = '<!-- secret --><p class="secret" title="secret">SECRET</p>'
+    assert not check_page(profile, make(profile, body=body)).errors
+
+
+def test_a_bad_banned_pattern_is_reported(home: Path) -> None:
+    repo, _ = _profile_in(home, '[[banned]]\npattern = "("\n')
+    profile = load_profile(repo)
+    assert any("invalid banned pattern" in e for e in check_page(profile, make(profile)).errors)
+
+
 def test_builtin_pages_embed_their_font(home: Path) -> None:
     document = make(load_profile()).index.read_text()
     assert 'font-family: "IBM Plex Sans";' in document and "data:font/woff2;base64," in document

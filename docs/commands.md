@@ -24,6 +24,7 @@ pagekit prune [--older-than-days N] [--dry-run]
 ```text
 pagekit profile           print the resolved profile and its instructions
 pagekit init --name NAME [--brand BRAND] [--extends PROFILE] [--personal | --local]
+pagekit font add FILE --family NAME [--weight N] [--italic]
                           create a profile
 ```
 
