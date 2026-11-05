@@ -7,7 +7,7 @@
 
 # pagekit
 
-**Polished, self-contained HTML pages for coding agents.**
+**Self-contained HTML pages for coding agents.**
 
 Ask your agent for a page instead of a wall of terminal text. You get one plain file that works offline, prints well,
 and reads well on a phone, and you can answer on the page and send your answers straight back to the agent.
