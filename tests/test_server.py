@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from pagekit.pages import PageError, build_page, new_page, pages_root, set_public_url
-from pagekit.profiles import load_profile
+from pagekit.profiles import builtin_dir, load_profile
 from pagekit.server import make_server
 
 
@@ -129,6 +129,13 @@ def test_index_can_be_installed_as_an_app(home: Path, port: int) -> None:
     assert status == 200 and response.headers["Content-Type"] == "application/manifest+json"
     assert manifest["display"] == "standalone" and manifest["start_url"] == "/"
     assert manifest["name"] == manifest["short_name"] == "pagekit"
+    # The bars and splash screen match the index's own background in the built-in theme.
+    theme = (builtin_dir() / "theme.css").read_text()
+    assert manifest["background_color"] == manifest["theme_color"] == "#f6f7f9"
+    assert "--pk-bg: #f6f7f9" in theme and "--pk-bg: #16181c" in theme
+    index = request(port, "/")[1].decode()
+    assert 'media="(prefers-color-scheme: light)" content="#f6f7f9"' in index
+    assert 'media="(prefers-color-scheme: dark)" content="#16181c"' in index
     for icon in manifest["icons"]:
         status, body, response = request(port, icon["src"])
         assert status == 200 and response.headers["Content-Type"] == "image/png" and body.startswith(b"\x89PNG")
