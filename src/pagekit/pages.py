@@ -400,6 +400,8 @@ def build_page(profile: Profile, page: Page) -> None:
     if profile.config.get("interactive", True) is False:
         export_meta["readonly"] = True
     source = add_image_sizes(page.content.read_text(encoding="utf-8"), page.dir)
+    if error := raw_tag_error(source):
+        raise PageError(f"{page.content}: {error}")
     try:
         source = expand_tags(source)
     except TagError as exc:
@@ -420,6 +422,52 @@ def build_page(profile: Profile, page: Page) -> None:
     except (DiagramError, IconError) as exc:
         raise PageError(str(exc)) from exc
     page.index.write_text(document, encoding="utf-8")
+
+
+_HTML_ELEMENTS = frozenset(
+    """a abbr acronym address area article aside audio b base bdi bdo big blockquote body br button canvas caption center
+    cite code col colgroup data datalist dd del details dfn dialog dir div dl dt em embed fieldset figcaption figure font
+    footer form frame frameset h1 h2 h3 h4 h5 h6 head header hgroup hr html i iframe img input ins kbd label legend li link
+    main map mark menu meta meter nav noscript object ol optgroup option output p param picture pre progress q rp rt ruby s
+    samp script search section select slot small source span strike strong style sub summary sup table tbody td textarea
+    tfoot th thead time title tr track tt u ul var video wbr""".split()
+)
+# Allowed once the page has an inline <svg>: its shapes, and MathML.
+_SVG_ELEMENTS = frozenset(
+    """svg g defs desc title symbol use path rect circle ellipse line polyline polygon text tspan textpath image marker
+    mask pattern clippath lineargradient radialgradient stop filter fe foreignobject switch view style a math mrow mi mo
+    mn msup msub mfrac msqrt mtext mspace mtable mtr mtd semantics annotation""".split()
+)
+
+
+class _RawTagFinder(HTMLParser):
+    """Finds the first start tag a browser would read as a real element that never closes."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.found: tuple[int, str, str] | None = None
+        self.svg = False
+
+    def handle_starttag(self, tag, attrs):
+        self.svg = self.svg or tag == "svg"
+        known = tag in _HTML_ELEMENTS or "-" in tag or (self.svg and (tag in _SVG_ELEMENTS or tag.startswith("fe")))
+        if (tag == "template" or not known) and not self.found:
+            self.found = (self.getpos()[0], tag, self.get_starttag_text() or "")
+
+
+def raw_tag_error(source: str) -> str | None:
+    """A message for text such as `<template ID from the fields panel>` or `<uuid>`, which the browser parses as a tag."""
+    finder = _RawTagFinder()
+    finder.feed(source)
+    finder.close()
+    if not finder.found:
+        return None
+    line, _, text = finder.found
+    text = text if len(text) <= 80 else text[:77] + "..."
+    return (
+        f"line {line}: `{text}` is read as an HTML tag and swallows the rest of the page; "
+        "write &lt; and &gt; to show it as text"
+    )
 
 
 # Not what a reader sees as page content: comments, scripts, styles, the head, the footer, and the header bar.
@@ -562,6 +610,8 @@ def check_page(profile: Profile, page: Page) -> CheckResult:
         return CheckResult([f"not built: run pagekit build {page.slug}"], [])
     if page.content.stat().st_mtime > page.index.stat().st_mtime:
         errors.append(f"stale: content.html changed after the last build, run pagekit build {page.slug}")
+    if error := raw_tag_error(page.content.read_text(encoding="utf-8")):
+        errors.append(f"content.html {error}")
     document = page.index.read_text(encoding="utf-8")
     scan = _Scanner()
     scan.feed(document)

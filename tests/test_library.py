@@ -13,7 +13,7 @@ from pagekit.library import (
     library_dir,
     list_components,
 )
-from pagekit.pages import build_page, check_page, new_page
+from pagekit.pages import PageError, build_page, check_page, new_page
 from pagekit.profiles import init_profile, load_profile
 
 CSS = ".field-map { color: var(--pk-text); }\n.field-map-row { padding: 2px; }\n"
@@ -188,3 +188,37 @@ def test_add_commits_only_its_own_folder_when_in_git(home: Path, tmp_path: Path)
 
 def test_add_works_outside_git(home: Path, tmp_path: Path) -> None:
     assert add_component(load_profile(), "field-map", "x", source(tmp_path)).is_dir()
+
+
+@pytest.mark.parametrize("tag", ["<template ID from the fields panel>", "<uuid>"])
+def test_a_raw_tag_in_content_fails_the_build_with_its_line(home: Path, tag: str) -> None:
+    profile, page = page_with("<p>Fine</p>")
+    good = page.index.read_text()
+    page.content.write_text(f"<p>Fine</p>\n<p>Set {tag} here</p>")
+    with pytest.raises(PageError, match=r"line 2: `<(template|uuid)[^`]*>` is read as an HTML tag.*&lt; and &gt;"):
+        build_page(profile, page)
+    assert page.index.read_text() == good
+    page.index.touch()
+    assert any("is read as an HTML tag" in error for error in check_page(profile, page).errors)
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "<p>Use &lt;template ID from the fields panel&gt; and &lt;uuid&gt;</p>",
+        "<!-- <uuid> --><script>if (a<b) x = '<uuid>'</script>",
+        '<div class="pk-callout">x</div><my-widget>x</my-widget><p>a < b</p>',
+        '<svg viewBox="0 0 1 1"><defs><linearGradient id="g"><stop/></linearGradient></defs><path d="M0 0"/></svg>',
+        "<table><tbody><tr><td><kbd>x</kbd></td></tr></tbody></table>",
+    ],
+)
+def test_escaped_text_and_valid_elements_pass_the_tag_check(home: Path, body: str) -> None:
+    profile, page = page_with(body)
+    assert check_page(profile, page).ok
+
+
+def test_svg_shapes_are_unknown_tags_outside_an_svg(home: Path) -> None:
+    profile, page = page_with("<p>ok</p>")
+    page.content.write_text("<path d='M0 0'/>")
+    with pytest.raises(PageError, match="<path"):
+        build_page(profile, page)
