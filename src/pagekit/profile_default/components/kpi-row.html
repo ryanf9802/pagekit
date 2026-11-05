@@ -1,5 +1,10 @@
-<!-- A row of headline numbers at the top of a page. -->
+<!-- A row of headline numbers at the top of a page, each with an optional sparkline for its trend. -->
 <div class="pk-kpis">
   <div class="pk-kpi"><div class="pk-kpi-value">42</div><div class="pk-kpi-label">What this counts</div></div>
-  <div class="pk-kpi"><div class="pk-kpi-value">3.1 s</div><div class="pk-kpi-label">What this measures</div></div>
+  <div class="pk-kpi">
+    <div class="pk-kpi-value">3.1 s</div>
+    <div class="pk-kpi-label">What this measures</div>
+    <!-- 2 to 60 numbers, oldest first. label is the text alternative: say what the numbers are. -->
+    <pk-spark values="3.9,3.6,3.4,3.5,3.1" label="Build time, last five weeks"></pk-spark>
+  </div>
 </div>
