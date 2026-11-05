@@ -131,7 +131,7 @@ def test_index_can_be_installed_as_an_app(home: Path, port: int) -> None:
     assert manifest["name"] == manifest["short_name"] == "pagekit"
     # The bars and splash screen match the index's own background in the built-in theme.
     theme = (builtin_dir() / "theme.css").read_text()
-    assert manifest["background_color"] == manifest["theme_color"] == "#f6f7f9"
+    assert manifest["background_color"] == manifest["theme_color"] == "#16181c"
     assert "--pk-bg: #f6f7f9" in theme and "--pk-bg: #16181c" in theme
     index = request(port, "/")[1].decode()
     assert 'media="(prefers-color-scheme: light)" content="#f6f7f9"' in index
