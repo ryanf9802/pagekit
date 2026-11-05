@@ -56,6 +56,8 @@ pagekit refuses a two slice pie.
 - Two or more series get a legend. Every chart has a "Show the data as a table" section with the exact values, which
   opens when the page is printed.
 - A bar chart starts at zero. A line chart does not have to, so check the axis before reading a slope.
+- A line or area chart runs edge to edge, with its first and last points on the edges of the plot. A bar chart keeps a
+  gap at each end, since a bar needs room on both sides.
 - A bar chart with one series labels each bar with its value (a vertical one up to 12 bars). Other charts leave the
   values to the axis and the table.
 - Bars are at most 24 units thick with a rounded end, lines are 2px, and the chart scales down to a phone's width.
