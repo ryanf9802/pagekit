@@ -26,6 +26,7 @@ from .diagrams import DiagramError, expand_diagrams
 from .icons import IconError, expand_icons
 from .images import add_image_sizes
 from .library import consistency_warnings, library_css_for
+from .tags import TagError, expand_tags
 from .profiles import NAME_RE, RESERVED_NAMES, Profile
 
 DEFAULT_PORT = 8766
@@ -327,6 +328,10 @@ def build_page(profile: Profile, page: Page) -> None:
         export_meta["readonly"] = True
     meta_json = json.dumps(export_meta).replace("<", "\\u003c")
     source = add_image_sizes(page.content.read_text(encoding="utf-8"), page.dir)
+    try:
+        source = expand_tags(source)
+    except TagError as exc:
+        raise PageError(str(exc)) from exc
     component_css = library_css_for(source)
     head = "\n".join(
         part

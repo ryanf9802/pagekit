@@ -181,6 +181,11 @@ p { margin: 0 0 12px; }
 .pk-pdf:disabled .pk-icon { animation: pk-pulse 1s ease-in-out infinite; }
 .pk-pdf-failed { color: var(--pk-danger); }
 @keyframes pk-pulse { 50% { opacity: 0.35; } }
+.pk-contents { margin: 0 0 20px; padding: 12px 16px; background: var(--pk-surface); border: 1px solid var(--pk-border); border-radius: var(--pk-radius); }
+.pk-contents-title { margin: 0 0 6px; color: var(--pk-muted); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+.pk-contents ol { margin: 0; padding: 0; list-style: none; }
+.pk-contents ol ol { padding-left: 1.2em; }
+.pk-contents li { margin-top: 2px; }
 .pk-footer-meta { display: flex; gap: 8px; min-width: 0; white-space: nowrap; }
 .pk-footer-meta > span:empty { display: none; }
 .pk-footer-meta > span:not(:empty) ~ span::before { content: "/"; margin-right: 8px; color: var(--pk-border); }

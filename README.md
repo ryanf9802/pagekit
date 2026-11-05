@@ -63,6 +63,7 @@ Then give your agent the skill in the clone's `src/pagekit/skills/create-page`, 
 | [Agent setup guide](docs/agent-setup.md) | The steps your agent follows in the prompt above |
 | [Getting started](docs/getting-started.md) | Install, your first profile, and connecting an agent |
 | [Writing pages](docs/pages.md) | The page workflow, checks, sharing, saving, and expiry |
+| [Generated tags](docs/tags.md) | Content the build works out from the page, such as a table of contents |
 | [Profiles](docs/profiles.md) | Making pagekit yours: brand, theme, rules, and hooks |
 | [Components](docs/components.md) | The core set and your growing library |
 | [Icons](docs/icons.md) | Lucide icons, tones, and adding your own |

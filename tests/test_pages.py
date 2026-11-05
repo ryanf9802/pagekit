@@ -397,6 +397,55 @@ def test_pages_are_interactive_by_default(home: Path) -> None:
     assert '"readonly"' not in document
 
 
+def test_contents_tag_lists_headings_and_nests_them_by_level(home: Path) -> None:
+    body = '<pk-contents></pk-contents><h2>First part</h2><h3>Detail &amp; more</h3><h2 id="kept">Second</h2><h4>Too deep</h4>'
+    document = make(load_profile(), body=body).index.read_text()
+    assert '<h2 id="first-part">First part</h2>' in document and '<h3 id="detail-more">' in document
+    assert (
+        '<ol><li><a href="#first-part">First part</a><ol><li><a href="#detail-more">Detail &amp; more</a></li></ol>'
+        '</li><li><a href="#kept">Second</a></li></ol>'
+    ) in document
+    assert 'href="#too-deep"' not in document and "pk-contents>" not in document
+
+
+def test_contents_tag_respects_max_level_and_title(home: Path) -> None:
+    body = '<pk-contents max-level="2" title="In this report"></pk-contents><h2>One</h2><h3>Two</h3>'
+    document = make(load_profile(), body=body).index.read_text()
+    assert '<p class="pk-contents-title">In this report</p>' in document
+    assert 'href="#one"' in document and 'href="#two"' not in document
+
+
+def test_contents_tag_can_drop_its_title_and_skip_a_heading(home: Path) -> None:
+    body = '<pk-contents title=""></pk-contents><h2>One</h2><h2 data-pk-no-contents>Hidden</h2>'
+    document = make(load_profile(), body=body).index.read_text()
+    assert "pk-contents-title\">" not in document
+    assert 'href="#one"' in document and 'href="#hidden"' not in document
+
+
+def test_contents_ids_stay_unique_when_headings_repeat(home: Path) -> None:
+    document = make(load_profile(), body='<pk-contents></pk-contents><h2>Same</h2><h2>Same</h2>').index.read_text()
+    assert 'id="same"' in document and 'id="same-2"' in document
+
+
+def test_pages_without_tags_get_no_generated_ids(home: Path) -> None:
+    assert "<h2>Plain</h2>" in make(load_profile(), body="<h2>Plain</h2>").index.read_text()
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        ('<pk-contents max-level="9"></pk-contents><h2>A</h2>', "max-level must be a number"),
+        ('<pk-contents depth="2"></pk-contents><h2>A</h2>', "no attribute 'depth'"),
+        ("<pk-contents></pk-contents>", "no headings"),
+        ("<pk-chart></pk-chart>", "unknown tag <pk-chart>"),
+        ("<pk-contents>", "malformed"),
+    ],
+)
+def test_a_mistake_in_a_tag_stops_the_build(home: Path, body: str, message: str) -> None:
+    with pytest.raises(PageError, match=message):
+        make(load_profile(), body=body)
+
+
 def test_builtin_pages_embed_their_font(home: Path) -> None:
     document = make(load_profile()).index.read_text()
     assert 'font-family: "IBM Plex Sans";' in document and "data:font/woff2;base64," in document

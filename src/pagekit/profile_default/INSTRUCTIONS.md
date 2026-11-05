@@ -24,6 +24,8 @@
   comment on the item, and the comment comes back under `comments:` keyed by the ID.
 - A bespoke widget reports its state with
   `pagekit.register("name", function () { return value; })`.
+- For a table of contents on a long page, use `<pk-contents max-level="3"></pk-contents>`: the build
+  generates it from the headings. Never write one by hand unless it needs a summary or parts.
 - Number every item and figure with an ID the reader can quote back (`F-01`, `S-03`). IDs are
   stable: never renumber, and give new items the next free number.
 - Lead with what the reader must decide or do. Keep text short and direct.
