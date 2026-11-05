@@ -6,13 +6,26 @@ an index of your pages, the **Download PDF** button, and links you can open from
 ## The page index
 
 ```bash
-pagekit install-service     # a systemd user service on http://localhost:8766
-pagekit serve               # or run it in a spare terminal
+pagekit serve               # runs on http://localhost:8766 until the terminal closes
+pagekit install-service     # or always on, as a systemd user service
 ```
 
 Set `PAGEKIT_PORT` or pass `--port` to use another port. The server listens on localhost only. Served pages show
 an **All pages** link in the header, back to the index. Packed and saved copies have no index, so they have no
 link, and it does not print.
+
+## Starting at login
+
+`install-service` needs systemd, which covers most Linux systems and WSL with systemd enabled. Elsewhere, have the
+operating system run `pagekit serve` at login:
+
+- **Windows:** create a scheduled task, using the full path that `where pagekit` prints:
+
+  ```text
+  schtasks /Create /TN pagekit /SC ONLOGON /TR "C:\path\to\pagekit.exe serve"
+  ```
+
+- **macOS:** add a launchd agent in `~/Library/LaunchAgents/` that runs `pagekit serve`, with `RunAtLoad` set.
 
 ## Over SSH
 

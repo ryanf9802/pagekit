@@ -1,7 +1,15 @@
 # Getting started
 
-pagekit needs Python 3.11 or newer and has no other dependencies. Local Chrome or Chromium is optional:
+To have your coding agent do all of this for you, use the prompt in the [README](../README.md#set-up-with-your-agent).
+
+pagekit needs Python 3.11 or newer and has no other dependencies. A local Chrome, Chromium, or Edge is optional:
 only [diagrams](diagrams.md) and [generated PDFs](printing.md#bookmarked-pdfs) use it.
+
+| Platform | Support |
+| --- | --- |
+| Linux and WSL | Everything |
+| Windows | Everything except `pagekit install-service`, which needs systemd. [Start the server at login](serving.md#starting-at-login) instead. |
+| macOS | Expected to match Windows, but not yet tested. |
 
 ## Install
 
@@ -34,7 +42,8 @@ The `create-page` skill teaches an agent the workflow. From the clone, link it i
 ln -s "$PWD/src/pagekit/skills/create-page" YOUR_AGENT_SKILLS_FOLDER/create-page
 ```
 
-An agent without skill support can follow the same steps from that file's text.
+On Windows, use `mklink /J YOUR_AGENT_SKILLS_FOLDER\create-page src\pagekit\skills\create-page` from Command
+Prompt. An agent without skill support can follow the same steps from that file's text.
 
 ## Make a page
 

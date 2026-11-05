@@ -16,7 +16,20 @@ the same designer, works offline, prints well, and reads well on a phone.
   and the page index server is optional.
 - **Tidy.** Pages expire after 30 days unless you save them.
 
-## Quick start
+## Set up with your agent
+
+The quickest way in. Paste this into your coding agent, and it will install pagekit and walk you through your brand,
+your profiles, and the optional local server:
+
+```text
+Set up pagekit for me. Clone https://github.com/ryanf9802/pagekit.git somewhere permanent, then read
+docs/agent-setup.md in the clone and follow it step by step. Ask me one question at a time, including
+whether I want the local server.
+```
+
+Tested on Linux, WSL, and Windows. Any agent that can run commands can follow it.
+
+## Set up by hand
 
 Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/).
 
@@ -40,6 +53,7 @@ Then give your agent the skill in the clone's `src/pagekit/skills/create-page`, 
 
 | Guide | Covers |
 | --- | --- |
+| [Agent setup guide](docs/agent-setup.md) | The steps your agent follows in the prompt above |
 | [Getting started](docs/getting-started.md) | Install, your first profile, and connecting an agent |
 | [Writing pages](docs/pages.md) | The page workflow, checks, sharing, saving, and expiry |
 | [Profiles](docs/profiles.md) | Making pagekit yours: brand, theme, rules, and hooks |
