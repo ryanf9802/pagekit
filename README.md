@@ -141,6 +141,13 @@ keyed by ID, and the footer shows a count that steps through them. They do not p
 Password and hidden inputs are never exported. Answers survive a reload and a style-only
 rebuild in `localStorage`, and reset when `content.html` changes. Comments behave the same way.
 
+## Answering
+
+Clicking a selected radio option clears it, as does pressing Space on it. Closing or reloading
+a page asks first when it has answers or comments that have not been copied. Browsers do not
+let a page cancel Ctrl+W itself, so this prompt is the guard. Opening a collapsed section does
+not count as a change.
+
 ## Getting around
 
 Served pages show an **All pages** link on the right of the header, back to the index. A

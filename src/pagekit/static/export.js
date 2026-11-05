@@ -22,7 +22,7 @@
     });
   }
 
-  function collect() {
+  function collect(skipDetails) {
     var names = [];
     var values = {};
     var boxes = {};
@@ -35,7 +35,7 @@
     elements().forEach(function (el) {
       var name = nameOf(el);
       if (el.tagName === "DETAILS") {
-        ensure(name, el.open ? "open" : "closed");
+        if (!skipDetails) ensure(name, el.open ? "open" : "closed");
       } else if (el.hasAttribute("contenteditable")) {
         ensure(name, el.innerText.trim());
       } else if (el.type === "radio") {
@@ -139,6 +139,7 @@
   }
 
   function copied() {
+    markCopied();
     var count = collect().length;
     var fields = count + (count === 1 ? " field" : " fields");
     var notes = commentedIds().length;
@@ -389,8 +390,74 @@
     copy: copy,
   };
 
+  /* Warn before leaving only when there are answers or comments the user has not copied.
+     Browsers do not let a page cancel Ctrl+W, so this prompt is the only guard available. */
+  var COPIED_KEY = STORE_KEY + ":copied";
+  var leavingForIndex = false;
+  var copiedState = null;
+
+  function currentState() {
+    var sorted = {};
+    Object.keys(comments).sort().forEach(function (id) { sorted[id] = comments[id]; });
+    /* Opening a section is not an answer, so details do not count. */
+    return JSON.stringify([collect(true), sorted]);
+  }
+
+  function markCopied() {
+    copiedState = currentState();
+    try {
+      localStorage.setItem(COPIED_KEY, copiedState);
+    } catch (err) {
+      /* Storage can be blocked; this only affects the prompt after a reload. */
+    }
+  }
+
+  /* With no copy yet, the baseline is the page as it was built. */
+  copiedState = currentState();
   restore();
   initComments();
+  try {
+    copiedState = localStorage.getItem(COPIED_KEY) || copiedState;
+  } catch (err) {
+    /* Keep the baseline. */
+  }
+
+  window.addEventListener("beforeunload", function (event) {
+    if (leavingForIndex || currentState() === copiedState) return;
+    event.preventDefault();
+    event.returnValue = "";
+  });
+
+  /* Clicking the selected radio option clears it. The browser checks a radio before the click
+     event, so this remembers each group's selection to tell a repeat click from a new one. */
+  var selectedRadios = {};
+  Array.prototype.forEach.call(document.querySelectorAll('input[type="radio"]:checked'), function (radio) {
+    if (radio.name) selectedRadios[radio.name] = radio;
+  });
+  function isNamedRadio(el) {
+    return el.tagName === "INPUT" && el.type === "radio" && !!el.name;
+  }
+  function clearRadio(radio) {
+    radio.checked = false;
+    delete selectedRadios[radio.name];
+    radio.dispatchEvent(new Event("input", { bubbles: true }));
+    radio.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  document.addEventListener("click", function (event) {
+    var radio = event.target;
+    if (!isNamedRadio(radio)) return;
+    if (selectedRadios[radio.name] === radio) clearRadio(radio);
+    else selectedRadios[radio.name] = radio;
+  });
+  /* Space on a selected radio fires no click, so the keyboard needs its own path. */
+  document.addEventListener("keyup", function (event) {
+    var radio = event.target;
+    if (event.key === " " && isNamedRadio(radio) && selectedRadios[radio.name] === radio && radio.checked) {
+      event.preventDefault();
+      clearRadio(radio);
+    }
+  });
+
   document.addEventListener("input", persist);
   document.addEventListener("change", persist);
   document.addEventListener("toggle", persist, true);
@@ -429,6 +496,8 @@
     home.className = "pk-home";
     home.href = "/";
     home.textContent = "All pages";
+    /* Answers are saved in the browser and this stays in the same tab, so no prompt. */
+    home.addEventListener("click", function () { leavingForIndex = true; });
     headerBar.appendChild(home);
   }
 
