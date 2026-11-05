@@ -217,6 +217,8 @@ input, progress { accent-color: var(--pk-accent); }
   background: color-mix(in srgb, var(--pk-accent) 10%, var(--pk-surface));
   border-color: var(--pk-accent);
 }
+/* Cancels the option's own padding and border, so its text lines up with the rest of the row. */
+td > .pk-choices, th > .pk-choices { margin: -3px 0; }
 .pk-help { color: var(--pk-muted); font-size: 0.875rem; }
 
 .pk-card {
@@ -295,18 +297,30 @@ input, progress { accent-color: var(--pk-accent); }
 }
 .pk-comment-done:hover, .pk-comment-count:hover { text-decoration: underline; text-underline-offset: 2px; }
 .pk-comment-count { flex: none; margin-left: auto; }
+/* Status is a colored Lucide icon beside plain text, so it reads without relying on a pill. */
 .pk-badge {
-  display: inline-block;
-  padding: 1px 8px;
-  background: var(--pk-surface-2);
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 550;
+  --pk-badge-color: var(--pk-muted);
+  color: var(--pk-text);
+  font-weight: 500;
   white-space: nowrap;
 }
-.pk-badge-success { background: color-mix(in srgb, var(--pk-success) 13%, transparent); color: var(--pk-success); }
-.pk-badge-warning { background: color-mix(in srgb, var(--pk-warning) 13%, transparent); color: var(--pk-warning); }
-.pk-badge-danger { background: color-mix(in srgb, var(--pk-danger) 13%, transparent); color: var(--pk-danger); }
+.pk-badge-success, .pk-badge-warning, .pk-badge-danger, .pk-badge-info { --pk-badge-mask: none; }
+.pk-badge-success::before, .pk-badge-warning::before, .pk-badge-danger::before, .pk-badge-info::before {
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 4px;
+  vertical-align: -0.15em;
+  background: var(--pk-badge-color);
+  -webkit-mask: var(--pk-badge-mask) center / contain no-repeat;
+  mask: var(--pk-badge-mask) center / contain no-repeat;
+}
+.pk-badge-success { --pk-badge-color: var(--pk-success); --pk-badge-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIC8+PHBhdGggZD0ibTE2IDktNS41IDUuNUw4IDEyIiAvPjwvc3ZnPg=="); }
+.pk-badge-warning { --pk-badge-color: var(--pk-warning); --pk-badge-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTIxLjczIDE4LTgtMTRhMiAyIDAgMCAwLTMuNDggMGwtOCAxNEEyIDIgMCAwIDAgNCAyMWgxNmEyIDIgMCAwIDAgMS43My0zIiAvPjxwYXRoIGQ9Ik0xMiA5djQiIC8+PHBhdGggZD0iTTEyIDE3aC4wMSIgLz48L3N2Zz4="); }
+.pk-badge-danger { --pk-badge-color: var(--pk-danger); --pk-badge-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDE2aC4wMSIgLz48cGF0aCBkPSJNMTIgOHY0IiAvPjxwYXRoIGQ9Ik0xNS4zMTIgMmEyIDIgMCAwIDEgMS40MTQuNTg2bDQuNjg4IDQuNjg4QTIgMiAwIDAgMSAyMiA4LjY4OHY2LjYyNGEyIDIgMCAwIDEtLjU4NiAxLjQxNGwtNC42ODggNC42ODhhMiAyIDAgMCAxLTEuNDE0LjU4Nkg4LjY4OGEyIDIgMCAwIDEtMS40MTQtLjU4NmwtNC42ODgtNC42ODhBMiAyIDAgMCAxIDIgMTUuMzEyVjguNjg4YTIgMiAwIDAgMSAuNTg2LTEuNDE0bDQuNjg4LTQuNjg4QTIgMiAwIDAgMSA4LjY4OCAyeiIgLz48L3N2Zz4="); }
+.pk-badge-info { --pk-badge-color: var(--pk-accent); --pk-badge-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIC8+PHBhdGggZD0iTTEyIDE2di00IiAvPjxwYXRoIGQ9Ik0xMiA4aC4wMSIgLz48L3N2Zz4="); }
+.pk-icon { display: inline-block; flex: none; width: 1em; height: 1em; vertical-align: -0.125em; }
 
 .pk-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
 .pk-kpis { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 0 0 8px; }
@@ -344,7 +358,35 @@ th {
   text-transform: uppercase;
   white-space: nowrap;
 }
-details > summary { cursor: pointer; font-weight: 500; }
+details > summary {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  margin-left: -4px;
+  padding: 2px 8px 2px 4px;
+  border-radius: var(--pk-radius-small);
+  font-weight: 500;
+  list-style: none;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+details > summary::-webkit-details-marker { display: none; }
+details > summary::before {
+  content: "";
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: var(--pk-muted);
+  -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTkgMTggNi02LTYtNiIgLz48L3N2Zz4=") center / contain no-repeat;
+  mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTkgMTggNi02LTYtNiIgLz48L3N2Zz4=") center / contain no-repeat;
+  transition: transform 120ms ease;
+}
+details > summary:hover { background: var(--pk-surface-2); }
+details[open] > summary { margin-bottom: 4px; }
+details[open] > summary::before { transform: rotate(90deg); }
+details > :not(summary) { margin-left: 20px; }
+details > :last-child { margin-bottom: 0; }
 
 @media (max-width: 560px) {
   h1 { font-size: 1.5rem; }
@@ -430,10 +472,13 @@ details > summary { cursor: pointer; font-weight: 500; }
   .pk-section { margin-top: 20px; }
   h1 { font-size: 20pt; }
   h2 { font-size: 13pt; }
-  h1, h2, h3, h4, .pk-card-head, p:has(+ pre), p:has(+ .pk-table-wrap) { break-after: avoid; }
+  h1, h2, h3, h4, .pk-card-head, p:has(+ pre), p:has(+ .pk-table-wrap), p:has(+ .pk-figure), p:has(+ .pk-grid) { break-after: avoid; }
   .pk-card, .pk-callout, .pk-kpi, .pk-figure, tr, pre, blockquote { break-inside: avoid; }
   .pk-divider { break-inside: avoid; break-after: avoid; }
   .pk-table-wrap { overflow: visible; }
+  details > summary { margin-left: 0; padding: 0; }
+  details > summary::before { display: none; }
+  details > :not(summary) { margin-left: 0; }
   thead { display: table-header-group; }
   th { white-space: normal; }
   pre { overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; }

@@ -9,6 +9,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from .icons import search_icons
 from .library import ComponentError, add_component, find_component, list_components
 from .pages import (
     DEFAULT_PORT,
@@ -156,6 +157,16 @@ def cmd_component_add(args) -> int:
     return 0
 
 
+def cmd_icons(args) -> int:
+    matches = search_icons(" ".join(args.query))
+    if not matches:
+        print("no matching icons: try a broader word")
+        return 1
+    print("\n".join(matches))
+    print('\nuse in a page: <i data-icon="NAME"></i>')
+    return 0
+
+
 def cmd_ls(args) -> int:
     entries = [p.to_json() for p in iter_pages()] + list_saved()
     if args.json:
@@ -297,6 +308,10 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--update", action="store_true", help="replace the library's copy, for every page on its next build")
     q.add_argument("--profile", help=profile_help)
     q.set_defaults(fn=cmd_component_add)
+
+    p = sub.add_parser("icons", help="search the Lucide icons by name or tag")
+    p.add_argument("query", nargs="+")
+    p.set_defaults(fn=cmd_icons)
 
     p = sub.add_parser("serve", help="run the optional page index")
     p.add_argument("--host", default="127.0.0.1")

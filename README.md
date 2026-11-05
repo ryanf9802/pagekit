@@ -68,8 +68,8 @@ profile before using it from a repo you do not trust.
 
 There are three layers, and each has one job:
 
-- **Core**, in this repo: card, callout, divider, table, grid, tile row, figure, before and
-  after, finding card, and decision card. These change only by deliberate choice.
+- **Core**, in this repo: callout, divider, table, grid, tile row, status, collapsed section,
+  figure, before and after, finding card, and decision card. These change only by deliberate choice.
 - **Your library**, in `~/.pagekit/library/`: anything an agent builds that core does not cover.
   Agents add to it as they work, with no user involved, and one library serves every profile.
 - **Profiles**: look and writing rules. A profile restyles components through theme tokens
@@ -85,6 +85,17 @@ pagekit component add NAME --when TEXT --from FOLDER [--update]
 name, and existing names unless `--update` is passed. A build adds a library component's CSS
 only to pages that use it. When the library is in a git repo, `add` commits that folder
 locally and never pushes.
+
+## Icons
+
+All Lucide icons (ISC license, `src/pagekit/static/lucide-LICENSE`) ship in one file, and a page
+embeds only those it uses, so pages stay small and work offline. Refresh them with
+`scripts/update_lucide.py`.
+
+```text
+pagekit icons WORD          search by name or tag
+<i data-icon="NAME"></i>    use one in a page; an unknown name fails the build
+```
 
 ## Agent workflow
 

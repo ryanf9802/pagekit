@@ -126,6 +126,26 @@ def test_no_copyright_setting_means_no_notice(home: Path) -> None:
     assert "&copy;" not in make(load_profile()).index.read_text()
 
 
+def test_icons_are_embedded_only_when_used_and_unknown_names_fail(home: Path) -> None:
+    profile = load_profile()
+    page = make(profile, body='<p><i data-icon="circle-check"></i> Ready <i data-icon="x" aria-label="Close"></i></p>')
+    document = page.index.read_text()
+    assert document.count('class="pk-icon"') == 2
+    assert 'role="img" aria-label="Close"' in document and 'data-icon=' not in document
+    assert 'class="pk-icon"' not in make(profile, slug="plain").index.read_text()
+    page.content.write_text('<i data-icon="not-a-real-icon"></i>')
+    with pytest.raises(PageError, match="no icon named"):
+        build_page(profile, page)
+
+
+def test_icon_search_finds_by_name_and_tag(home: Path) -> None:
+    from pagekit.icons import search_icons
+
+    assert search_icons("circle-check")[0] == "circle-check"
+    assert "triangle-alert" in search_icons("warning")
+    assert search_icons("zzzznothing") == []
+
+
 def test_title_is_escaped(home: Path) -> None:
     profile = load_profile()
     page, _ = new_page(profile, "x", "<script>alert(1)</script>", None, "slots")
