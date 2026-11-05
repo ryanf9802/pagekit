@@ -1,0 +1,6 @@
+details.details-layer { margin: 6px 0; padding-bottom: 6px; border-bottom: 1px solid var(--pk-border); }
+.details-layer-ref { flex: none; min-width: 2em; color: var(--pk-muted); font-family: var(--pk-mono); font-size: 0.8125rem; font-weight: 600; }
+@media print {
+  details.details-layer { break-inside: auto; }
+  details.details-layer > summary { break-after: avoid; }
+}

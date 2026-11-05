@@ -4,6 +4,9 @@ Components keep pages consistent. There are three layers, and each has one job:
 
 - **Core** ships with pagekit: callout, divider, diagram, table, grid, tile row, status, collapsed section,
   figure, before and after, finding card, and decision card. These change only by deliberate choice.
+- **Bundled** components also ship with pagekit, for longer documents: contents card, document status, at a
+  glance, in short, details layer, rule list, rule table, field map, checklist, and page break. Like the library,
+  their styles reach only the pages that use them, so they add nothing to other pages.
 - **Your library**, in `~/.pagekit/library/`, holds anything an agent builds that core does not cover. Agents
   add to it as they work, with no user involved, and one library serves every profile.
 - **Profiles** set the look and writing rules. A profile restyles components through theme tokens rather than
@@ -30,6 +33,8 @@ when to use it, which is what later agents see in the list.
 - Inline styles
 - Classes that do not start with the component's name
 - Core names, and existing names unless `--update` is passed
+
+Saving a component with a bundled name is allowed, and your copy then wins for every page.
 
 `--update` replaces the library's copy for every page on its next build, so use it only for changes that suit
 all of them.

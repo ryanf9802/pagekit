@@ -1,0 +1,4 @@
+.rule-list { margin: 8px 0 14px; padding: 0; list-style: none; }
+.rule-list li { display: flex; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--pk-border); }
+.rule-list li:last-child { border-bottom: 0; }
+.rule-list-ref { flex: none; min-width: 2.4em; color: var(--pk-muted); font-family: var(--pk-mono); font-size: 0.8125rem; font-weight: 600; }

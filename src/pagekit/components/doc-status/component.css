@@ -1,0 +1,5 @@
+.doc-status th { width: 30%; text-transform: none; letter-spacing: 0; font-size: 0.875rem; }
+@media print {
+  .doc-status { break-inside: avoid; }
+  .doc-status th, .doc-status td { padding-top: 3px; padding-bottom: 3px; }
+}

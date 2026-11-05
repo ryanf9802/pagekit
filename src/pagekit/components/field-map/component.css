@@ -1,0 +1,3 @@
+@media print {
+  .field-map td:first-child code { white-space: nowrap; }
+}

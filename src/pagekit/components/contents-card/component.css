@@ -1,0 +1,28 @@
+.contents-card { margin: 14px 0 20px; padding: 14px 18px; }
+.contents-card-title {
+  margin: 0 0 6px;
+  color: var(--pk-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+/* Every row gets the same space above it and no list adds its own, so spacing stays even at any depth. */
+.contents-card ol { margin: 0; padding-left: 1.4em; }
+.contents-card ol ol { padding-left: 0.4em; list-style: none; }
+.contents-card ol.contents-card-inline { display: flex; flex-wrap: wrap; gap: 0 16px; padding-left: 0.4em; list-style: none; }
+.contents-card li { margin: 3px 0 0; }
+/* Every entry is a link, so an underline on each would overwhelm the list. */
+.contents-card a { text-decoration: none; }
+.contents-card a:hover { text-decoration: underline; }
+/* A part heading sits closer to its own list than to the one before it. */
+.contents-card-part { margin: 10px 0 0; color: var(--pk-muted); font-size: 0.875rem; font-weight: 600; }
+.contents-card-title + .contents-card-part { margin-top: 0; }
+.contents-card-plain { margin: 4px 0 0; padding-left: 1.4em; }
+@media print {
+  .contents-card { break-inside: auto; font-size: 0.9rem; line-height: 1.25; }
+  .contents-card li { margin-top: 1px; }
+  .contents-card-part { margin-top: 6px; }
+  .contents-card-title + .contents-card-part { margin-top: 0; }
+  .contents-card-title { break-after: avoid; }
+}
