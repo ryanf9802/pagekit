@@ -67,7 +67,7 @@ Ask about each of these in turn, in plain language. Everything is optional. Put 
 | A copyright notice | `copyright` in `profile.toml`, set to the holder's name |
 | A logo | Copy an SVG to `logo.svg`, and any dark-mode version to `logo-dark.svg` |
 | A brand color | Set `--pk-accent` in `theme.css`, for light and dark, and check the contrast of each |
-| A brand font | Embed static font files as `@font-face` rules in `fonts.css`, and set `--pk-font` in `theme.css` |
+| A brand font | `pagekit font add FILE --family NAME`, then set `--pk-font` in `theme.css`. See `docs/profiles.md` |
 | How pages should be written | Add short rules to `INSTRUCTIONS.md`, such as tone and words to avoid |
 | Where saved pages should go | `[save]` in `profile.toml`. The default is `~/pages/saved` |
 | How to send a page to someone | `[send]` in `profile.toml`, if they have a tool for it |
@@ -86,6 +86,7 @@ For a repo profile, the test is: **would this work, and be wanted, on a teammate
 | --- | --- | --- |
 | Brand, theme, fonts, logos, footer, shared writing rules | The profile's folder | It is what the pages are |
 | A check script kept in the repo | The profile's folder, as `{profile}/checks/NAME` in `[checks]` | Everyone has it |
+| `interactive = false` and `[[banned]]` wording, for pages sent to outside readers | The profile's folder | Everyone must follow them |
 | A home folder path, or a tool only this person uses | `~/.pagekit/overrides/PROFILE/` | Only exists for them |
 | Steps that use this person's own skills or notes | `~/.pagekit/overrides/PROFILE/` | Same reason |
 | Writing rules only this person wants | `~/.pagekit/overrides/PROFILE/INSTRUCTIONS.md` | Others did not ask for them |

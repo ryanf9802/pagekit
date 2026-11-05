@@ -26,6 +26,7 @@ from .diagrams import DiagramError, expand_diagrams
 from .icons import IconError, expand_icons
 from .images import add_image_sizes
 from .library import consistency_warnings, library_css_for
+from .tags import TagError, expand_tags
 from .profiles import NAME_RE, RESERVED_NAMES, Profile
 
 DEFAULT_PORT = 8766
@@ -311,7 +312,7 @@ def _head_html(profile: Profile, title: str, meta: dict[str, str], component_css
             _favicon_html(profile),
             f'<script type="application/json" id="pagekit-meta">{meta_json}</script>',
             profile.concat("head.html"),
-            f"<style>\n{profile.concat('fonts.css')}\n{profile.theme()}\n{component_css}\n</style>",
+            f"<style>\n{profile.fonts()}\n{profile.theme()}\n{component_css}\n</style>",
             extra,
         )
         if part
@@ -385,7 +386,13 @@ def build_page(profile: Profile, page: Page) -> None:
         # Keys saved answers: a style-only rebuild keeps them, a content change resets them.
         "rev": hashlib.sha256(page.content.read_bytes()).hexdigest()[:12],
     }
+    if profile.config.get("interactive", True) is False:
+        export_meta["readonly"] = True
     source = add_image_sizes(page.content.read_text(encoding="utf-8"), page.dir)
+    try:
+        source = expand_tags(source)
+    except TagError as exc:
+        raise PageError(str(exc)) from exc
     head = _head_html(profile, title, export_meta, library_css_for(source, profile))
     summary_html = f'<p class="pk-summary">{html.escape(summary)}</p>' if summary else ""
     values = _shell_values(profile, head, title, summary_html, built)
@@ -397,11 +404,18 @@ def build_page(profile: Profile, page: Page) -> None:
     else:
         document = _fill_template(profile, values, source)
     try:
-        document = expand_diagrams(document, page.dir, profile.concat("fonts.css"), profile.theme())
+        document = expand_diagrams(document, page.dir, profile.fonts(), profile.theme())
         document = expand_icons(document, profile)
     except (DiagramError, IconError) as exc:
         raise PageError(str(exc)) from exc
     page.index.write_text(document, encoding="utf-8")
+
+
+# Not what a reader sees as page content: comments, scripts, styles, the head, the footer, and the header bar.
+_HIDDEN_BLOCK_RE = re.compile(
+    r"<!--.*?-->|<(script|style|head)\b.*?</\1\s*>|<(footer|header)\b[^>]*\bpk-\2\b.*?</\2\s*>", re.DOTALL | re.IGNORECASE
+)
+_ANY_TAG_RE = re.compile(r"<[^>]*>")
 
 
 class _Scanner(HTMLParser):
@@ -504,6 +518,31 @@ def run_profile_check(profile: Profile, page: Page) -> list[str]:
     return [f"profile check: {line}" for line in shown] or [f"profile check failed with exit code {result.returncode}"]
 
 
+def _banned_wording(profile: Profile, page: Page) -> list[str]:
+    """The profile's [[banned]] list, checked against the built page, so diagram text counts. Line numbers are kept."""
+    rules = profile.config.get("banned", [])
+    if not rules:
+        return []
+    keep_lines = lambda match: "\n" * match.group(0).count("\n")  # noqa: E731
+    text = _HIDDEN_BLOCK_RE.sub(keep_lines, page.index.read_text(encoding="utf-8"))
+    text = _ANY_TAG_RE.sub(keep_lines, text)
+    errors = []
+    for rule in rules:
+        pattern = str(rule.get("pattern", ""))
+        flags = 0 if rule.get("case_sensitive") else re.IGNORECASE
+        try:
+            compiled = re.compile(pattern, flags)
+        except re.error as exc:
+            errors.append(f"invalid banned pattern {pattern!r} in the profile: {exc}")
+            continue
+        why = str(rule.get("why", "")).strip()
+        for number, line in enumerate(text.splitlines(), 1):
+            for match in compiled.finditer(html.unescape(line)):
+                detail = f" ({why})" if why else ""
+                errors.append(f"banned wording {match.group(0)!r} on line {number} of index.html{detail}")
+    return errors
+
+
 def check_page(profile: Profile, page: Page) -> CheckResult:
     """The mechanical gate. Phone-width layout needs a browser, so that stays a warning."""
     errors: list[str] = []
@@ -542,6 +581,10 @@ def check_page(profile: Profile, page: Page) -> CheckResult:
                 errors.append(f"non-ASCII character {bad!r} on line {number} of index.html")
                 break
 
+    warnings.extend(profile.brand_warnings())
+    errors.extend(_banned_wording(profile, page))
+    if profile.config.get("interactive", True) is False and (scan.unnamed or scan.singles):
+        warnings.append("form controls on a read-only page: this profile sets interactive = false, so answers cannot be copied")
     for control in scan.unnamed:
         errors.append(f"{control} has no name or id, so it cannot be exported")
     for name, count in scan.singles.items():

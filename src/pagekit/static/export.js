@@ -260,7 +260,7 @@
 
   function refreshExportButton() {
     var exportButton = document.getElementById("pk-export");
-    if (exportButton) exportButton.hidden = !hasState();
+    if (exportButton) exportButton.hidden = !!meta.readonly || !hasState();
   }
 
   function refreshComments() {
@@ -453,7 +453,7 @@
   /* With no copy yet, the baseline is the page as it was built. */
   copiedState = currentState();
   restore();
-  initComments();
+  if (!meta.readonly) initComments();
   /* A script can add controls after load. */
   new MutationObserver(refreshExportButton).observe(document.body, { childList: true, subtree: true });
   try {
@@ -509,6 +509,27 @@
   document.addEventListener("submit", function (event) { event.preventDefault(); });
   var button = document.getElementById("pk-export");
   if (button) button.addEventListener("click", copy);
+
+  /* A link to something inside a collapsed section opens that section, then scrolls to it. */
+  function revealLinkTarget() {
+    var target = null;
+    try {
+      target = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    } catch (err) {
+      return;
+    }
+    if (!target) return;
+    var opened = false;
+    for (var node = target; node; node = node.parentElement) {
+      if (node.tagName === "DETAILS" && !node.open) {
+        node.open = true;
+        opened = true;
+      }
+    }
+    if (opened) target.scrollIntoView();
+  }
+  window.addEventListener("hashchange", revealLinkTarget);
+  window.addEventListener("load", revealLinkTarget);
 
   /* A heading row becomes a real <thead>, so it repeats on every printed sheet. */
   Array.prototype.forEach.call(document.querySelectorAll("table"), function (table) {

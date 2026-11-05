@@ -72,7 +72,7 @@ teammates.
 | --- | --- | --- |
 | `profile.toml` | Settings, listed below | Deep merge |
 | `theme.css` | `--pk-*` tokens and styles, redefined for light and dark | Concatenated |
-| `fonts.css` | `@font-face` rules with embedded static fonts, so pages work offline and PDFs stay small | Concatenated |
+| `fonts.css` | `@font-face` rules with embedded static fonts, added with `pagekit font add`, so pages work offline and PDFs stay small | Concatenated, without the built-in font once a profile has its own |
 | `head.html` | Extra head tags | Concatenated |
 | `INSTRUCTIONS.md` | Content and voice rules, printed by `pagekit new` | Concatenated |
 | `template.html` | Page shell with `{{head}}`, `{{logo}}`, `{{brand}}`, `{{title}}`, `{{summary}}`, `{{content}}`, and `{{footer}}` | Nearest wins |
@@ -105,9 +105,11 @@ With no profile, pages carry the pagekit logo, name, and ember colors. Every par
 | Logo ember | `#e5532d` | `#ff7a50` |
 | `--pk-accent` | `#c8431c` | `#ff7a50` |
 
-`--pk-accent` is darker than the logo's ember in light mode so links and button text stay readable. The wordmark is
-Space Grotesk SemiBold, drawn as outlines, so pages need no web font. Body text stays on the system font to keep pages
-small. Source files for other uses are in [`docs/brand/`](brand/), and `scripts/build_brand.py` regenerates all of them.
+`--pk-accent` is darker than the logo's ember in light mode so links and button text stay readable. Text is IBM Plex
+Sans and code is IBM Plex Mono, both embedded so pages and PDFs look the same on every machine, which adds about 103 KB
+to a page. A profile with its own `fonts.css`, or that sets `--pk-font` in `theme.css`, does not carry Plex Sans. One
+that sets `--pk-mono` does not carry Plex Mono. The wordmark is Space Grotesk SemiBold,
+drawn as outlines. Source files for other uses are in [`docs/brand/`](brand/), and `scripts/build_brand.py` regenerates all of them.
 
 ## Settings
 
@@ -121,10 +123,12 @@ small. Source files for other uses are in [`docs/brand/`](brand/), and `scripts/
 | `copyright` | Adds a copyright notice for this holder to the footer |
 | `ascii_only` | Treat non-ASCII characters as an error |
 | `allowed_hosts` | Hosts a page may load external resources from |
+| `interactive` | Set to `false` for pages sent to outside readers: no Copy state button and no comments on item IDs |
 | `pdf_margin` | Margins for [generated PDFs](printing.md#bookmarked-pdfs) |
 | `[save]` | Where saved pages go, [below](#saving) |
 | `[send]` | How `pagekit send` shares a page, [below](#send) |
 | `[checks]` | A check every build must pass, [below](#checks) |
+| `[[banned]]` | Words a page may not use, [below](#banned-wording) |
 
 ## Saving
 
@@ -167,6 +171,18 @@ profile that sets the command.
 The command runs without a shell, in the page's folder, with the built `index.html` and the page folder as its
 last two arguments. A non-zero exit prints its output as errors and fails the command. A failed build keeps
 the page's last good version, or leaves no page if it is new, and `pagekit save` refuses a page that fails.
+
+## Banned wording
+
+A profile can list words its pages must never use, with no script. Each `pattern` is a regular expression, matched
+against the words a reader sees in the built page, including text in diagrams, and ignoring case unless
+`case_sensitive = true`. A match fails the build, and `why` appears in the message.
+
+```toml
+[[banned]]
+pattern = "\\bTBD\\b"
+why = "state what is true now"
+```
 
 ## Commands in profiles
 

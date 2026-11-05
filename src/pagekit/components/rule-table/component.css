@@ -1,0 +1,5 @@
+.rule-table td:first-child { width: 1%; font-weight: 600; white-space: nowrap; }
+.rule-table td:nth-child(2) { width: 1%; white-space: nowrap; }
+@media print {
+  .rule-table td:nth-child(2) { white-space: normal; }
+}

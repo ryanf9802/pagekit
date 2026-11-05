@@ -11,6 +11,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from .fonts import FontError, add_font
 from .icons import search_icons
 from .library import ComponentError, add_component, find_component, list_components
 from .pages import (
@@ -235,7 +236,24 @@ def cmd_prune(args) -> int:
 
 
 def cmd_profile(args) -> int:
-    _print_profile(_profile(args))
+    profile = _profile(args)
+    _print_profile(profile)
+    weights = profile.brand_weights()
+    if weights:
+        print("\nbrand data on every page:")
+        for name, size in weights:
+            print(f"  {name}: {size / 1024:.0f} KB")
+        print(f"  total: {sum(size for _, size in weights) / 1024:.0f} KB")
+    for warning in profile.brand_warnings():
+        print(f"warning: {warning}")
+    return 0
+
+
+def cmd_font_add(args) -> int:
+    profile = _profile(args)
+    target = add_font(profile, Path(args.file), args.family, args.weight, args.italic)
+    print(f"added {args.family} {args.weight} to {target}")
+    print(f'then set --pk-font: "{args.family}", sans-serif; in {profile.nearest / "theme.css"}')
     return 0
 
 
@@ -373,6 +391,16 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--profile", help=profile_help)
     q.set_defaults(fn=cmd_component_add)
 
+    p = sub.add_parser("font", help="embed a font in the profile")
+    font = p.add_subparsers(dest="font_cmd", required=True)
+    q = font.add_parser("add", help="add one static font file, one weight at a time, to the profile's fonts.css")
+    q.add_argument("file")
+    q.add_argument("--family", required=True, help='the name to use in CSS, such as "Acme Sans"')
+    q.add_argument("--weight", type=int, default=400)
+    q.add_argument("--italic", action="store_true")
+    q.add_argument("--profile", help=profile_help)
+    q.set_defaults(fn=cmd_font_add)
+
     p = sub.add_parser("icons", help="search the Lucide icons by name or tag")
     p.add_argument("query", nargs="+")
     p.add_argument("--profile", help=profile_help)
@@ -398,7 +426,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         return args.fn(args)
-    except (PageError, ProfileError, ComponentError) as exc:
+    except (PageError, ProfileError, ComponentError, FontError) as exc:
         print(f"pagekit: {exc}", file=sys.stderr)
         return 1
 

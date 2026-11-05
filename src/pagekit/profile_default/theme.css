@@ -18,12 +18,13 @@
   --pk-warning: #a85b00;
   --pk-danger: #c22a1f;
   --pk-shadow: none;
-  --pk-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  --pk-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --pk-font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --pk-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --pk-radius: 10px;
   --pk-radius-small: 6px;
   --pk-max-width: 960px;
   --pk-bar-height: 52px;
+  --pk-print-font-size: 10pt;
   --pk-gutter: max(16px, calc((100% - var(--pk-max-width)) / 2 + 16px));
 }
 @media screen and (prefers-color-scheme: dark) {
@@ -182,6 +183,11 @@ p { margin: 0 0 12px; }
 .pk-pdf:disabled .pk-icon { animation: pk-pulse 1s ease-in-out infinite; }
 .pk-pdf-failed { color: var(--pk-danger); }
 @keyframes pk-pulse { 50% { opacity: 0.35; } }
+.pk-contents { margin: 0 0 20px; padding: 12px 16px; background: var(--pk-surface); border: 1px solid var(--pk-border); border-radius: var(--pk-radius); }
+.pk-contents-title { margin: 0 0 6px; color: var(--pk-muted); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+.pk-contents ol { margin: 0; padding: 0; list-style: none; }
+.pk-contents ol ol { padding-left: 1.2em; }
+.pk-contents li { margin-top: 2px; }
 .pk-footer-meta { display: flex; gap: 8px; min-width: 0; white-space: nowrap; }
 .pk-footer-meta > span:empty { display: none; }
 .pk-footer-meta > span:not(:empty) ~ span::before { content: "/"; margin-right: 8px; color: var(--pk-border); }
@@ -225,6 +231,7 @@ p { margin: 0 0 12px; }
   cursor: pointer;
   transition: filter 120ms ease;
 }
+.pk-button[hidden] { display: none; }
 .pk-button svg { flex: none; width: 14px; height: 14px; }
 .pk-button:hover { filter: brightness(1.12); }
 .pk-button-done { background: var(--pk-success); }
@@ -626,15 +633,15 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
     content: "Page " counter(page) " of " counter(pages);
     margin: -3.5mm 0 0 0;
     vertical-align: top;
-    color: #5b6270;
-    font: 400 8pt system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--pk-muted);
+    font: 400 8pt var(--pk-font);
   }
 }
 @media print {
   :root { color-scheme: light; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  /* Sizes are in rem, so this one root scales all printed text from 14px. */
+  /* Sizes are in rem, so this one root scales all printed text. */
   /* No canvas color: paper is white, and a painted canvas would cover the page number. */
-  html { background: none; font-size: 14px; scroll-padding-block: 0; }
+  html { background: none; font-size: var(--pk-print-font-size); scroll-padding-block: 0; }
   body {
     display: table;
     width: 100%;
@@ -643,6 +650,7 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
     background: none !important;
     font-size: 1rem;
     line-height: 1.45;
+    overflow-wrap: break-word;
   }
   .pk-header {
     position: static;
@@ -690,14 +698,18 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
   h1 { font-size: 1.625rem; }
   h2 { font-size: 1.125rem; }
   h1, h2, h3, h4, .pk-card-head, p:has(+ pre), p:has(+ .pk-table-wrap), p:has(+ .pk-figure), p:has(+ .pk-grid) { break-after: avoid; }
-  .pk-card, .pk-callout, .pk-kpi, .pk-figure, tr, pre, blockquote { break-inside: avoid; }
+  :is(h2, h3, h4) + :is(p, ul, ol, .pk-table-wrap, .pk-callout) { break-before: avoid; }
+  .pk-card, .pk-callout, .pk-kpi, .pk-figure, tr, li, pre, blockquote { break-inside: avoid; }
   .pk-divider { break-inside: avoid; break-after: avoid; }
   .pk-table-wrap { overflow: visible; }
+  /* Open in print even if the script that opens them has not run. */
+  details::details-content { display: block !important; height: auto !important; content-visibility: visible !important; }
   details > summary { margin-left: 0; padding: 0; }
   details > summary::before { display: none; }
   details > :not(summary) { margin-left: 0; }
   thead { display: table-header-group; }
   th { white-space: normal; }
+  th, td { overflow-wrap: break-word; }
   pre { overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; }
   /* Paper cannot scroll, so printed answers show in full. */
   textarea { max-height: none; overflow: visible; }

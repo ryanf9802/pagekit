@@ -14,6 +14,7 @@ import subprocess
 import tempfile
 import tomllib
 from dataclasses import dataclass
+from importlib import resources
 from pathlib import Path
 
 from .profiles import NAME_RE, Profile
@@ -37,7 +38,7 @@ class ComponentError(Exception):
 class Component:
     name: str
     when: str
-    source: str  # core, profile, or library
+    source: str  # core, profile, library, or bundled
     html: Path
     css: Path | None = None
 
@@ -62,8 +63,19 @@ def _when_from_html(path: Path) -> str:
     return " ".join(match.group(1).split()) if match else ""
 
 
+def bundled_dir() -> Path:
+    return Path(str(resources.files("pagekit").joinpath("components")))
+
+
 def library_components() -> list[Component]:
-    root = library_dir()
+    """The user's library, then the ones shipped with pagekit. A user's copy wins by name."""
+    found: dict[str, Component] = {}
+    for component in [*_folder_components(library_dir(), "library"), *_folder_components(bundled_dir(), "bundled")]:
+        found.setdefault(component.name, component)
+    return list(found.values())
+
+
+def _folder_components(root: Path, source: str) -> list[Component]:
     if not root.is_dir():
         return []
     components = []
@@ -76,12 +88,12 @@ def library_components() -> list[Component]:
             when = str(tomllib.loads((folder / "component.toml").read_text(encoding="utf-8")).get("when", ""))
         except (OSError, tomllib.TOMLDecodeError):
             when = ""
-        components.append(Component(folder.name, when, "library", html, css if css.is_file() else None))
+        components.append(Component(folder.name, when, source, html, css if css.is_file() else None))
     return components
 
 
 def list_components(profile: Profile) -> list[Component]:
-    """Core and profile components, then the library. Core names cannot be reused."""
+    """Core and profile components, then the library and bundled set. Core names cannot be reused."""
     found: dict[str, Component] = {}
     for index, directory in enumerate(profile.dirs):
         folder = directory / "components"
@@ -92,7 +104,7 @@ def list_components(profile: Profile) -> list[Component]:
                 found[path.stem] = Component(path.stem, _when_from_html(path), source, path, css if css.is_file() else None)
     for component in library_components():
         found.setdefault(component.name, component)
-    return sorted(found.values(), key=lambda c: ({"core": 0, "profile": 1, "library": 2}[c.source], c.name))
+    return sorted(found.values(), key=lambda c: ({"core": 0, "profile": 1, "library": 2, "bundled": 3}[c.source], c.name))
 
 
 def find_component(profile: Profile, name: str) -> Component:
@@ -150,9 +162,9 @@ def add_component(profile: Profile, name: str, when: str, source: Path, update: 
     css = css_path.read_text(encoding="utf-8") if css_path.is_file() else ""
     _validate(name, when, html, css)
     existing = next((c for c in list_components(profile) if c.name == name), None)
-    if existing and existing.source != "library":
+    if existing and existing.source in ("core", "profile"):
         raise ComponentError(f"{name!r} is a {existing.source} component: use it, or pick another name")
-    if existing and not update:
+    if existing and existing.source == "library" and not update:
         raise ComponentError(f"{name!r} is already in the library: use it, or pass --update to change it for every page")
     target = library_dir() / name
     target.parent.mkdir(parents=True, exist_ok=True)

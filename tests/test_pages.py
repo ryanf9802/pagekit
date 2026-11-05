@@ -381,6 +381,159 @@ def test_builtin_pages_carry_the_pagekit_brand(home: Path) -> None:
     assert "Made with pagekit" in document
 
 
+def test_a_read_only_profile_hides_the_copy_button_and_comments(home: Path) -> None:
+    repo, _ = _profile_in(home, "interactive = false")
+    profile = load_profile(repo)
+    page = make(profile, body='<span class="pk-id">D-01</span>')
+    document = page.index.read_text()
+    assert 'id="pk-export" class="pk-button" hidden>' in document
+    assert '"readonly": true' in document
+    assert not check_page(profile, page).errors
+
+
+def test_pages_are_interactive_by_default(home: Path) -> None:
+    document = make(load_profile()).index.read_text()
+    # export.js shows the button once there is something to copy.
+    assert 'id="pk-export"' in document and "refreshExportButton" in document
+    assert '"readonly"' not in document
+
+
+def test_contents_tag_lists_headings_and_nests_them_by_level(home: Path) -> None:
+    body = '<pk-contents></pk-contents><h2>First part</h2><h3>Detail &amp; more</h3><h2 id="kept">Second</h2><h4>Too deep</h4>'
+    document = make(load_profile(), body=body).index.read_text()
+    assert '<h2 id="first-part">First part</h2>' in document and '<h3 id="detail-more">' in document
+    assert (
+        '<ol><li><a href="#first-part">First part</a><ol><li><a href="#detail-more">Detail &amp; more</a></li></ol>'
+        '</li><li><a href="#kept">Second</a></li></ol>'
+    ) in document
+    assert 'href="#too-deep"' not in document and "pk-contents>" not in document
+
+
+def test_contents_tag_respects_max_level_and_title(home: Path) -> None:
+    body = '<pk-contents max-level="2" title="In this report"></pk-contents><h2>One</h2><h3>Two</h3>'
+    document = make(load_profile(), body=body).index.read_text()
+    assert '<p class="pk-contents-title">In this report</p>' in document
+    assert 'href="#one"' in document and 'href="#two"' not in document
+
+
+def test_contents_tag_can_drop_its_title_and_skip_a_heading(home: Path) -> None:
+    body = '<pk-contents title=""></pk-contents><h2>One</h2><h2 data-pk-no-contents>Hidden</h2>'
+    document = make(load_profile(), body=body).index.read_text()
+    assert "pk-contents-title\">" not in document
+    assert 'href="#one"' in document and 'href="#hidden"' not in document
+
+
+def test_contents_ids_stay_unique_when_headings_repeat(home: Path) -> None:
+    document = make(load_profile(), body='<pk-contents></pk-contents><h2>Same</h2><h2>Same</h2>').index.read_text()
+    assert 'id="same"' in document and 'id="same-2"' in document
+
+
+def test_pages_without_tags_get_no_generated_ids(home: Path) -> None:
+    assert "<h2>Plain</h2>" in make(load_profile(), body="<h2>Plain</h2>").index.read_text()
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        ('<pk-contents max-level="9"></pk-contents><h2>A</h2>', "max-level must be a number"),
+        ('<pk-contents depth="2"></pk-contents><h2>A</h2>', "no attribute 'depth'"),
+        ("<pk-contents></pk-contents>", "no headings"),
+        ("<pk-chart></pk-chart>", "unknown tag <pk-chart>"),
+        ("<pk-contents>", "malformed"),
+    ],
+)
+def test_a_mistake_in_a_tag_stops_the_build(home: Path, body: str, message: str) -> None:
+    with pytest.raises(PageError, match=message):
+        make(load_profile(), body=body)
+
+
+def test_the_default_brand_stays_under_the_weight_limits(home: Path) -> None:
+    assert load_profile().brand_warnings() == []
+
+
+def test_a_heavy_logo_warns_on_build(home: Path) -> None:
+    repo, directory = _profile_in(home, "")
+    (directory / "logo.svg").write_text("<svg>" + "x" * 60_000 + "</svg>")
+    profile = load_profile(repo)
+    warnings = check_page(profile, make(profile)).warnings
+    assert any("logo.svg adds 78 KB to every page" in w for w in warnings)
+
+
+def test_banned_wording_fails_with_the_line_and_reason(home: Path) -> None:
+    repo, _ = _profile_in(home, '[[banned]]\npattern = "\\\\bTBD\\\\b"\nwhy = "state what is true now"\n')
+    profile = load_profile(repo)
+    page = make(profile, body="<p>Fine.</p>\n<p>Date is tbd.</p>")
+    errors = check_page(profile, page).errors
+    assert len(errors) == 1
+    assert errors[0].startswith("banned wording 'tbd' on line ") and "of index.html (state what is true now)" in errors[0]
+
+
+def test_banned_wording_ignores_markup_and_comments_and_can_match_case(home: Path) -> None:
+    repo, _ = _profile_in(home, '[[banned]]\npattern = "secret"\ncase_sensitive = true\n')
+    profile = load_profile(repo)
+    body = '<!-- secret --><p class="secret" title="secret">SECRET</p>'
+    assert not check_page(profile, make(profile, body=body)).errors
+
+
+def test_banned_wording_reads_generated_text_but_not_the_page_chrome(home: Path) -> None:
+    repo, _ = _profile_in(home, 'footer = "Prepared by secret"\n[[banned]]\npattern = "secret"\n')
+    profile = load_profile(repo)
+    assert not check_page(profile, make(profile, body="<p>Fine.</p>")).errors
+    errors = check_page(profile, make(profile, body="<pk-contents></pk-contents><h2>Secret</h2>")).errors
+    assert errors and all("banned wording" in e for e in errors)
+
+
+def test_a_bad_banned_pattern_is_reported(home: Path) -> None:
+    repo, _ = _profile_in(home, '[[banned]]\npattern = "("\n')
+    profile = load_profile(repo)
+    assert any("invalid banned pattern" in e for e in check_page(profile, make(profile)).errors)
+
+
+def test_builtin_pages_embed_their_font(home: Path) -> None:
+    document = make(load_profile()).index.read_text()
+    assert 'font-family: "IBM Plex Sans";' in document and "data:font/woff2;base64," in document
+
+
+def test_builtin_pages_embed_their_code_font(home: Path) -> None:
+    document = make(load_profile()).index.read_text()
+    assert 'font-family: "IBM Plex Mono";' in document and '--pk-mono: "IBM Plex Mono"' in document
+
+
+def test_a_profile_with_its_own_text_font_keeps_the_builtin_code_font(home: Path) -> None:
+    repo, directory = _profile_in(home, "")
+    (directory / "fonts.css").write_text('@font-face { font-family: "Mine"; src: url("data:font/woff2;base64,AAAA"); }')
+    document = make(load_profile(repo)).index.read_text()
+    assert 'font-family: "IBM Plex Mono";' in document
+
+
+def test_a_profile_that_sets_a_code_font_does_not_carry_the_builtin_one(home: Path) -> None:
+    repo, directory = _profile_in(home, "")
+    (directory / "theme.css").write_text(":root { --pk-mono: Courier, monospace; }")
+    document = make(load_profile(repo)).index.read_text()
+    assert 'font-family: "IBM Plex Mono";' not in document
+    assert 'font-family: "IBM Plex Sans";' in document
+
+
+def test_a_profile_with_its_own_font_does_not_carry_the_builtin_font(home: Path) -> None:
+    repo, directory = _profile_in(home, "")
+    (directory / "fonts.css").write_text('@font-face { font-family: "Mine"; src: url("data:font/woff2;base64,AAAA"); }')
+    document = make(load_profile(repo)).index.read_text()
+    assert 'font-family: "Mine"' in document
+    assert 'font-family: "IBM Plex Sans";' not in document
+
+
+def test_a_profile_that_sets_a_system_font_does_not_carry_the_builtin_font(home: Path) -> None:
+    repo, directory = _profile_in(home, "")
+    (directory / "theme.css").write_text(":root { --pk-font: Georgia, serif; }")
+    assert 'font-family: "IBM Plex Sans";' not in make(load_profile(repo)).index.read_text()
+
+
+def test_a_profile_that_only_changes_colors_keeps_the_builtin_font(home: Path) -> None:
+    repo, directory = _profile_in(home, "")
+    (directory / "theme.css").write_text(":root { --pk-accent: #123456; }")
+    assert 'font-family: "IBM Plex Sans";' in make(load_profile(repo)).index.read_text()
+
+
 def test_a_profile_with_its_own_brand_inherits_no_pagekit_logo(home: Path) -> None:
     repo, _ = _profile_in(home, 'brand = "Acme"')
     document = make(load_profile(repo)).index.read_text()

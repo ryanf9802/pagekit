@@ -1,0 +1,4 @@
+.in-short { margin: 10px 0 14px; padding: 8px 14px; background: var(--pk-surface); border-left: 3px solid var(--pk-accent); }
+@media print {
+  .in-short { break-inside: auto; }
+}

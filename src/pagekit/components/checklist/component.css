@@ -1,0 +1,6 @@
+.checklist { margin: 0; padding: 0; list-style: none; }
+.checklist li { position: relative; margin: 0 0 4px; padding-left: 1.6em; }
+.checklist li::before { content: ""; position: absolute; top: 0.18em; left: 0.3em; width: 0.32em; height: 0.62em; border: solid var(--pk-muted); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+@media print {
+  .checklist li { margin-bottom: 2px; }
+}

@@ -21,6 +21,11 @@ EXTRA_PROFILES_SUBDIR = Path(".pagekit") / "profiles"
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,80}$")
 RESERVED_NAMES = {"saved", "all"}
 TOKEN_RE = re.compile(r"(--pk-[a-z0-9-]+)\s*:")
+FONT_TOKEN_RE = re.compile(r"--pk-font\s*:")
+MONO_TOKEN_RE = re.compile(r"--pk-mono\s*:")
+BRAND_FILE_LIMIT_BYTES = 40 * 1024
+FONTS_LIMIT_BYTES = 200 * 1024
+_SLIM_ADVICE = {False: "use a simpler file", True: "embed fewer weights"}
 BRAND_FILES = ("logo.svg", "logo-dark.svg", "wordmark.svg", "logo-print.png", "favicon.svg")
 # Overrides change how pagekit behaves on one machine, never how a page looks or what it must pass.
 OVERRIDE_KEYS = {"save", "send"}
@@ -207,18 +212,50 @@ class Profile:
             return None
         return path
 
+    def brand_weights(self) -> list[tuple[str, int]]:
+        """What each brand file adds to every page, in bytes, once embedded."""
+        weights = []
+        for name in BRAND_FILES:
+            path = self.brand_file(name)
+            if path:
+                weights.append((name, path.stat().st_size * 4 // 3))
+        fonts = self.fonts()
+        if fonts:
+            weights.append(("fonts.css", len(fonts.encode())))
+        return weights
+
+    def brand_warnings(self) -> list[str]:
+        warnings = []
+        for name, size in self.brand_weights():
+            limit = FONTS_LIMIT_BYTES if name == "fonts.css" else BRAND_FILE_LIMIT_BYTES
+            if size > limit:
+                warnings.append(f"{name} adds {size // 1024} KB to every page (limit {limit // 1024} KB): {_SLIM_ADVICE[name == 'fonts.css']}")
+        return warnings
+
     def read(self, relative: str, default: str = "") -> str:
         path = self.file(relative)
         return path.read_text(encoding="utf-8") if path else default
 
-    def concat(self, relative: str) -> str:
+    def concat(self, relative: str, dirs: list[Path] | None = None) -> str:
         """Every layer's copy of a file, built-in first. Later layers override in CSS."""
         parts = []
-        for directory in self.dirs:
+        for directory in self.dirs if dirs is None else dirs:
             path = directory / relative
             if path.is_file():
                 parts.append(path.read_text(encoding="utf-8").strip())
         return "\n\n".join(p for p in parts if p)
+
+    def fonts(self) -> str:
+        """Embedded fonts. A profile with its own text or code font does not also carry the built-in one's bytes."""
+        above = self.dirs[1:]
+        theme = self.concat("theme.css", above)
+        parts = []
+        if not (any((d / "fonts.css").is_file() for d in above) or FONT_TOKEN_RE.search(theme)):
+            parts.append(self.concat("fonts.css", self.dirs[:1]))
+        if not MONO_TOKEN_RE.search(theme):
+            parts.append(self.concat("fonts-mono.css", self.dirs[:1]))
+        parts.append(self.concat("fonts.css", above))
+        return "\n\n".join(part for part in parts if part)
 
     def theme(self) -> str:
         return self.concat("theme.css")
