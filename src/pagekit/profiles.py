@@ -132,8 +132,7 @@ def _chain(nearest: Path) -> list[Path]:
         chain.append(resolved)
         if resolved == builtin_dir().resolve():
             break
-        default = "builtin" if resolved == personal_dir().resolve() else "personal"
-        current = _resolve_extends(str(_read_toml(resolved).get("extends", default)), resolved)
+        current = _resolve_extends(str(_read_toml(resolved).get("extends", "builtin")), resolved)
     chain.reverse()
     return chain
 
@@ -220,11 +219,13 @@ def load_profile(cwd: Path | None = None, override: str | None = None) -> Profil
     return Profile(name=name, dirs=dirs, config=config)
 
 
+_STARTER_BRAND = """brand = "{brand}"
+footer = "{brand}"
+"""
+
 _STARTER_TOML = """name = "{name}"
 extends = "{extends}"
-brand = "{brand}"
-footer = "{brand}"
-
+{brand_lines}
 # Where `pagekit save` puts a page. Default: ~/pages/saved.
 # [save]
 # root = "~/somewhere/durable"
@@ -233,7 +234,8 @@ footer = "{brand}"
 """
 
 _STARTER_THEME = """/* Override only what differs. Redefine tokens for both light and dark.
-   Keep "screen and" on the dark block so pages always print in light colors. */
+   Keep "screen and" on the dark block so pages always print in light colors.
+
 :root {
   --pk-accent: #1f6feb;
 }
@@ -242,6 +244,7 @@ _STARTER_THEME = """/* Override only what differs. Redefine tokens for both ligh
     --pk-accent: #8fb0f0;
   }
 }
+*/
 """
 
 _STARTER_INSTRUCTIONS = """## {brand} pages
@@ -252,16 +255,18 @@ Add a SAVE.md next to this file to have agents write a matching document after
 """
 
 
-def init_profile(directory: Path, name: str, extends: str, brand: str) -> list[Path]:
-    """Scaffold a profile. Never overwrites an existing file."""
+def init_profile(directory: Path, name: str, extends: str, brand: str = "") -> list[Path]:
+    """Scaffold a profile. Never overwrites an existing file. Without a brand, it keeps the inherited one."""
     if not NAME_RE.match(name) or name in RESERVED_NAMES:
         raise ProfileError(f"invalid profile name {name!r}")
     directory.mkdir(parents=True, exist_ok=True)
     written = []
     starters = {
-        "profile.toml": _STARTER_TOML.format(name=name, extends=extends, brand=brand),
+        "profile.toml": _STARTER_TOML.format(
+            name=name, extends=extends, brand_lines=_STARTER_BRAND.format(brand=brand) if brand else ""
+        ),
         "theme.css": _STARTER_THEME,
-        "INSTRUCTIONS.md": _STARTER_INSTRUCTIONS.format(brand=brand),
+        "INSTRUCTIONS.md": _STARTER_INSTRUCTIONS.format(brand=brand or name),
     }
     for filename, content in starters.items():
         path = directory / filename

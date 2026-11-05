@@ -7,22 +7,28 @@ any of it to make pages entirely yours.
 ## Choosing a profile
 
 The profile comes from where the agent works, never from an account. pagekit walks up from the working
-directory to the nearest `.pagekit/profile/` or folder mapped in `~/.pagekit/projects.toml`, which under the
-home folder ends at `~/.pagekit/profile/`. Git worktrees nested inside a repository find its profile the same
-way. Override with `--profile` or `$PAGEKIT_PROFILE`.
+directory to the nearest `.pagekit/profile/` or folder mapped in `~/.pagekit/projects.toml`. With neither, it uses
+your personal profile at `~/.pagekit/profile/` if you have one, and otherwise the built-in profile. Git worktrees
+nested inside a repository find its profile the same way. Override with `--profile` or `$PAGEKIT_PROFILE`.
 
 Run `pagekit profile` to see which profile applies and what it is made of.
 
 ## Creating one
 
+To have an agent do this, ask it to "set up a pagekit profile for this repo" or to "set up my personal pagekit
+profile". It uses the `setup-profile` skill. By hand, from the folder the profile is for:
+
 ```bash
 cd ~/workspace/acme
-pagekit init --name acme --brand "Acme"           # .pagekit/profile here: commit it to share with a team
-pagekit init --name acme --brand "Acme" --local   # or kept in ~/.pagekit/profiles/acme, nothing in the project
+pagekit init --brand "Acme"           # .pagekit/profile here: commit it to share with a team
+pagekit init --brand "Acme" --local   # or kept in ~/.pagekit/profiles/acme, nothing in the project
+pagekit init --personal               # ~/.pagekit/profile, used wherever no other profile applies
 ```
 
-A profile extends `personal` by default, which falls back to the built-in profile for people who have no
-personal one. Use `--extends builtin` to start clean.
+`init` writes only what you ask for. The name defaults to the folder's name, and without `--brand` the profile keeps
+the pagekit logo and footer. A profile extends the built-in profile by default, so a committed profile looks the same
+for everyone. Use `--extends personal` to build on your personal profile instead, which falls back to the built-in
+profile for people who have none.
 
 ## Files
 
@@ -47,11 +53,11 @@ personal one. Use `--extends builtin` to start clean.
 With no profile, pages carry the pagekit logo, name, and ember colors. Every part can be overridden:
 
 - **Colors and type** inherit like any theme. Redefine `--pk-*` tokens in `theme.css`, for light and dark, and the
-  rest stays. A profile that sets no colors of its own keeps ember; `pagekit init` writes a placeholder blue to edit.
+  rest stays. A profile that sets no colors of its own keeps ember.
 - **The logo goes as a set.** A profile that sets its own `brand`, or adds any logo file, gets none of pagekit's
   logo, wordmark, print logo, or tab icon, so "Acme" never appears beside the pagekit mark. Set `brand = ""` to show
   no name or logo at all.
-- **The footer** reads "Made with pagekit" until a profile sets `footer`. `pagekit init` sets it to the brand.
+- **The footer** reads "Made with pagekit" until a profile sets `footer`. `pagekit init --brand` sets it to the brand.
 - **The header and footer** are the same on every page, and a profile changes them in one place. Restyle them in
   `theme.css`, such as `.pk-logo { width: 30px; height: 30px; }`, or replace the layout in `template.html`.
 - **The page index** at the server root uses the same header and footer with the built-in profile, because it lists
@@ -72,7 +78,7 @@ small. Source files for other uses are in [`docs/brand/`](brand/), and `scripts/
 | Key in `profile.toml` | Meaning |
 | --- | --- |
 | `name` | The profile's name, and its folder under the pages root |
-| `extends` | The profile to build on: `personal`, `builtin`, or a path |
+| `extends` | The profile to build on: `builtin` (the default), `personal`, or a path |
 | `brand` | Name in the header, unless `wordmark.svg` replaces it |
 | `footer` | Footer text, required on every page |
 | `copyright` | Adds a copyright notice for this holder to the footer |

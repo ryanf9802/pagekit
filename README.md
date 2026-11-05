@@ -10,11 +10,11 @@
 **Polished, self-contained HTML pages for coding agents.**
 
 Ask an agent for a report, a review, or a set of questions, and get a page instead of a wall of
-terminal text. You bring the brand once, as a profile. Every page after that looks like it came from
-the same designer, works offline, prints well, and reads well on a phone.
+terminal text. Every page looks like it came from the same designer, works offline, prints well, and
+reads well on a phone.
 
-- **On brand by default.** A profile sets the theme, logo, footer, and writing rules, and the working
-  directory picks the profile.
+- **Yours when you want.** Pages carry the pagekit brand until a profile sets your theme, logo, footer,
+  and writing rules. The working directory picks the profile, so each repo can have its own.
 - **Two-way.** Readers answer forms and comment on items, then one button copies it all back to the agent.
 - **Ready to share.** Light and dark modes, phone layouts, clean printing, and bookmarked PDFs come standard.
 - **Rich content.** Components, Lucide icons, and Mermaid diagrams are built in, and agents grow a shared
@@ -25,8 +25,8 @@ the same designer, works offline, prints well, and reads well on a phone.
 
 ## Set up with your agent
 
-The quickest way in. Paste this into your coding agent, and it will install pagekit and walk you through your brand,
-your profiles, and the optional local server:
+The quickest way in. Paste this into your coding agent, and it will install pagekit, connect itself, and walk you
+through the optional local server:
 
 ```text
 Set up pagekit for me. Clone https://github.com/ryanf9802/pagekit.git somewhere permanent, then read
@@ -46,22 +46,31 @@ git clone https://github.com/ryanf9802/pagekit.git
 cd pagekit
 uv tool install --editable .
 
-# Create your profile, from anywhere.
-pagekit init --personal --name personal --brand "Your Name"
-
 # Make a page, from anywhere.
 pagekit new hello --title "Hello"     # prints the file to write and the house rules
 pagekit build hello                   # composes the page and checks it
 ```
 
-Then give your agent the skill in the clone's `src/pagekit/skills/create-page`, and ask it for a page.
+Then give your agent the skills in the clone's `src/pagekit/skills`, and ask it for a page.
+
+## Make it yours
+
+Once pagekit is set up, ask your agent from the folder you want to brand:
+
+```text
+Set up a pagekit profile for this repo.
+Set up my personal pagekit profile.
+```
+
+A repo profile applies in that repo, and a personal profile applies wherever no other profile does. To do it by
+hand, see [Profiles](docs/profiles.md).
 
 ## Documentation
 
 | Guide | Covers |
 | --- | --- |
 | [Agent setup guide](docs/agent-setup.md) | The steps your agent follows in the prompt above |
-| [Getting started](docs/getting-started.md) | Install, your first profile, and connecting an agent |
+| [Getting started](docs/getting-started.md) | Install, connecting an agent, and your first page |
 | [Writing pages](docs/pages.md) | The page workflow, checks, sharing, saving, and expiry |
 | [Profiles](docs/profiles.md) | Making pagekit yours: brand, theme, rules, and hooks |
 | [Components](docs/components.md) | The core set and your growing library |

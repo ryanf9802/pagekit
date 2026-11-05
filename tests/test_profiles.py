@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from pagekit.cli import main
 from pagekit.profiles import (
     ProfileError,
     init_profile,
@@ -120,3 +121,48 @@ def test_init_never_overwrites(home: Path) -> None:
     (directory / "theme.css").write_text("mine")
     assert init_profile(directory, "two", "builtin", "Two") == []
     assert (directory / "theme.css").read_text() == "mine"
+
+
+def test_init_without_a_brand_keeps_the_pagekit_look(home: Path) -> None:
+    directory = home / "work" / "repo" / ".pagekit" / "profile"
+    init_profile(directory, "repo", "builtin")
+    profile = load_profile(directory.parent.parent)
+    assert profile.name == "repo"
+    assert profile.config["brand"] == "pagekit" and profile.config["footer"] == "Made with pagekit"
+    assert profile.brand_file("logo.svg") is not None
+    # The starter theme is a commented example, so it changes nothing.
+    starter = (directory / "theme.css").read_text()
+    assert starter.startswith("/*") and starter.rstrip().endswith("*/") and starter.count("*/") == 1
+
+
+def test_init_with_a_brand_replaces_the_pagekit_look(home: Path) -> None:
+    directory = home / "work" / "repo" / ".pagekit" / "profile"
+    init_profile(directory, "repo", "builtin", "Acme")
+    profile = load_profile(directory.parent.parent)
+    assert profile.config["brand"] == "Acme" and profile.config["footer"] == "Acme"
+    assert profile.brand_file("logo.svg") is None
+
+
+def test_a_profile_without_extends_ignores_the_personal_profile(home: Path) -> None:
+    init_profile(personal_dir(), "personal", "builtin", "Me")
+    repo = home / "work" / "repo"
+    (repo / ".pagekit" / "profile").mkdir(parents=True)
+    (repo / ".pagekit" / "profile" / "profile.toml").write_text('name = "repo"\n')
+    profile = load_profile(repo)
+    assert profile.config["brand"] == "pagekit"
+    assert personal_dir().resolve() not in [d.resolve() for d in profile.dirs]
+
+
+def test_init_command_defaults_the_name_and_extends_builtin(home: Path, monkeypatch) -> None:
+    repo = home / "work" / "Acme Site"
+    repo.mkdir(parents=True)
+    monkeypatch.chdir(repo)
+    assert main(["init"]) == 0
+    text = (repo / ".pagekit" / "profile" / "profile.toml").read_text()
+    assert 'name = "acme-site"' in text and 'extends = "builtin"' in text and "brand" not in text
+
+
+def test_init_command_defaults_the_personal_name(home: Path, monkeypatch) -> None:
+    monkeypatch.chdir(home)
+    assert main(["init", "--personal"]) == 0
+    assert load_profile(home).name == "personal"

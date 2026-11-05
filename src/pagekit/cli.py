@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -220,17 +221,22 @@ def cmd_profile(args) -> int:
     return 0
 
 
+def _default_profile_name() -> str:
+    return re.sub(r"[^a-z0-9]+", "-", Path.cwd().name.lower()).strip("-")
+
+
 def cmd_init(args) -> int:
+    name = args.name or ("personal" if args.personal else _default_profile_name())
     if args.personal:
         directory = personal_dir()
         extends = "builtin"
     elif args.local:
-        directory = local_profile_dir(args.name)
+        directory = local_profile_dir(name)
         extends = args.extends
     else:
         directory = Path.cwd() / PROFILE_SUBDIR
         extends = args.extends
-    for path in init_profile(directory, args.name, extends, args.brand or args.name):
+    for path in init_profile(directory, name, extends, args.brand or ""):
         print(f"wrote {path}")
     if args.local:
         register_project(Path.cwd(), directory)
@@ -316,11 +322,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(fn=cmd_profile)
 
     p = sub.add_parser("init", help="scaffold a profile in .pagekit/profile here, or ~/.pagekit/profile with --personal")
-    p.add_argument("--name", required=True)
-    p.add_argument("--brand")
-    p.add_argument("--extends", default="personal")
+    p.add_argument("--name", help="default: this folder's name, or personal with --personal")
+    p.add_argument("--brand", help="name to show in the header and footer, replacing the pagekit logo (default: keep it)")
+    p.add_argument("--extends", default="builtin", help="the profile to build on: builtin, personal, or a path")
     p.add_argument("--personal", action="store_true")
-    p.add_argument("--local", action="store_true", help="personal profile for this folder: kept under ~/.pagekit, nothing added to the project")
+    p.add_argument("--local", action="store_true", help="private profile for this folder: kept under ~/.pagekit, nothing added to the project")
     p.set_defaults(fn=cmd_init)
 
     p = sub.add_parser("component", help="list, show, or save reusable components")

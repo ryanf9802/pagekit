@@ -7,6 +7,7 @@ description: Create or update a local, consistently branded HTML page with pagek
 
 The profile comes from the working directory, so run every command from the project the
 page belongs to. Do not hand-roll chrome: the profile owns the theme, header, and footer.
+To change how pages look in a project or for the user, use the `setup-profile` skill.
 
 ## Steps
 
