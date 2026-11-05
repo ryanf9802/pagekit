@@ -139,6 +139,8 @@ def _contents(attrs: dict[str, str], headings: list[Heading]) -> str:
     return "".join(parts)
 
 
+# The drawing is stretched to the width of its tile, so x runs the full width and only y has padding.
+# Strokes do not scale (see theme.css), which keeps the line even and the end dot round.
 _SPARK_W, _SPARK_H, _SPARK_PAD = 96, 28, 3
 _SPARK_MIN_POINTS, _SPARK_MAX_POINTS = 2, 60
 
@@ -157,10 +159,10 @@ def _spark(attrs: dict[str, str], headings: list[Heading]) -> str:
         raise TagError(f"<pk-spark>: values needs {_SPARK_MIN_POINTS} to {_SPARK_MAX_POINTS} numbers, e.g. values=\"3,5,4,8\"")
     low, high = min(values), max(values)
     span = high - low
-    inner_w, inner_h = _SPARK_W - 2 * _SPARK_PAD, _SPARK_H - 2 * _SPARK_PAD
+    inner_h = _SPARK_H - 2 * _SPARK_PAD
     points = []
     for index, value in enumerate(values):
-        x = _SPARK_PAD + inner_w * index / (len(values) - 1)
+        x = _SPARK_W * index / (len(values) - 1)
         y = _SPARK_PAD + inner_h * (0.5 if span == 0 else 1 - (value - low) / span)
         points.append((x, y))
     line = " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
@@ -169,9 +171,9 @@ def _spark(attrs: dict[str, str], headings: list[Heading]) -> str:
     label = attrs.get("label", "").strip()
     text = html.escape(f"{label}: {summary}" if label else f"Trend: {summary}", quote=True)
     return (
-        f'<svg class="pk-spark" viewBox="0 0 {_SPARK_W} {_SPARK_H}" width="{_SPARK_W}" height="{_SPARK_H}" '
+        f'<svg class="pk-spark" viewBox="0 0 {_SPARK_W} {_SPARK_H}" height="{_SPARK_H}" preserveAspectRatio="none" '
         f'role="img" aria-label="{text}"><polyline class="pk-spark-line" points="{line}"/>'
-        f'<circle class="pk-spark-end" cx="{end_x:.1f}" cy="{end_y:.1f}" r="2.5"/></svg>'
+        f'<line class="pk-spark-end" x1="{end_x:.1f}" y1="{end_y:.1f}" x2="{end_x:.1f}" y2="{end_y:.1f}"/></svg>'
     )
 
 

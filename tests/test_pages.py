@@ -435,14 +435,14 @@ def test_pages_without_tags_get_no_generated_ids(home: Path) -> None:
 def test_spark_tag_draws_an_accessible_line_scaled_to_its_values(home: Path) -> None:
     body = '<div class="pk-kpi"><pk-spark values="1, 3,2" label="Builds"></pk-spark></div>'
     document = make(load_profile(), body=body).index.read_text()
-    assert '<polyline class="pk-spark-line" points="3.0,25.0 48.0,3.0 93.0,14.0"/>' in document
+    assert '<polyline class="pk-spark-line" points="0.0,25.0 48.0,3.0 96.0,14.0"/>' in document
     assert 'role="img" aria-label="Builds: 3 points, from 1 to 2, low 1, high 3"' in document
-    assert '<circle class="pk-spark-end" cx="93.0" cy="14.0"' in document and "pk-spark>" not in document
+    assert '<line class="pk-spark-end" x1="96.0" y1="14.0" x2="96.0" y2="14.0"/>' in document and "pk-spark>" not in document
 
 
 def test_spark_tag_draws_a_flat_line_when_every_value_is_the_same(home: Path) -> None:
     document = make(load_profile(), body='<pk-spark values="5,5,5"></pk-spark>').index.read_text()
-    assert 'points="3.0,14.0 48.0,14.0 93.0,14.0"' in document and 'aria-label="Trend: ' in document
+    assert 'points="0.0,14.0 48.0,14.0 96.0,14.0"' in document and 'aria-label="Trend: ' in document
 
 
 @pytest.mark.parametrize(
