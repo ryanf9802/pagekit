@@ -60,6 +60,20 @@ pagekit refuses a two slice pie.
   values to the axis and the table.
 - Bars are at most 24 units thick with a rounded end, lines are 2px, and the chart scales down to a phone's width.
 
+## Tooltips and full screen
+
+There is nothing to set. Every chart works in three ways:
+
+- **Point or tap** to see the exact values. The tooltip shows the label under the pointer with every series' value, and
+  a band marks that spot. On a touch screen a tap shows it and stays until the next tap.
+- **Keyboard:** Tab to the chart, then Left and Right (or Up and Down) step through the values, Home and End jump to the
+  first and last, and Esc hides the tooltip. Each step is read out by a screen reader. The data table below the chart
+  has the same values for anyone who prefers to read them.
+- **Full screen:** the button at a chart's top right opens it large, with its legend. Tap or click it to zoom, use the
+  arrows or swipe to move between the page's charts, images, and diagrams, and press Esc to leave. Tooltips work there too.
+
+A page without scripts, a print, and a PDF show the plain chart, with no tooltips or button.
+
 ## Side by side
 
 Put two or three charts in the grid component to show them in a row. They sit side by side when there is room, and

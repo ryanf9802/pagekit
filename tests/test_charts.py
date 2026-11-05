@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from html.parser import HTMLParser
 from importlib import resources
 from pathlib import Path
 
@@ -169,6 +170,75 @@ def test_every_chart_type_starts_its_plot_at_the_same_height_so_a_row_of_them_li
     # A single series bar chart prints its values above the bars, so it must not be the one that needs headroom.
     tops = {name: top(KINDS[name]) for name in ("bar", "horizontal", "line", "area", "scatter")}
     assert len(set(tops.values())) == 1, tops
+
+
+class _Tips(HTMLParser):
+    """Collects each data-tip the way a browser reads it, so escaping mistakes show up as wrong text."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.tips: list[dict] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        for name, value in attrs:
+            if name == "data-tip":
+                self.tips.append(json.loads(value or ""))
+
+
+def tips(chart: str) -> list[dict]:
+    parser = _Tips()
+    parser.feed(chart)
+    return parser.tips
+
+
+def test_every_chart_type_gives_each_mark_the_text_its_tooltip_shows(home: Path) -> None:
+    counts = {name: len(tips(figure(build(KINDS[name])))) for name in KINDS}
+    # One target for each label (bars, lines, areas), each point (scatter), and each slice (pie).
+    assert counts == {"bar": 3, "horizontal": 3, "line": 3, "area": 3, "scatter": 3, "pie": 3}
+
+
+def test_a_tooltip_names_the_label_and_gives_each_series_its_value_with_the_unit(home: Path) -> None:
+    first = tips(figure(build(LINE)))[0]
+    assert first == {"t": "W1", "r": [["Median", "3.9 s", 1], ["Slowest", "7.2 s", 2]]}
+
+
+def test_a_scatter_tooltip_gives_the_series_and_both_values_and_a_pie_tooltip_the_share(home: Path) -> None:
+    assert tips(figure(build(SCATTER)))[0] == {"t": "Pages", "r": [["X", "40", 0], ["Y", "2.9", 0]], "s": 1}
+    assert tips(figure(build(PIE)))[0] == {"t": "Default", "r": [["Pages", "107", 1], ["Share", "50%", 0]]}
+
+
+def test_tooltip_text_from_the_file_survives_quotes_angle_brackets_and_ampersands(home: Path) -> None:
+    spec = {**BAR, "labels": ['say "hi" <b> & more', "b", "c"], "series": [{"name": 'a"b', "values": [1, 2, 3]}]}
+    chart = figure(build(spec))
+    assert tips(chart)[0] == {"t": 'say "hi" <b> & more', "r": [['a"b', "1", 1]]}
+    assert "<b>" not in chart
+
+
+def test_a_tooltip_target_is_a_transparent_shape_that_draws_nothing_of_its_own(home: Path) -> None:
+    chart = figure(build(LINE))
+    assert re.search(r'<g class="pk-chart-point"><line class="pk-chart-cross" [^>]*/><rect class="pk-chart-hit" ', chart)
+    # Bars have no crosshair, and every shape is styled by class, so the drawing sets no color.
+    assert "pk-chart-cross" not in figure(build(BAR))
+    assert not re.search(r'\b(?:fill|stroke|style)="', chart)
+
+
+def test_a_chart_can_take_focus_and_open_full_screen(home: Path) -> None:
+    chart = figure(build(BAR))
+    assert re.search(r'<svg class="pk-chart-svg" [^>]*role="img" tabindex="0"', chart)
+    assert re.search(r'<button type="button" class="pk-chart-expand" aria-label="Open the chart full screen"><svg ', chart)
+
+
+def test_the_page_script_shows_tooltips_and_adds_charts_to_the_full_screen_view(home: Path) -> None:
+    document = build(BAR)
+    for text in ('className = "pk-tip"', '"[data-tip]"', ".pk-chart-expand", 'PREVIEWABLE + ", .pk-chart-svg"', '"pk-chart-on"'):
+        assert text in document
+
+
+def test_the_theme_hides_the_tooltip_and_expand_button_in_print_and_styles_the_active_mark() -> None:
+    theme = resources.files("pagekit").joinpath("profile_default/theme.css").read_text(encoding="utf-8")
+    assert re.search(r"@media print \{.*?\.pk-chart-expand, \.pk-tip \{ display: none; \}", theme, re.DOTALL)
+    # The script alone marks the active target, so a resting mouse never leaves a second highlight.
+    assert ".pk-chart-point.pk-chart-on .pk-chart-hit {" in theme and ":hover" not in re.search(r"\.pk-chart-hit \{.*?\n\.pk-chart-expand", theme, re.DOTALL).group(0)
 
 
 def test_a_unit_keeps_its_leading_space_on_the_axis_and_in_the_table(home: Path) -> None:

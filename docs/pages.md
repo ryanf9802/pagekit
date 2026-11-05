@@ -24,7 +24,8 @@ lacks them, so a page holds its layout while lazy images load. Images still scal
 
 Any image or diagram opens full screen when clicked or tapped, with no setup. Tap again to zoom, use the
 arrows or swipe to move between them, and press Esc, the close button, or the phone's back button to leave.
-Images inside a link keep following the link.
+Images inside a link keep following the link. A [chart](charts.md#tooltips-and-full-screen) opens from the button at its
+top right instead, since a tap on a chart shows its tooltip.
 
 ## Checks
 
