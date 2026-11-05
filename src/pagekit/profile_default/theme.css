@@ -527,6 +527,8 @@ td > .pk-choices, th > .pk-choices { margin: -3px 0; }
 
 /* Hover and focus. The targets are transparent until pointed at, so a chart is the plain drawing without the script. */
 .pk-chart { position: relative; }
+/* A click or tap focuses the chart too, and the browser would box it. Only keyboard focus gets the ring. */
+.pk-chart-svg:focus { outline: none; }
 .pk-chart-svg:focus-visible { outline: 2px solid var(--pk-accent); outline-offset: 2px; border-radius: var(--pk-radius-small); }
 .pk-chart-hit { fill: transparent; stroke: none; }
 .pk-chart-cross { stroke: var(--pk-muted); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: 0; pointer-events: none; }

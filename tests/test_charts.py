@@ -241,6 +241,13 @@ def test_the_theme_hides_the_tooltip_and_expand_button_in_print_and_styles_the_a
     assert ".pk-chart-point.pk-chart-on .pk-chart-hit {" in theme and ":hover" not in re.search(r"\.pk-chart-hit \{.*?\n\.pk-chart-expand", theme, re.DOTALL).group(0)
 
 
+def test_a_click_on_a_chart_leaves_no_focus_box_but_keyboard_focus_still_gets_a_ring() -> None:
+    theme = resources.files("pagekit").joinpath("profile_default/theme.css").read_text(encoding="utf-8")
+    plain_focus = theme.index(".pk-chart-svg:focus { outline: none; }")
+    # The ring rule must come later, so it wins when both match: that is a keyboard focus.
+    assert plain_focus < theme.index(".pk-chart-svg:focus-visible { outline: 2px solid var(--pk-accent);")
+
+
 def test_a_unit_keeps_its_leading_space_on_the_axis_and_in_the_table(home: Path) -> None:
     chart = figure(build(LINE))
     assert ">3 s</text>" in chart and "<td>3.9 s</td>" in chart
