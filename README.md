@@ -73,14 +73,8 @@ Then give your agent the skills in the clone's `src/pagekit/skills`, and ask it 
 
 ## Set up a profile
 
-Once pagekit is set up, ask your agent from the folder you want to brand:
-
-```text
-Set up a pagekit profile for this repo.
-Set up my personal pagekit profile.
-```
-
-A repo profile applies in that repo, and a personal profile applies wherever no other profile does. To do it by
+Once pagekit is set up, ask your agent to set up a pagekit profile, either for the repo you're in or a personal one for
+you. A repo profile applies in that repo, and a personal profile applies wherever no other profile does. To do it by
 hand, see [Profiles](docs/profiles.md).
 
 ## Stay up to date
