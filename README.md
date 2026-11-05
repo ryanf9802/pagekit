@@ -21,14 +21,20 @@ the same designer, works offline, prints well, and reads well on a phone.
 Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/).
 
 ```bash
+# Install from a clone, and keep the clone: the command runs from it.
+git clone https://github.com/ryanf9802/pagekit.git
+cd pagekit
 uv tool install --editable .
+
+# Create your profile, from anywhere.
 pagekit init --personal --name personal --brand "Your Name"
 
+# Make a page, from anywhere.
 pagekit new hello --title "Hello"     # prints the file to write and the house rules
 pagekit build hello                   # composes the page and checks it
 ```
 
-Then give your agent the skill in `src/pagekit/skills/create-page`, and ask it for a page.
+Then give your agent the skill in the clone's `src/pagekit/skills/create-page`, and ask it for a page.
 
 ## Documentation
 

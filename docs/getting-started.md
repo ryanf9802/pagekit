@@ -5,11 +5,16 @@ only [diagrams](diagrams.md) and [generated PDFs](printing.md#bookmarked-pdfs) u
 
 ## Install
 
-From a clone of this repository, install the command with [uv](https://docs.astral.sh/uv/):
+Clone the repository, then install the command from inside it with [uv](https://docs.astral.sh/uv/):
 
 ```bash
+git clone https://github.com/ryanf9802/pagekit.git
+cd pagekit
 uv tool install --editable .
 ```
+
+Keep the clone where it is: an editable install runs from it, so `git pull` there updates pagekit. After this,
+`pagekit` works from any directory.
 
 ## Create your profile
 
@@ -23,7 +28,7 @@ pagekit init --personal --name personal --brand "Your Name"
 
 ## Connect your agent
 
-The `create-page` skill teaches an agent the workflow. Link it into your agent's skills folder:
+The `create-page` skill teaches an agent the workflow. From the clone, link it into your agent's skills folder:
 
 ```bash
 ln -s "$PWD/src/pagekit/skills/create-page" YOUR_AGENT_SKILLS_FOLDER/create-page
