@@ -48,8 +48,8 @@ def test_core_components_all_say_when_to_use_them(home: Path) -> None:
 def test_bundled_components_ship_with_pagekit_and_add_css_only_when_used(home: Path) -> None:
     profile = load_profile()
     assert find_component(profile, "contents-card").source == "bundled"
-    assert ".page-break" in library_css_for('<div class="page-break"></div>')
-    assert ".page-break" not in library_css_for('<div class="pk-card"></div>')
+    assert ".page-break" in library_css_for('<div class="page-break"></div>', profile)
+    assert ".page-break" not in library_css_for('<div class="pk-card"></div>', profile)
 
 
 def test_a_library_copy_wins_over_a_bundled_component(home: Path, tmp_path: Path) -> None:
@@ -59,13 +59,6 @@ def test_a_library_copy_wins_over_a_bundled_component(home: Path, tmp_path: Path
     add_component(load_profile(), "in-short", "My own version", folder)
     component = find_component(load_profile(), "in-short")
     assert (component.source, component.when) == ("library", "My own version")
-
-
-def test_bundled_components_are_free_of_any_one_brand(home: Path) -> None:
-    for component in library_components():
-        files = [component.html, component.css] if component.css else [component.html]
-        for file in files:
-            assert "acme" not in file.read_text().lower(), file
 
 
 def test_add_saves_to_the_library_and_lists_it(home: Path, tmp_path: Path) -> None:

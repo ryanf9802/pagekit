@@ -140,3 +140,18 @@ def test_index_can_be_installed_as_an_app(home: Path, port: int) -> None:
     for icon in manifest["icons"]:
         status, body, response = request(port, icon["src"])
         assert status == 200 and response.headers["Content-Type"] == "image/png" and body.startswith(b"\x89PNG")
+
+
+def test_index_uses_the_same_chrome_as_a_page(home: Path, port: int) -> None:
+    built_page(home)
+    page = request(port, "/p/default/demo/")[1].decode()
+    index = request(port, "/")[1].decode()
+    for document in (page, index):
+        assert '<header class="pk-header"><div class="pk-bar">' in document
+        assert '<span class="pk-header-title">' in document
+        assert "Made with pagekit" in document and "window.pagekit" in document
+        assert 'id="pk-export" class="pk-button" hidden' in document
+    # Only the shared theme sizes the logo, and the index's own inputs are not state to copy.
+    assert ".pk-header .pk-logo" not in index and ".pk-header .pk-wordmark" not in index
+    assert '<div class="ix-controls" data-pk-ignore>' in index
+    assert "<span>Updated " in page and "<span>Updated " not in index

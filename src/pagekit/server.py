@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import base64
 import json
 import mimetypes
 import re
@@ -13,9 +12,9 @@ from importlib import resources
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from .pages import SAVED_DIR, PageError, iter_pages, list_saved, load_page_dir, logo_html, pages_root, prune_pages, public_url
+from .pages import SAVED_DIR, PageError, iter_pages, list_saved, load_page_dir, pages_root, prune_pages, public_url, render_index
 from .pdf import find_chrome, render_pdf
-from .profiles import builtin_dir, load_profile
+from .profiles import load_profile
 
 _LOCAL_HOST = re.compile(r"^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$")
 _PAGE_PATH = re.compile(r"^/p/([a-z0-9-]+)/([a-z0-9-]+)(/.*)?$")
@@ -32,16 +31,6 @@ _PDF_PATH = re.compile(r"^/api/pdf/([a-z0-9-]+)/([a-z0-9-]+)$")
 _MAX_STATE_BYTES = 2_000_000
 
 
-def _index_html() -> bytes:
-    template = resources.files("pagekit").joinpath("static/index.html").read_text(encoding="utf-8")
-    mark = "data:image/svg+xml;base64," + base64.b64encode((builtin_dir() / "favicon.svg").read_bytes()).decode()
-    # The index lists pages from every profile, so it always carries pagekit's own brand.
-    builtin = load_profile(override="builtin")
-    theme = f"{builtin.fonts()}\n{builtin.theme()}"
-    logo = logo_html(builtin, str(builtin.config.get("brand", "")))
-    return template.replace("{{theme}}", theme).replace("{{mark}}", mark).replace("{{logo}}", logo).encode()
-
-
 def _resolve_page_file(profile: str, slug: str, relative: str) -> Path | None:
     if profile == SAVED_DIR:
         return None
@@ -55,7 +44,8 @@ def _resolve_page_file(profile: str, slug: str, relative: str) -> Path | None:
 
 
 def make_handler():
-    index = _index_html()
+    # The index lists pages from every profile, so it always carries pagekit's own brand.
+    index = render_index(load_profile(override="builtin", overrides=False)).encode()
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "pagekit"

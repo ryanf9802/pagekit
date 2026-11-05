@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -35,7 +36,9 @@ from .pages import (
     set_public_url,
 )
 from .pdf import render_pdf
+from .update import UpdateError, pending_commits, update
 from .profiles import (
+    EXTRA_PROFILES_SUBDIR,
     PROFILE_SUBDIR,
     Profile,
     ProfileError,
@@ -45,6 +48,7 @@ from .profiles import (
     personal_dir,
     projects_file,
     register_project,
+    repo_profiles,
 )
 
 
@@ -54,7 +58,13 @@ def _profile(args) -> Profile:
 
 def _print_profile(profile: Profile) -> None:
     print(f"profile: {profile.name}")
-    print("layers: " + " > ".join(str(d) for d in profile.dirs))
+    if profile.config.get("when"):
+        print(f"when: {profile.config['when']}")
+    print(f"folder: {profile.nearest}")
+    print("layers: " + " > ".join(str(d) for d in profile.dirs[: len(profile.dirs) - len(profile.overrides)]))
+    if profile.overrides:
+        print("overrides: " + " > ".join(str(d) for d in profile.overrides))
+    _print_other_profiles(profile)
     print("theme tokens: " + ", ".join(profile.tokens()))
     print("components (pagekit component show NAME):")
     for component in list_components(profile):
@@ -64,6 +74,22 @@ def _print_profile(profile: Profile) -> None:
         print("\n--- profile instructions ---")
         print(instructions)
         print("--- end instructions ---")
+
+
+def _print_other_profiles(profile: Profile) -> None:
+    offered = {name: load_profile(override=str(path), overrides=False) for name, path in repo_profiles().items()}
+    # A profile others build on, with no guidance of its own, is a shared base rather than a choice.
+    bases = {layer for other in offered.values() for layer in other.dirs[:-1]}
+    others = {
+        name: other
+        for name, other in offered.items()
+        if name != profile.name and (other.config.get("when") or other.dirs[-1] not in bases)
+    }
+    if not others:
+        return
+    print("other profiles here (choose by when to use each, then add --profile NAME to every command for the page):")
+    for name, other in others.items():
+        print(f"  {name}: {other.config.get('when') or 'no guidance yet: add when to its profile.toml'}")
 
 
 def _print_location(page: Page) -> None:
@@ -238,17 +264,28 @@ def cmd_font_add(args) -> int:
     return 0
 
 
+def _default_profile_name() -> str:
+    return re.sub(r"[^a-z0-9]+", "-", Path.cwd().name.lower()).strip("-")
+
+
 def cmd_init(args) -> int:
+    name = args.name or ("personal" if args.personal else _default_profile_name())
     if args.personal:
         directory = personal_dir()
         extends = "builtin"
     elif args.local:
-        directory = local_profile_dir(args.name)
+        directory = local_profile_dir(name)
+        extends = args.extends
+    elif args.also:
+        if not args.name:
+            print("error: --also needs --name", file=sys.stderr)
+            return 1
+        directory = Path.cwd() / EXTRA_PROFILES_SUBDIR / name
         extends = args.extends
     else:
         directory = Path.cwd() / PROFILE_SUBDIR
         extends = args.extends
-    for path in init_profile(directory, args.name, extends, args.brand or args.name):
+    for path in init_profile(directory, name, extends, args.brand or "", args.when or ""):
         print(f"wrote {path}")
     if args.local:
         register_project(Path.cwd(), directory)
@@ -281,6 +318,36 @@ WantedBy=default.target
 """
 
 
+def cmd_update(args) -> int:
+    try:
+        if args.check:
+            commits = pending_commits()
+            for commit in commits:
+                print(f"  {commit}")
+            print(f"{len(commits)} update(s) available: run pagekit update" if commits else "pagekit is up to date")
+            return 0
+        result = update()
+    except UpdateError as exc:
+        print(f"pagekit: {exc}", file=sys.stderr)
+        return 1
+    if not result.commits:
+        print("pagekit is up to date")
+        return 0
+    print(f"updated pagekit with {len(result.commits)} change(s):")
+    for commit in result.commits:
+        print(f"  {commit}")
+    if result.reinstalled:
+        print("reinstalled, because its dependencies changed")
+    for skill in result.new_skills:
+        print(f"new skill, link it for your agent: {skill}")
+    if result.server == "restarted":
+        print("restarted the server")
+    elif result.server:
+        print("the server is still running the old version: restart it")
+    print("pages already built keep their old look until you run pagekit build SLUG")
+    return 0
+
+
 def cmd_install_service(args) -> int:
     if not shutil.which("systemctl"):
         raise PageError("install-service needs systemd: use pagekit serve, or start it at login (see docs/serving.md)")
@@ -299,7 +366,7 @@ def cmd_install_service(args) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="pagekit", description=__doc__)
     sub = parser.add_subparsers(dest="cmd", required=True)
-    profile_help = "personal, builtin, or a profile directory (default: nearest to the working directory)"
+    profile_help = "personal, builtin, a profile this repo offers, or a directory (default: nearest to the working directory)"
 
     def page_command(name: str, fn, help_text: str) -> argparse.ArgumentParser:
         p = sub.add_parser(name, help=help_text)
@@ -334,11 +401,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(fn=cmd_profile)
 
     p = sub.add_parser("init", help="scaffold a profile in .pagekit/profile here, or ~/.pagekit/profile with --personal")
-    p.add_argument("--name", required=True)
-    p.add_argument("--brand")
-    p.add_argument("--extends", default="personal")
+    p.add_argument("--name", help="default: this folder's name, or personal with --personal")
+    p.add_argument("--brand", help="name to show in the header and footer, replacing the pagekit logo (default: keep it)")
+    p.add_argument("--extends", default="builtin", help="the profile to build on: builtin, personal, or a path")
+    p.add_argument("--when", help="when to use this profile, shown to agents choosing between profiles")
+    p.add_argument("--also", action="store_true", help="another profile for this repo, in .pagekit/profiles/NAME")
     p.add_argument("--personal", action="store_true")
-    p.add_argument("--local", action="store_true", help="personal profile for this folder: kept under ~/.pagekit, nothing added to the project")
+    p.add_argument("--local", action="store_true", help="private profile for this folder: kept under ~/.pagekit, nothing added to the project")
     p.set_defaults(fn=cmd_init)
 
     p = sub.add_parser("component", help="list, show, or save reusable components")
@@ -373,6 +442,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("query", nargs="+")
     p.add_argument("--profile", help=profile_help)
     p.set_defaults(fn=cmd_icons)
+
+    p = sub.add_parser("update", help="update pagekit from its clone, and restart the server if needed")
+    p.add_argument("--check", action="store_true", help="list what an update would bring in, and change nothing")
+    p.set_defaults(fn=cmd_update)
 
     p = sub.add_parser("serve", help="run the optional page index")
     p.add_argument("--host", default="127.0.0.1")

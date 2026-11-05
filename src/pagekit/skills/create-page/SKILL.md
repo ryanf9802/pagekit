@@ -7,6 +7,7 @@ description: Create or update a local, consistently branded HTML page with pagek
 
 The profile comes from the working directory, so run every command from the project the
 page belongs to. Do not hand-roll chrome: the profile owns the theme, header, and footer.
+To change how pages look in a project or for the user, use the `setup-profile` skill.
 
 ## Steps
 
@@ -17,7 +18,9 @@ page belongs to. Do not hand-roll chrome: the profile owns the theme, header, an
    ```
 
    Read everything it prints. It names the file to write, the theme tokens, the
-   components to use, and the profile's rules, which you must follow.
+   components to use, and the profile's rules, which you must follow. If it lists other
+   profiles here, pick the one whose `when` fits the page, without asking, and add
+   `--profile NAME` to every command for that page.
 
 2. Write the page body to the printed `content.html`, and put images in `assets/`.
    Use `--mode free` on a new page only for something bespoke that the shell gets in the
@@ -54,7 +57,7 @@ only to improve a component in a way that suits every page using it.
 
 ## Collecting input
 
-Every page has a footer button that copies the state of every control. To get answers from
+A page with controls or comments has a footer button that copies their state. To get answers from
 the user, add controls with stable names keyed to item IDs (the `decision-card` component),
 then tell them to press the button and paste the result.
 

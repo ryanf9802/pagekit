@@ -52,7 +52,7 @@ def test_build_composes_a_self_contained_page(home: Path) -> None:
     document = page.index.read_text()
     assert page.dir == home / "pages" / "default" / "demo"
     assert "<title>Demo</title>" in document and "<p>Hello</p>" in document and "--pk-accent" in document
-    assert 'id="pk-export"' in document and "window.pagekit" in document
+    assert 'id="pk-export" class="pk-button" hidden' in document and "window.pagekit" in document
     assert 'class="pk-summary">One line' in document
     assert check_page(profile, page).ok
 
@@ -393,7 +393,8 @@ def test_a_read_only_profile_hides_the_copy_button_and_comments(home: Path) -> N
 
 def test_pages_are_interactive_by_default(home: Path) -> None:
     document = make(load_profile()).index.read_text()
-    assert 'id="pk-export" class="pk-button">' in document
+    # export.js shows the button once there is something to copy.
+    assert 'id="pk-export"' in document and "refreshExportButton" in document
     assert '"readonly"' not in document
 
 
@@ -721,3 +722,32 @@ def test_save_updates_its_own_copy_but_never_another_file(home: Path) -> None:
     with pytest.raises(PageError, match="different page"):
         save_page(profile, page)
     assert first.path.read_text() == "someone else's file"
+
+
+def test_profile_component_css_reaches_only_the_pages_that_use_it(home: Path) -> None:
+    directory = home / ".pagekit" / "profile"
+    init_profile(directory, "personal", "builtin", "Me")
+    (directory / "components").mkdir()
+    (directory / "components" / "notice.html").write_text('<!-- A notice. --><div class="notice">Hi</div>')
+    (directory / "components" / "notice.css").write_text(".notice { color: var(--pk-accent); }")
+    profile = load_profile()
+    used = make(profile, slug="uses", body='<div class="notice">Hi</div>')
+    assert ".notice { color" in used.index.read_text()
+    assert "notice" not in " ".join(check_page(profile, used).warnings)
+    unused = make(profile, slug="plain", body="<p>Hi</p>")
+    assert ".notice { color" not in unused.index.read_text()
+
+
+def test_check_command_can_point_into_its_profile(home: Path) -> None:
+    directory = home / "work" / "repo" / ".pagekit" / "profile"
+    init_profile(directory, "repo", "builtin", "Acme")
+    (directory / "checks").mkdir()
+    script = directory / "checks" / "lint.py"
+    script.write_text('import sys\nprint("checked " + sys.argv[0])\nsys.exit(1)\n')
+    (directory / "profile.toml").write_text(
+        'name = "repo"\nextends = "builtin"\n[checks]\ncommand = ["python3", "{profile}/checks/lint.py"]\n'
+    )
+    profile = load_profile(directory.parent.parent)
+    page = make(profile)
+    assert f"checked {script.resolve()}" in errors(profile, page)
+

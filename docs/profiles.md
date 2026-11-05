@@ -7,22 +7,65 @@ any of it to make pages entirely yours.
 ## Choosing a profile
 
 The profile comes from where the agent works, never from an account. pagekit walks up from the working
-directory to the nearest `.pagekit/profile/` or folder mapped in `~/.pagekit/projects.toml`, which under the
-home folder ends at `~/.pagekit/profile/`. Git worktrees nested inside a repository find its profile the same
-way. Override with `--profile` or `$PAGEKIT_PROFILE`.
+directory to the nearest `.pagekit/profile/` or folder mapped in `~/.pagekit/projects.toml`. With neither, it uses
+your personal profile at `~/.pagekit/profile/` if you have one, and otherwise the built-in profile. Git worktrees
+nested inside a repository find its profile the same way. Override with `--profile` or `$PAGEKIT_PROFILE`.
 
 Run `pagekit profile` to see which profile applies and what it is made of.
 
 ## Creating one
 
+To have an agent do this, ask it to "set up a pagekit profile for this repo" or to "set up my personal pagekit
+profile". It uses the `setup-profile` skill. By hand, from the folder the profile is for:
+
 ```bash
 cd ~/workspace/acme
-pagekit init --name acme --brand "Acme"           # .pagekit/profile here: commit it to share with a team
-pagekit init --name acme --brand "Acme" --local   # or kept in ~/.pagekit/profiles/acme, nothing in the project
+pagekit init --brand "Acme"           # .pagekit/profile here: commit it to share with a team
+pagekit init --brand "Acme" --local   # or kept in ~/.pagekit/profiles/acme, nothing in the project
+pagekit init --personal               # ~/.pagekit/profile, used wherever no other profile applies
 ```
 
-A profile extends `personal` by default, which falls back to the built-in profile for people who have no
-personal one. Use `--extends builtin` to start clean.
+`init` writes only what you ask for. The name defaults to the folder's name, and without `--brand` the profile keeps
+the pagekit logo and footer. A profile extends the built-in profile by default, so a committed profile looks the same
+for everyone. Use `--extends personal` to build on your personal profile instead, which falls back to the built-in
+profile for people who have none.
+
+## More than one profile in a repo
+
+A repo can offer several, such as one for internal pages and one for customer documents. `.pagekit/profile/` stays the
+default, and the rest go in `.pagekit/profiles/`:
+
+```bash
+pagekit init --also --name acme-public --when "Customer or public facing documents"
+```
+
+Give every profile a `when` in its `profile.toml`. `pagekit new` and `pagekit profile` print the other choices with their
+`when`, and agents use that to pick one without asking. A profile that others extend and that has no `when` is treated
+as a shared base, so it is not offered. Select one by name from anywhere in the repo:
+
+```bash
+pagekit new report --profile acme-public
+```
+
+## Overrides
+
+Some settings belong to one machine: a command only you have, or a folder in your home. A committed profile cannot hold
+those, so they live outside the repo and pagekit layers them on top of whichever profile applies:
+
+```text
+~/.pagekit/overrides/all/       every profile
+~/.pagekit/overrides/acme/      only the profile named acme
+```
+
+Because they are keyed by profile name and never in the repo, they cannot be committed by accident, need no `.gitignore`
+entry, and work in every worktree and clone.
+
+An override can hold only `profile.toml` with `[save]` or `[send]`, `SAVE.md`, and `INSTRUCTIONS.md`, whose rules are
+added to the profile's. pagekit refuses anything else, so an override cannot change how a shared profile looks or
+remove a check it requires. `pagekit profile` lists any that apply.
+
+A profile in a repo that names a path on this machine gets a warning on every build, as that path will not exist for
+teammates.
 
 ## Files
 
@@ -39,7 +82,7 @@ personal one. Use `--extends builtin` to start clean.
 | `logo-print.png` | The full logo as one image for print, which saves about 3 to 5 KB per PDF sheet over a vector logo | Nearest wins |
 | `wordmark.svg` | Drawn name beside the icon, replacing the typed `brand`; dark ink, inverted to white in dark mode | Nearest wins |
 | `icons/` | [Your own icons](icons.md#your-own-icons) | Nearest wins, by name |
-| `components/*.html` | Components specific to this profile; prefer the [shared ones](components.md) | Nearest wins, by name |
+| `components/*.html`, `components/*.css` | Components specific to this profile, with optional styles included only on pages that use them; prefer the [shared ones](components.md) | Nearest wins, by name |
 | `SAVE.md` | Steps printed after `pagekit save`, such as writing a matching document | Nearest wins |
 
 ## The default brand
@@ -47,11 +90,15 @@ personal one. Use `--extends builtin` to start clean.
 With no profile, pages carry the pagekit logo, name, and ember colors. Every part can be overridden:
 
 - **Colors and type** inherit like any theme. Redefine `--pk-*` tokens in `theme.css`, for light and dark, and the
-  rest stays. A profile that sets no colors of its own keeps ember; `pagekit init` writes a placeholder blue to edit.
+  rest stays. A profile that sets no colors of its own keeps ember.
 - **The logo goes as a set.** A profile that sets its own `brand`, or adds any logo file, gets none of pagekit's
   logo, wordmark, print logo, or tab icon, so "Acme" never appears beside the pagekit mark. Set `brand = ""` to show
   no name or logo at all.
-- **The footer** reads "Made with pagekit" until a profile sets `footer`. `pagekit init` sets it to the brand.
+- **The footer** reads "Made with pagekit" until a profile sets `footer`. `pagekit init --brand` sets it to the brand.
+- **The header and footer** are the same on every page, and a profile changes them in one place. Restyle them in
+  `theme.css`, such as `.pk-logo { width: 30px; height: 30px; }`, or replace the layout in `template.html`.
+- **The page index** at the server root uses the same header and footer with the built-in profile, because it lists
+  pages from every profile.
 
 | Color | Light | Dark |
 | --- | --- | --- |
@@ -70,7 +117,8 @@ drawn as outlines. Source files for other uses are in [`docs/brand/`](brand/), a
 | Key in `profile.toml` | Meaning |
 | --- | --- |
 | `name` | The profile's name, and its folder under the pages root |
-| `extends` | The profile to build on: `personal`, `builtin`, or a path |
+| `extends` | The profile to build on: `builtin` (the default), `personal`, or a path |
+| `when` | One line on which pages this profile is for, which agents use to [choose between profiles](#more-than-one-profile-in-a-repo) |
 | `brand` | Name in the header, unless `wordmark.svg` replaces it |
 | `footer` | Footer text, required on every page |
 | `copyright` | Adds a copyright notice for this holder to the footer |
@@ -117,6 +165,9 @@ A profile can require its own check on every `pagekit build` and `pagekit check`
 [checks]
 command = ["python3", "/path/to/lint.py"]
 ```
+
+To keep the script with a profile in a repo, write `{profile}/checks/lint.py`, which points to the folder of the
+profile that sets the command.
 
 The command runs without a shell, in the page's folder, with the built `index.html` and the page folder as its
 last two arguments. A non-zero exit prints its output as errors and fails the command. A failed build keeps

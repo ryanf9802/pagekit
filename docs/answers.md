@@ -1,7 +1,8 @@
 # Answers and comments
 
 A page can collect input as well as show information. The reader answers on the page, presses **Copy state** in
-the footer, and pastes the result to the agent.
+the footer, and pastes the result to the agent. The button shows only when there is something to copy: a control, a
+registered widget, or a comment. Collapsible sections alone do not count.
 
 ## What gets copied
 

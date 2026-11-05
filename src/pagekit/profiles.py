@@ -17,8 +17,9 @@ from importlib import resources
 from pathlib import Path
 
 PROFILE_SUBDIR = Path(".pagekit") / "profile"
+EXTRA_PROFILES_SUBDIR = Path(".pagekit") / "profiles"
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,80}$")
-RESERVED_NAMES = {"saved"}
+RESERVED_NAMES = {"saved", "all"}
 TOKEN_RE = re.compile(r"(--pk-[a-z0-9-]+)\s*:")
 FONT_TOKEN_RE = re.compile(r"--pk-font\s*:")
 MONO_TOKEN_RE = re.compile(r"--pk-mono\s*:")
@@ -26,6 +27,10 @@ BRAND_FILE_LIMIT_BYTES = 40 * 1024
 FONTS_LIMIT_BYTES = 200 * 1024
 _SLIM_ADVICE = {False: "use a simpler file", True: "embed fewer weights"}
 BRAND_FILES = ("logo.svg", "logo-dark.svg", "wordmark.svg", "logo-print.png", "favicon.svg")
+# Overrides change how pagekit behaves on one machine, never how a page looks or what it must pass.
+OVERRIDE_KEYS = {"save", "send"}
+OVERRIDE_FILES = {"profile.toml", "INSTRUCTIONS.md", "SAVE.md"}
+_MACHINE_PATH_RE = re.compile(r"(?<![\w./-])(?:~/|/home/|/Users/|/mnt/[a-z]/|[A-Za-z]:\\)")
 
 
 class ProfileError(Exception):
@@ -58,6 +63,10 @@ def _read_toml(directory: Path) -> dict:
         return {}
     except tomllib.TOMLDecodeError as exc:
         raise ProfileError(f"{path}: {exc}") from exc
+
+
+def overrides_dir() -> Path:
+    return Path.home() / ".pagekit" / "overrides"
 
 
 def projects_file() -> Path:
@@ -112,6 +121,24 @@ def find_profile_dir(cwd: Path | None = None) -> Path:
     return builtin_dir()
 
 
+def repo_profiles(cwd: Path | None = None) -> dict[str, Path]:
+    """Every profile a repo offers, by name: its default and those in .pagekit/profiles."""
+    start = (cwd or Path.cwd()).resolve()
+    home = Path.home().resolve()
+    for directory in (start, *start.parents):
+        # The home folder's .pagekit/profiles is a private store, not choices for this folder.
+        if directory == home:
+            break
+        default = directory / PROFILE_SUBDIR
+        extras = directory / EXTRA_PROFILES_SUBDIR
+        candidates = [default] if (default / "profile.toml").is_file() else []
+        if extras.is_dir():
+            candidates += sorted(path for path in extras.iterdir() if (path / "profile.toml").is_file())
+        if candidates:
+            return {str(_read_toml(path).get("name", path.name)): path for path in candidates}
+    return {}
+
+
 def _resolve_extends(value: str, directory: Path) -> Path:
     if value == "builtin":
         return builtin_dir()
@@ -137,21 +164,32 @@ def _chain(nearest: Path) -> list[Path]:
         chain.append(resolved)
         if resolved == builtin_dir().resolve():
             break
-        default = "builtin" if resolved == personal_dir().resolve() else "personal"
-        current = _resolve_extends(str(_read_toml(resolved).get("extends", default)), resolved)
+        current = _resolve_extends(str(_read_toml(resolved).get("extends", "builtin")), resolved)
     chain.reverse()
     return chain
+
+
+def _strings(value: object) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, dict):
+        value = list(value.values())
+    if isinstance(value, list):
+        return [text for item in value for text in _strings(item)]
+    return []
 
 
 @dataclass
 class Profile:
     name: str
-    dirs: list[Path]  # built-in first, nearest last
+    dirs: list[Path]  # built-in first, then the profile's layers, then any overrides
     config: dict = field(default_factory=dict)
+    overrides: list[Path] = field(default_factory=list)
 
     @property
     def nearest(self) -> Path:
-        return self.dirs[-1]
+        """The profile's own folder, where its settings belong."""
+        return self.dirs[-1 - len(self.overrides)]
 
     def file(self, relative: str) -> Path | None:
         """The nearest layer's copy of a file."""
@@ -228,6 +266,33 @@ class Profile:
     def tokens(self) -> list[str]:
         return sorted(set(TOKEN_RE.findall(self.theme())))
 
+    def checks_layer(self) -> Path:
+        """The layer whose [checks] applies, which {profile} in its command points to."""
+        for directory in reversed(self.dirs):
+            if _read_toml(directory).get("checks", {}).get("command"):
+                return directory
+        return self.nearest
+
+    def machine_path_warnings(self) -> list[str]:
+        """Paths in a profile kept in a repo, which would not exist on a teammate's machine."""
+        private = (Path.home() / ".pagekit").resolve()
+        warnings = []
+        for directory in self.dirs[1 : len(self.dirs) - len(self.overrides)]:
+            if directory.is_relative_to(private):
+                continue
+            texts = {"profile.toml": _strings(_read_toml(directory))}
+            for name in ("SAVE.md", "INSTRUCTIONS.md"):
+                if (directory / name).is_file():
+                    texts[name] = (directory / name).read_text(encoding="utf-8").splitlines()
+            for name, lines in texts.items():
+                for line in lines:
+                    if _MACHINE_PATH_RE.search(line):
+                        warnings.append(
+                            f"{directory / name} names a path on this machine, which teammates will not have: "
+                            f"{line.strip()[:80]}. Move it to {overrides_dir() / self.name}"
+                        )
+        return warnings
+
 
 def _named_dir(name: str, cwd: Path) -> Path:
     """Explicit override: `personal`, `builtin`, or a profile directory."""
@@ -235,6 +300,9 @@ def _named_dir(name: str, cwd: Path) -> Path:
         return builtin_dir()
     if name == "personal":
         return personal_dir() if (personal_dir() / "profile.toml").is_file() else builtin_dir()
+    offered = repo_profiles(cwd)
+    if name in offered:
+        return offered[name]
     target = Path(name).expanduser()
     if not target.is_absolute():
         target = cwd / target
@@ -243,7 +311,27 @@ def _named_dir(name: str, cwd: Path) -> Path:
     return target
 
 
-def load_profile(cwd: Path | None = None, override: str | None = None) -> Profile:
+def _override_layers(name: str) -> list[Path]:
+    """This machine's additions to a profile, for all profiles and then for this one."""
+    layers = []
+    for folder in (overrides_dir() / "all", overrides_dir() / name):
+        if not folder.is_dir():
+            continue
+        allowed = ", ".join(sorted(OVERRIDE_FILES))
+        for path in folder.iterdir():
+            if path.name not in OVERRIDE_FILES and not path.name.startswith("."):
+                raise ProfileError(f"{path}: overrides can only hold {allowed}")
+        keys = set(_read_toml(folder)) - OVERRIDE_KEYS
+        if keys:
+            raise ProfileError(
+                f"{folder / 'profile.toml'}: overrides can only set {', '.join(sorted(OVERRIDE_KEYS))}, "
+                f"not {', '.join(sorted(keys))}"
+            )
+        layers.append(folder)
+    return layers
+
+
+def load_profile(cwd: Path | None = None, override: str | None = None, overrides: bool = True) -> Profile:
     where = cwd or Path.cwd()
     override = override or os.environ.get("PAGEKIT_PROFILE") or None
     nearest = _named_dir(override, where) if override else find_profile_dir(where)
@@ -254,14 +342,19 @@ def load_profile(cwd: Path | None = None, override: str | None = None) -> Profil
     name = str(config.get("name", ""))
     if not NAME_RE.match(name) or name in RESERVED_NAMES:
         raise ProfileError(f"{nearest}: invalid profile name {name!r}")
-    return Profile(name=name, dirs=dirs, config=config)
+    layers = _override_layers(name) if overrides else []
+    for directory in layers:
+        config = _deep_merge(config, _read_toml(directory))
+    return Profile(name=name, dirs=[*dirs, *layers], config=config, overrides=layers)
 
+
+_STARTER_BRAND = """brand = {brand}
+footer = {brand}
+"""
 
 _STARTER_TOML = """name = "{name}"
 extends = "{extends}"
-brand = "{brand}"
-footer = "{brand}"
-
+{when_line}{brand_lines}
 # Where `pagekit save` puts a page. Default: ~/pages/saved.
 # [save]
 # root = "~/somewhere/durable"
@@ -270,7 +363,8 @@ footer = "{brand}"
 """
 
 _STARTER_THEME = """/* Override only what differs. Redefine tokens for both light and dark.
-   Keep "screen and" on the dark block so pages always print in light colors. */
+   Keep "screen and" on the dark block so pages always print in light colors.
+
 :root {
   --pk-accent: #1f6feb;
 }
@@ -279,6 +373,7 @@ _STARTER_THEME = """/* Override only what differs. Redefine tokens for both ligh
     --pk-accent: #8fb0f0;
   }
 }
+*/
 """
 
 _STARTER_INSTRUCTIONS = """## {brand} pages
@@ -289,16 +384,25 @@ Add a SAVE.md next to this file to have agents write a matching document after
 """
 
 
-def init_profile(directory: Path, name: str, extends: str, brand: str) -> list[Path]:
-    """Scaffold a profile. Never overwrites an existing file."""
+def _toml_string(value: str) -> str:
+    return json.dumps(value, ensure_ascii=False)
+
+
+def init_profile(directory: Path, name: str, extends: str, brand: str = "", when: str = "") -> list[Path]:
+    """Scaffold a profile. Never overwrites an existing file. Without a brand, it keeps the inherited one."""
     if not NAME_RE.match(name) or name in RESERVED_NAMES:
         raise ProfileError(f"invalid profile name {name!r}")
     directory.mkdir(parents=True, exist_ok=True)
     written = []
     starters = {
-        "profile.toml": _STARTER_TOML.format(name=name, extends=extends, brand=brand),
+        "profile.toml": _STARTER_TOML.format(
+            name=name,
+            extends=extends,
+            when_line=f"when = {_toml_string(when)}\n" if when else "",
+            brand_lines=_STARTER_BRAND.format(brand=_toml_string(brand)) if brand else "",
+        ),
         "theme.css": _STARTER_THEME,
-        "INSTRUCTIONS.md": _STARTER_INSTRUCTIONS.format(brand=brand),
+        "INSTRUCTIONS.md": _STARTER_INSTRUCTIONS.format(brand=brand or name),
     }
     for filename, content in starters.items():
         path = directory / filename
