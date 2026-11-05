@@ -19,6 +19,7 @@ To try your changes as the `pagekit` command, run `uv run pagekit`, or `uv tool 
 
 1. **Start with an issue.** Anything beyond a typo or a small docs fix starts as a
    [GitHub issue](https://github.com/ryanf9802/pagekit/issues/new/choose), so the scope is agreed before the work begins.
+   Every issue has a [category label](#issue-labels).
 2. **Work on a branch** named after the issue, such as `42-rebuild-all`. Fork the repo first if you cannot push to it.
 3. **Check your work** before pushing:
 
@@ -33,6 +34,20 @@ To try your changes as the `pagekit` command, run `uv run pagekit`, or `uv tool 
 5. **Merge** once CI passes. Pull requests are squash merged, and the branch is deleted automatically.
 
 Direct pushes to `main` are refused, for everyone.
+
+## Issue labels
+
+Every issue has at least one category. The issue forms apply it for you. An issue opened another way, such as with
+`gh issue create`, should set it with `--label`. Otherwise it gets `needs-triage` until someone picks a category.
+
+| Label | For |
+| --- | --- |
+| `bug` | Something does not work as it should |
+| `enhancement` | Something new, or better than it is |
+| `documentation` | Docs that are wrong, missing, or unclear |
+| `accessibility` | A barrier for keyboard, screen reader, zoom, or low vision users |
+| `performance` | Slow builds, or large or slow pages |
+| `maintenance` | CI, tooling, dependencies, and refactoring |
 
 ## Name your pull request well
 

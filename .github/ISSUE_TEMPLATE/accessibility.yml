@@ -1,0 +1,21 @@
+name: Accessibility
+description: A page or control is hard to use with a keyboard, screen reader, zoom, or low vision.
+labels: ["accessibility"]
+body:
+  - type: textarea
+    id: barrier
+    attributes:
+      label: What gets in the way
+      description: What you were trying to do, and what stopped you.
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: How you were using it
+      description: For example, the screen reader and browser, keyboard only, or 200% zoom.
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: The page or component, and what to do on it.
