@@ -50,7 +50,7 @@ pagekit init --personal --name personal --brand "NAME"
 
 ## 4. Make it theirs
 
-Ask about each of these in turn, in plain language. Everything is optional, and the neutral defaults look good. Put
+Ask about each of these in turn, in plain language. Everything is optional, and pages use the pagekit brand until a profile replaces it. Put
 the results in the profile folder that `pagekit profile` lists, which is `~/.pagekit/profile/` for the personal one.
 
 | Ask about | What to do with the answer |

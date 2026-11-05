@@ -364,6 +364,57 @@ def test_wordmark_joins_the_icon_and_carries_the_brand_name(home: Path) -> None:
     assert re.search(r'class="pk-wordmark" src="[^"]+" alt="Acme"', document)
 
 
+def _profile_in(home: Path, toml: str) -> tuple[Path, Path]:
+    repo = home / "repo"
+    directory = repo / ".pagekit" / "profile"
+    directory.mkdir(parents=True)
+    (directory / "profile.toml").write_text(f'name = "acme"\nextends = "builtin"\n{toml}\n')
+    return repo, directory
+
+
+def test_builtin_pages_carry_the_pagekit_brand(home: Path) -> None:
+    document = make(load_profile()).index.read_text()
+    assert 'class="pk-logo"' in document
+    assert re.search(r'class="pk-wordmark" src="[^"]+" alt="pagekit"', document)
+    assert 'class="pk-logo-print"' in document
+    assert '<link rel="icon" href="data:image/svg+xml' in document
+    assert "Made with pagekit" in document
+
+
+def test_a_profile_with_its_own_brand_inherits_no_pagekit_logo(home: Path) -> None:
+    repo, _ = _profile_in(home, 'brand = "Acme"')
+    document = make(load_profile(repo)).index.read_text()
+    for marker in ('class="pk-logo"', 'class="pk-wordmark"', 'class="pk-logo-print"', 'rel="icon"'):
+        assert marker not in document
+    assert '<span class="pk-brand">Acme</span>' in document
+
+
+def test_a_profile_that_only_restyles_keeps_the_pagekit_logo(home: Path) -> None:
+    repo, directory = _profile_in(home, "")
+    (directory / "theme.css").write_text(":root { --pk-accent: #123456; }")
+    document = make(load_profile(repo)).index.read_text()
+    assert 'class="pk-wordmark"' in document
+    assert "--pk-accent: #123456" in document
+
+
+def test_a_profile_logo_replaces_the_whole_pagekit_set(home: Path) -> None:
+    repo, directory = _profile_in(home, "")
+    (directory / "logo.svg").write_text("<svg id='mine'/>")
+    document = make(load_profile(repo)).index.read_text()
+    mine = base64.b64encode(b"<svg id='mine'/>").decode()
+    assert f'class="pk-logo" src="data:image/svg+xml;base64,{mine}"' in document
+    assert f'<link rel="icon" href="data:image/svg+xml;base64,{mine}">' in document
+    assert 'class="pk-wordmark"' not in document
+    assert 'class="pk-logo-print"' not in document
+
+
+def test_an_empty_brand_shows_no_name_or_logo(home: Path) -> None:
+    repo, _ = _profile_in(home, 'brand = ""')
+    document = make(load_profile(repo)).index.read_text()
+    assert 'class="pk-logo"' not in document
+    assert '<span class="pk-brand"></span>' in document
+
+
 def test_print_logo_is_added_only_when_the_profile_has_one(home: Path) -> None:
     repo = home / "repo"
     directory = repo / ".pagekit" / "profile"

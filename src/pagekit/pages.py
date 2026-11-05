@@ -274,9 +274,9 @@ def _data_uri(path: Path) -> str:
 
 
 def _logo_html(profile: Profile, brand: str) -> str:
-    logo = profile.file("logo.svg")
-    dark = profile.file("logo-dark.svg")
-    wordmark = profile.file("wordmark.svg")
+    logo = profile.brand_file("logo.svg")
+    dark = profile.brand_file("logo-dark.svg")
+    wordmark = profile.brand_file("wordmark.svg")
     parts = []
     if logo:
         alt = "" if wordmark else html.escape(brand)
@@ -284,10 +284,15 @@ def _logo_html(profile: Profile, brand: str) -> str:
         parts.append(f'<picture>{source}<img class="pk-logo" src="{_data_uri(logo)}" alt="{alt}"></picture>')
     if wordmark:
         parts.append(f'<img class="pk-wordmark" src="{_data_uri(wordmark)}" alt="{html.escape(brand)}">')
-    print_logo = profile.file("logo-print.png")
+    print_logo = profile.brand_file("logo-print.png")
     if print_logo:
         parts.append(f'<img class="pk-logo-print" src="{_data_uri(print_logo)}" alt="{html.escape(brand)}">')
     return "".join(parts)
+
+
+def _favicon_html(profile: Profile) -> str:
+    icon = profile.brand_file("favicon.svg") or profile.brand_file("logo.svg")
+    return f'<link rel="icon" href="{_data_uri(icon)}">' if icon else ""
 
 
 def _render(template: str, values: dict[str, str]) -> str:
@@ -326,6 +331,7 @@ def build_page(profile: Profile, page: Page) -> None:
             '<meta charset="utf-8">',
             '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">',
             f"<title>{title}</title>",
+            _favicon_html(profile),
             f'<script type="application/json" id="pagekit-meta">{meta_json}</script>',
             profile.concat("head.html"),
             f"<style>\n{profile.concat('fonts.css')}\n{profile.theme()}\n{component_css}\n</style>",

@@ -1,5 +1,5 @@
 name = "default"
-brand = ""
-footer = ""
+brand = "pagekit"
+footer = "Made with pagekit"
 ascii_only = true
 allowed_hosts = ["cdn.jsdelivr.net", "cdnjs.cloudflare.com", "unpkg.com"]

@@ -1,3 +1,10 @@
+<p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/lockup-dark.svg">
+    <img src="docs/brand/lockup.svg" alt="pagekit" height="56">
+  </picture>
+</p>
+
 # pagekit
 
 **Polished, self-contained HTML pages for coding agents.**

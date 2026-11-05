@@ -123,7 +123,7 @@ def test_page_link_uses_the_private_address_once_set_up(home: Path) -> None:
 def test_index_can_be_installed_as_an_app(home: Path, port: int) -> None:
     status, body, _ = request(port, "/")
     assert status == 200 and b'rel="manifest"' in body
-    assert b"<title>pagekit</title>" in body and b"<h1>pagekit</h1>" in body
+    assert b"<title>pagekit</title>" in body and b"</h1>" in body and b"\"ix-brand\"" in body
     status, body, response = request(port, "/manifest.webmanifest")
     manifest = json.loads(body)
     assert status == 200 and response.headers["Content-Type"] == "application/manifest+json"

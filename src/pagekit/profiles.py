@@ -20,6 +20,7 @@ PROFILE_SUBDIR = Path(".pagekit") / "profile"
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,80}$")
 RESERVED_NAMES = {"saved"}
 TOKEN_RE = re.compile(r"(--pk-[a-z0-9-]+)\s*:")
+BRAND_FILES = ("logo.svg", "logo-dark.svg", "wordmark.svg", "logo-print.png", "favicon.svg")
 
 
 class ProfileError(Exception):
@@ -154,6 +155,19 @@ class Profile:
             if path.is_file():
                 return path
         return None
+
+    def has_own_brand(self) -> bool:
+        """Whether a layer above the built-in names a brand or draws a logo of its own."""
+        if str(self.config.get("brand", "")) != str(_read_toml(self.dirs[0]).get("brand", "")):
+            return True
+        return any((directory / name).is_file() for directory in self.dirs[1:] for name in BRAND_FILES)
+
+    def brand_file(self, relative: str) -> Path | None:
+        """A drawn brand asset. The built-in's go together, so "Acme" never shows pagekit's logo."""
+        path = self.file(relative)
+        if path and path.parent == self.dirs[0] and self.has_own_brand():
+            return None
+        return path
 
     def read(self, relative: str, default: str = "") -> str:
         path = self.file(relative)

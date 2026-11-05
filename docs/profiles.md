@@ -1,7 +1,8 @@
 # Profiles
 
 A profile holds everything specific to you or your organization: brand, colors, fonts, writing rules, and
-what happens when a page is saved. pagekit itself ships neutral, so a profile can make it entirely yours.
+what happens when a page is saved. pagekit ships with [its own brand](#the-default-brand), and a profile can replace
+any of it to make pages entirely yours.
 
 ## Choosing a profile
 
@@ -34,11 +35,33 @@ personal one. Use `--extends builtin` to start clean.
 | `INSTRUCTIONS.md` | Content and voice rules, printed by `pagekit new` | Concatenated |
 | `template.html` | Page shell with `{{head}}`, `{{logo}}`, `{{brand}}`, `{{title}}`, `{{summary}}`, `{{content}}`, and `{{footer}}` | Nearest wins |
 | `logo.svg`, `logo-dark.svg` | Header icon, with an optional dark-mode version | Nearest wins |
+| `favicon.svg` | Browser tab icon; without one, the tab uses `logo.svg` | Nearest wins |
 | `logo-print.png` | The full logo as one image for print, which saves about 3 to 5 KB per PDF sheet over a vector logo | Nearest wins |
 | `wordmark.svg` | Drawn name beside the icon, replacing the typed `brand`; dark ink, inverted to white in dark mode | Nearest wins |
 | `icons/` | [Your own icons](icons.md#your-own-icons) | Nearest wins, by name |
 | `components/*.html` | Components specific to this profile; prefer the [shared ones](components.md) | Nearest wins, by name |
 | `SAVE.md` | Steps printed after `pagekit save`, such as writing a matching document | Nearest wins |
+
+## The default brand
+
+With no profile, pages carry the pagekit logo, name, and ember colors. Every part can be overridden:
+
+- **Colors and type** inherit like any theme. Redefine `--pk-*` tokens in `theme.css`, for light and dark, and the
+  rest stays. A profile that sets no colors of its own keeps ember; `pagekit init` writes a placeholder blue to edit.
+- **The logo goes as a set.** A profile that sets its own `brand`, or adds any logo file, gets none of pagekit's
+  logo, wordmark, print logo, or tab icon, so "Acme" never appears beside the pagekit mark. Set `brand = ""` to show
+  no name or logo at all.
+- **The footer** reads "Made with pagekit" until a profile sets `footer`. `pagekit init` sets it to the brand.
+
+| Color | Light | Dark |
+| --- | --- | --- |
+| Logo ink | `#1b1b1f` | `#f2efe9` |
+| Logo ember | `#e5532d` | `#ff7a50` |
+| `--pk-accent` | `#c8431c` | `#ff7a50` |
+
+`--pk-accent` is darker than the logo's ember in light mode so links and button text stay readable. The wordmark is
+Space Grotesk SemiBold, drawn as outlines, so pages need no web font. Body text stays on the system font to keep pages
+small. Source files for other uses are in [`docs/brand/`](brand/), and `scripts/build_brand.py` regenerates all of them.
 
 ## Settings
 

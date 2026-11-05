@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import mimetypes
 import re
@@ -34,7 +35,8 @@ _MAX_STATE_BYTES = 2_000_000
 def _index_html() -> bytes:
     template = resources.files("pagekit").joinpath("static/index.html").read_text(encoding="utf-8")
     theme = (builtin_dir() / "theme.css").read_text(encoding="utf-8")
-    return template.replace("{{theme}}", theme).encode()
+    mark = "data:image/svg+xml;base64," + base64.b64encode((builtin_dir() / "favicon.svg").read_bytes()).decode()
+    return template.replace("{{theme}}", theme).replace("{{mark}}", mark).encode()
 
 
 def _resolve_page_file(profile: str, slug: str, relative: str) -> Path | None:

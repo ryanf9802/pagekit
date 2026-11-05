@@ -5,11 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>pagekit</title>
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="/icon-192.png">
+<link rel="icon" href="{{mark}}">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f7f9">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#16181c">
 <style>
 {{theme}}
+.ix-brand { display: flex; align-items: center; gap: 10px; }
+.ix-brand img { width: 1em; height: 1em; }
 .ix-controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
 .ix-controls input { flex: 1 1 220px; }
 .ix-controls select { flex: 0 1 180px; }
@@ -23,7 +25,7 @@
 </head>
 <body>
 <main class="pk-main">
-<h1>pagekit</h1>
+<h1 class="ix-brand"><img src="{{mark}}" alt="">pagekit</h1>
 <div class="ix-controls">
   <input id="q" type="search" placeholder="Search pages" aria-label="Search pages">
   <select id="profile" aria-label="Filter by profile"><option value="">All profiles</option></select>

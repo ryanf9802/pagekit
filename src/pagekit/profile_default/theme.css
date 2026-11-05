@@ -3,12 +3,12 @@
   --pk-bg: #f6f7f9;
   --pk-surface: #ffffff;
   --pk-surface-2: #eef0f3;
-  --pk-text: #16181d;
+  --pk-text: #1b1b1f;
   --pk-muted: #5b6270;
   --pk-border: #d9dde3;
-  --pk-accent: #2457c5;
+  --pk-accent: #c8431c;
   --pk-accent-contrast: #ffffff;
-  --pk-code: #2f5fb3;
+  --pk-code: #b23c19;
   --pk-icon-blue: #2f6fd0;
   --pk-icon-purple: #7a4fc4;
   --pk-icon-green: #2e8b3d;
@@ -31,12 +31,12 @@
     --pk-bg: #16181c;
     --pk-surface: #1f2228;
     --pk-surface-2: #2a2e35;
-    --pk-text: #e6e8ec;
+    --pk-text: #f2efe9;
     --pk-muted: #a2a9b5;
     --pk-border: #363b44;
-    --pk-accent: #8fb0f0;
+    --pk-accent: #ff7a50;
     --pk-accent-contrast: #12151a;
-    --pk-code: #8fb0f0;
+    --pk-code: #ff7a50;
     --pk-icon-blue: #7aa7ec;
     --pk-icon-purple: #b69bec;
     --pk-icon-green: #6fcf80;
@@ -356,7 +356,7 @@ td > .pk-choices, th > .pk-choices { margin: -3px 0; }
 .pk-badge-success { color: var(--pk-success); }
 .pk-badge-warning { color: var(--pk-warning); }
 .pk-badge-danger { color: var(--pk-danger); }
-.pk-badge-info { color: var(--pk-accent); }
+.pk-badge-info { color: var(--pk-icon-blue); }
 .pk-icon { display: inline-block; flex: none; width: 1em; height: 1em; vertical-align: -0.125em; }
 .pk-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 /* Icon tones differ in shape as well as color, so meaning survives grayscale printing. */
