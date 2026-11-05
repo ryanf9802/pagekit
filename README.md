@@ -50,8 +50,8 @@ pagekit init --name acme --brand "Acme" --local   # or personal: ~/.pagekit/prof
 | `head.html` | extra head tags, such as a web font | concatenated |
 | `INSTRUCTIONS.md` | content and voice rules, printed by `pagekit new` | concatenated |
 | `template.html` | page shell with `{{head}}`, `{{logo}}`, `{{brand}}`, `{{title}}`, `{{summary}}`, `{{content}}`, `{{footer}}` | nearest wins |
-| `logo.svg`, `logo-dark.svg` | header icon; the on-dark one is used when present, since the bar is dark | nearest wins |
-| `wordmark.svg` | drawn name beside the icon, replacing the typed `brand`; dark ink, inverted to white on the bar | nearest wins |
+| `logo.svg`, `logo-dark.svg` | header icon, with an optional dark-mode version | nearest wins |
+| `wordmark.svg` | drawn name beside the icon, replacing the typed `brand`; dark ink, inverted to white in dark mode | nearest wins |
 | `components/*.html` | snippets agents copy and adapt | nearest wins, by name |
 | `SAVE.md` | steps printed after `pagekit save`, such as writing a matching document | nearest wins |
 

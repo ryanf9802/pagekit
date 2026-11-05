@@ -186,15 +186,17 @@ def test_logo_is_inlined(home: Path) -> None:
     assert f"data:image/svg+xml;base64,{encoded}" in page.index.read_text()
 
 
-def test_header_uses_the_on_dark_logo_when_there_is_one(home: Path) -> None:
+def test_header_swaps_to_the_dark_logo_in_dark_mode(home: Path) -> None:
     repo = home / "repo"
     directory = repo / ".pagekit" / "profile"
     init_profile(directory, "acme", "builtin", "Acme")
     (directory / "logo.svg").write_text("<svg id='light'/>")
     (directory / "logo-dark.svg").write_text("<svg id='dark'/>")
     document = make(load_profile(repo)).index.read_text()
-    assert base64.b64encode(b"<svg id='dark'/>").decode() in document
-    assert base64.b64encode(b"<svg id='light'/>").decode() not in document
+    dark = base64.b64encode(b"<svg id='dark'/>").decode()
+    light = base64.b64encode(b"<svg id='light'/>").decode()
+    assert f'media="(prefers-color-scheme: dark)" srcset="data:image/svg+xml;base64,{dark}"' in document
+    assert f'class="pk-logo" src="data:image/svg+xml;base64,{light}"' in document
 
 
 def test_wordmark_joins_the_icon_and_carries_the_brand_name(home: Path) -> None:
