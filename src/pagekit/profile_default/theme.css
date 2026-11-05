@@ -293,16 +293,17 @@ details > summary { cursor: pointer; font-weight: 500; }
 }
 .pk-print-spacer { display: none; }
 
-/* Print: light colors always, and a layout the print dialog's margin setting cannot break.
-   The body prints as a table, because its header and footer groups repeat on every sheet
-   and reserve space inside it. They repeat only with break-inside: avoid. The footer is
-   fixed so it stays at the bottom of the last sheet too. The page number's negative margin
-   lifts it onto the footer line, and keeps it rendering when the margin is zero. */
+/* Print: light colors always. The margins are the page's @page margins and nothing else, so
+   the print dialog's margin setting moves all four sides. The body prints as a table, because
+   its header and footer groups repeat on every sheet and reserve space on it; they repeat only
+   with break-inside: avoid. The footer is fixed so it stays at the bottom of the last sheet too.
+   The page number's negative margin lifts it onto the footer line, measured from the bottom of
+   the printable area, and keeps it rendering when the dialog's margin is zero. */
 @page {
-  margin: 0 0 8mm;
+  margin: 12mm 15mm;
   @bottom-right {
     content: "Page " counter(page) " of " counter(pages);
-    margin: -5.5mm 15mm 0 0;
+    margin: -3.5mm 0 0 0;
     vertical-align: top;
     color: #5b6270;
     font: 400 8pt system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -315,7 +316,7 @@ details > summary { cursor: pointer; font-weight: 500; }
     display: table;
     width: 100%;
     min-height: 0;
-    padding: 0 15mm;
+    padding: 0;
     background: #fff !important;
     font-size: 10.5pt;
     line-height: 1.45;
@@ -329,18 +330,18 @@ details > summary { cursor: pointer; font-weight: 500; }
     border: 0;
     break-inside: avoid;
   }
-  .pk-header .pk-bar { display: flex; align-items: center; gap: 10px; height: 20mm; padding-top: 4mm; }
+  .pk-header .pk-bar { display: flex; align-items: center; gap: 10px; height: 12mm; padding-bottom: 3mm; }
   .pk-header-title { margin-left: auto; padding-left: 0 !important; border-left: 0 !important; font-size: 8.5pt; opacity: 1; }
   .pk-print-spacer { display: table-footer-group; break-inside: avoid; }
-  .pk-print-spacer > div { height: 12mm; }
+  .pk-print-spacer > div { height: 8mm; }
   .pk-footer {
     position: fixed;
-    right: 15mm;
+    right: 0;
     bottom: 0;
-    left: 15mm;
+    left: 0;
     display: block;
     min-height: 0;
-    padding: 0 0 2mm;
+    padding: 0;
     background: none;
     border: 0;
     font-size: 8.5pt;
