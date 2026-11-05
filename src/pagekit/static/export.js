@@ -516,6 +516,12 @@
     closedForPrint = [];
   });
 
+  /* Header controls are icons: this is both the hover label and the accessible name. */
+  function setBarLabel(control, label) {
+    control.setAttribute("data-label", label);
+    control.setAttribute("aria-label", label);
+  }
+
   /* The server can build a bookmarked PDF, including answers typed on this page. */
   function addPdfButton(bar, before) {
     var parts = location.pathname.split("/");
@@ -525,16 +531,13 @@
       var pdf = document.createElement("button");
       pdf.type = "button";
       pdf.className = "pk-pdf";
-      pdf.title = "Download PDF";
-      pdf.setAttribute("aria-label", "Download PDF");
-      pdf.innerHTML = '<i data-icon="download"></i><span class="pk-bar-label">Download PDF</span>';
-      var pdfLabel = pdf.querySelector(".pk-bar-label");
+      setBarLabel(pdf, "Download PDF");
+      pdf.innerHTML = '<i data-icon="download"></i>';
       bar.insertBefore(pdf, before);
       pdf.addEventListener("click", function () {
         pdf.disabled = true;
         pdf.classList.remove("pk-pdf-failed");
-        pdf.setAttribute("aria-label", "Generating PDF");
-        pdfLabel.textContent = "Generating...";
+        setBarLabel(pdf, "Generating PDF...");
         fetch("/api/pdf/" + parts[2] + "/" + parts[3], {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -550,12 +553,10 @@
           link.click();
           link.remove();
           setTimeout(function () { URL.revokeObjectURL(link.href); }, 10000);
-          pdfLabel.textContent = "Download PDF";
-          pdf.setAttribute("aria-label", "Download PDF");
+          setBarLabel(pdf, "Download PDF");
         }).catch(function () {
           pdf.classList.add("pk-pdf-failed");
-          pdfLabel.textContent = "PDF failed, try again";
-          pdf.setAttribute("aria-label", "PDF failed, try again");
+          setBarLabel(pdf, "PDF failed, try again");
         }).finally(function () {
           pdf.disabled = false;
         });
@@ -571,9 +572,8 @@
     var home = document.createElement("a");
     home.className = "pk-home";
     home.href = "/";
-    home.title = "All pages";
-    home.setAttribute("aria-label", "All pages");
-    home.innerHTML = '<i data-icon="layout-grid"></i><span class="pk-bar-label">All pages</span>';
+    setBarLabel(home, "All pages");
+    home.innerHTML = '<i data-icon="layout-grid"></i>';
     /* Answers are saved in the browser and this stays in the same tab, so no prompt. */
     home.addEventListener("click", function () { leavingForIndex = true; });
     headerBar.appendChild(home);

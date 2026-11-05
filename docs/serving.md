@@ -11,7 +11,7 @@ pagekit install-service     # or always on, as a systemd user service
 ```
 
 Set `PAGEKIT_PORT` or pass `--port` to use another port. The server listens on localhost only. Served pages show
-an **All pages** link in the header, back to the index. Packed and saved copies have no index, so they have no
+an **All pages** icon in the header, back to the index. Packed and saved copies have no index, so they have no
 link, and it does not print.
 
 ## Starting at login

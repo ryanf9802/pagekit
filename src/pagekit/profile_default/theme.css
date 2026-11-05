@@ -135,36 +135,51 @@ p { margin: 0 0 12px; }
 }
 .pk-brand:not(:empty) ~ .pk-header-title { padding-left: 12px; border-left: 1px solid var(--pk-border); }
 .pk-brand:empty ~ .pk-header-title, .pk-scrolled .pk-header-title { opacity: 1; }
-.pk-home {
+/* Header controls are icons, named by a label on hover or keyboard focus. */
+.pk-home, .pk-pdf {
+  position: relative;
   flex: none;
-  margin-left: auto;
-  font-size: 0.875rem;
-  font-weight: 550;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.pk-home:hover { text-decoration: underline; }
-.pk-home, .pk-pdf { display: inline-flex; align-items: center; justify-content: center; }
-.pk-home .pk-icon, .pk-pdf .pk-icon { display: none; width: 20px; height: 20px; }
-.pk-pdf:disabled { animation: pk-pulse 1s ease-in-out infinite; }
-.pk-pdf-failed { color: var(--pk-danger); }
-@keyframes pk-pulse { 50% { opacity: 0.35; } }
-.pk-pdf {
-  flex: none;
-  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
   padding: 0;
   background: none;
   border: 0;
+  border-radius: var(--pk-radius-small);
   color: var(--pk-accent);
-  font: inherit;
-  font-size: 0.875rem;
-  font-weight: 550;
-  white-space: nowrap;
   cursor: pointer;
 }
-.pk-pdf:hover:not(:disabled) { text-decoration: underline; }
+.pk-home { margin-left: auto; margin-right: -8px; }
+.pk-pdf { margin-left: auto; }
+.pk-pdf + .pk-home { margin-left: -8px; }
+.pk-home .pk-icon, .pk-pdf .pk-icon { display: block; width: 20px; height: 20px; }
+.pk-home::after, .pk-pdf::after {
+  content: attr(data-label);
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  padding: 4px 8px;
+  background: var(--pk-text);
+  border-radius: var(--pk-radius-small);
+  color: var(--pk-bg);
+  font-size: 0.75rem;
+  font-weight: 550;
+  line-height: 1.3;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
+.pk-home:focus-visible::after, .pk-pdf:focus-visible::after, .pk-pdf:disabled::after, .pk-pdf-failed::after { opacity: 1; }
+@media (hover: hover) {
+  .pk-home:hover, .pk-pdf:hover:not(:disabled) { background: var(--pk-surface-2); }
+  .pk-home:hover::after, .pk-pdf:hover::after { opacity: 1; }
+}
 .pk-pdf:disabled { color: var(--pk-muted); cursor: default; }
-.pk-pdf + .pk-home { margin-left: 0; }
+.pk-pdf:disabled .pk-icon { animation: pk-pulse 1s ease-in-out infinite; }
+.pk-pdf-failed { color: var(--pk-danger); }
+@keyframes pk-pulse { 50% { opacity: 0.35; } }
 .pk-footer-meta { display: flex; gap: 8px; min-width: 0; white-space: nowrap; }
 .pk-footer-meta > span:empty { display: none; }
 .pk-footer-meta > span:not(:empty) ~ span::before { content: "/"; margin-right: 8px; color: var(--pk-border); }
@@ -573,12 +588,8 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
   /* Keeps diagram text readable: a wide diagram scrolls inside its card instead of shrinking. */
   .pk-diagram svg.pk-diagram-wide { min-width: var(--pk-diagram-w); }
   .pk-header .pk-bar { display: contents; }
-  .pk-bar-label { display: none; }
-  .pk-home, .pk-pdf { width: 40px; height: 44px; margin: -4px 0; font-size: 0; }
-  .pk-pdf { margin-left: auto; }
-  .pk-pdf + .pk-home { margin-right: -10px; }
-  .pk-home:not(.pk-pdf + .pk-home) { margin-right: -10px; }
-  .pk-home .pk-icon, .pk-pdf .pk-icon { display: block; }
+  .pk-home, .pk-pdf { width: 40px; height: 44px; margin-block: -4px; }
+  .pk-home { margin-right: -10px; }
   .pk-header { padding-top: max(8px, env(safe-area-inset-top)); gap: 8px; transition: transform 180ms ease; }
   .pk-footer { padding-bottom: max(8px, env(safe-area-inset-bottom)); transition: transform 180ms ease; }
   .pk-bars-hidden .pk-header { transform: translateY(-100%); }

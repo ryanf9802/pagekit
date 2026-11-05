@@ -16,7 +16,7 @@ For this to hold in your own work:
 The browser's print dialog does not add bookmarks, so pagekit can generate a tagged PDF with bookmarks from the
 page's headings:
 
-- **Download PDF**, in the header of a served page, includes answers typed on the page.
+- **Download PDF**, the download icon in the header of a served page, includes answers typed on the page.
 - `pagekit pdf SLUG [--out FILE]` does the same from the command line.
 
 Both use local Chrome or Chromium. Set `$PAGEKIT_CHROME` to override the search. With none found, the button does
