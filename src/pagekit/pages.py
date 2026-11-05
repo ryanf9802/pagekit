@@ -150,11 +150,8 @@ class Page:
         return f"/p/{self.profile}/{self.slug}/"
 
     def url(self) -> str:
-        return f"http://localhost:{server_port()}{self.url_path}"
-
-    def phone_url(self) -> str:
-        base = public_url()
-        return f"{base}{self.url_path}" if base else ""
+        """The link to give people: the private address once set up, otherwise localhost."""
+        return f"{public_url() or f'http://localhost:{server_port()}'}{self.url_path}"
 
     def write_meta(self) -> None:
         lines = []

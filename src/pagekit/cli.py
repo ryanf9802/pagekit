@@ -69,8 +69,6 @@ def _print_location(page: Page) -> None:
         print(f"url: {page.url()}")
     else:
         print(f"url: {page.url()} (server not running: pagekit serve, or share with pagekit send)")
-    if page.phone_url():
-        print(f"phone: {page.phone_url()}")
 
 
 def _report_check(profile: Profile, page: Page) -> int:

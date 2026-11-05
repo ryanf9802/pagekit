@@ -113,11 +113,11 @@ def test_public_url_must_be_plain_https(home: Path, url: str) -> None:
         set_public_url(url)
 
 
-def test_page_reports_a_phone_link_only_when_set_up(home: Path) -> None:
+def test_page_link_uses_the_private_address_once_set_up(home: Path) -> None:
     page = built_page(home)
-    assert page.phone_url() == ""
+    assert page.url() == "http://localhost:8766/p/default/demo/"
     set_public_url("https://pages.example.ts.net")
-    assert page.phone_url() == "https://pages.example.ts.net/p/default/demo/"
+    assert page.url() == "https://pages.example.ts.net/p/default/demo/"
 
 
 def test_index_can_be_installed_as_an_app(home: Path, port: int) -> None:
