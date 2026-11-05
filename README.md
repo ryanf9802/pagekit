@@ -118,6 +118,11 @@ keyed by ID, and the footer shows a count that steps through them. They do not p
 Password and hidden inputs are never exported. Answers survive a reload and a style-only
 rebuild in `localStorage`, and reset when `content.html` changes. Comments behave the same way.
 
+## Getting around
+
+Served pages show an **All pages** link on the right of the header, back to the index. A
+downloaded, packed, or saved copy has no index, so it has no link. The link does not print.
+
 ## Printing
 
 Pages print in light colors, with the header and footer repeated on every sheet, page

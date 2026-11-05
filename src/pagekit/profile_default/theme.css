@@ -122,6 +122,15 @@ p { margin: 0 0 12px; }
 }
 .pk-brand:not(:empty) ~ .pk-header-title { padding-left: 12px; border-left: 1px solid var(--pk-border); }
 .pk-brand:empty ~ .pk-header-title, .pk-scrolled .pk-header-title { opacity: 1; }
+.pk-home {
+  flex: none;
+  margin-left: auto;
+  font-size: 0.875rem;
+  font-weight: 550;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.pk-home:hover { text-decoration: underline; }
 .pk-footer-meta { display: flex; gap: 8px; min-width: 0; white-space: nowrap; }
 .pk-footer-meta > span:empty { display: none; }
 .pk-footer-meta > span:not(:empty) ~ span::before { content: "/"; margin-right: 8px; color: var(--pk-border); }
@@ -401,7 +410,7 @@ details > summary { cursor: pointer; font-weight: 500; }
     line-height: 1.2;
   }
   .pk-footer .pk-bar { display: block; }
-  .pk-footer .pk-button, #pk-export-status, .pk-export-fallback, .pk-comment, .pk-comment-count { display: none; }
+  .pk-footer .pk-button, #pk-export-status, .pk-export-fallback, .pk-comment, .pk-comment-count, .pk-home { display: none; }
   .pk-has-comment { color: var(--pk-muted); }
   .pk-has-comment::after { display: none; }
   .pk-main { display: table-row-group; }

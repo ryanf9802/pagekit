@@ -422,6 +422,16 @@
     closedForPrint = [];
   });
 
+  /* A way back to the index, only when served by pagekit: a downloaded copy has no index. */
+  var headerBar = document.querySelector(".pk-header .pk-bar");
+  if (headerBar && /^https?:$/.test(location.protocol) && /^\/(p|saved)\//.test(location.pathname)) {
+    var home = document.createElement("a");
+    home.className = "pk-home";
+    home.href = "/";
+    home.textContent = "All pages";
+    headerBar.appendChild(home);
+  }
+
   /* The header shows the page title once the main heading has scrolled away. */
   var heading = document.querySelector("h1");
   if (heading && window.IntersectionObserver) {
