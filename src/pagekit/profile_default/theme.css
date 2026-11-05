@@ -18,7 +18,7 @@
   --pk-warning: #a85b00;
   --pk-danger: #c22a1f;
   --pk-shadow: none;
-  --pk-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --pk-font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --pk-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --pk-radius: 10px;
   --pk-radius-small: 6px;
@@ -624,7 +624,7 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
     margin: -3.5mm 0 0 0;
     vertical-align: top;
     color: #5b6270;
-    font: 400 8pt system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font: 400 8pt "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
 }
 @media print {

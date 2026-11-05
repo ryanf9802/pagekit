@@ -34,10 +34,10 @@ _MAX_STATE_BYTES = 2_000_000
 
 def _index_html() -> bytes:
     template = resources.files("pagekit").joinpath("static/index.html").read_text(encoding="utf-8")
-    theme = (builtin_dir() / "theme.css").read_text(encoding="utf-8")
     mark = "data:image/svg+xml;base64," + base64.b64encode((builtin_dir() / "favicon.svg").read_bytes()).decode()
     # The index lists pages from every profile, so it always carries pagekit's own brand.
     builtin = load_profile(override="builtin")
+    theme = f"{builtin.fonts()}\n{builtin.theme()}"
     logo = logo_html(builtin, str(builtin.config.get("brand", "")))
     return template.replace("{{theme}}", theme).replace("{{mark}}", mark).replace("{{logo}}", logo).encode()
 

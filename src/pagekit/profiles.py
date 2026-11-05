@@ -20,6 +20,7 @@ PROFILE_SUBDIR = Path(".pagekit") / "profile"
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,80}$")
 RESERVED_NAMES = {"saved"}
 TOKEN_RE = re.compile(r"(--pk-[a-z0-9-]+)\s*:")
+FONT_TOKEN_RE = re.compile(r"--pk-font\s*:")
 BRAND_FILES = ("logo.svg", "logo-dark.svg", "wordmark.svg", "logo-print.png", "favicon.svg")
 
 
@@ -173,14 +174,20 @@ class Profile:
         path = self.file(relative)
         return path.read_text(encoding="utf-8") if path else default
 
-    def concat(self, relative: str) -> str:
+    def concat(self, relative: str, dirs: list[Path] | None = None) -> str:
         """Every layer's copy of a file, built-in first. Later layers override in CSS."""
         parts = []
-        for directory in self.dirs:
+        for directory in self.dirs if dirs is None else dirs:
             path = directory / relative
             if path.is_file():
                 parts.append(path.read_text(encoding="utf-8").strip())
         return "\n\n".join(p for p in parts if p)
+
+    def fonts(self) -> str:
+        """Embedded fonts. A profile with its own font does not also carry the built-in one's bytes."""
+        above = self.dirs[1:]
+        own = any((d / "fonts.css").is_file() for d in above) or FONT_TOKEN_RE.search(self.concat("theme.css", above))
+        return self.concat("fonts.css", above if own else self.dirs)
 
     def theme(self) -> str:
         return self.concat("theme.css")

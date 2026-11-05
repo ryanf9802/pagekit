@@ -30,7 +30,7 @@ personal one. Use `--extends builtin` to start clean.
 | --- | --- | --- |
 | `profile.toml` | Settings, listed below | Deep merge |
 | `theme.css` | `--pk-*` tokens and styles, redefined for light and dark | Concatenated |
-| `fonts.css` | `@font-face` rules with embedded static fonts, so pages work offline and PDFs stay small | Concatenated |
+| `fonts.css` | `@font-face` rules with embedded static fonts, so pages work offline and PDFs stay small | Concatenated, without the built-in font once a profile has its own |
 | `head.html` | Extra head tags | Concatenated |
 | `INSTRUCTIONS.md` | Content and voice rules, printed by `pagekit new` | Concatenated |
 | `template.html` | Page shell with `{{head}}`, `{{logo}}`, `{{brand}}`, `{{title}}`, `{{summary}}`, `{{content}}`, and `{{footer}}` | Nearest wins |
@@ -59,9 +59,10 @@ With no profile, pages carry the pagekit logo, name, and ember colors. Every par
 | Logo ember | `#e5532d` | `#ff7a50` |
 | `--pk-accent` | `#c8431c` | `#ff7a50` |
 
-`--pk-accent` is darker than the logo's ember in light mode so links and button text stay readable. The wordmark is
-Space Grotesk SemiBold, drawn as outlines, so pages need no web font. Body text stays on the system font to keep pages
-small. Source files for other uses are in [`docs/brand/`](brand/), and `scripts/build_brand.py` regenerates all of them.
+`--pk-accent` is darker than the logo's ember in light mode so links and button text stay readable. Text is IBM Plex
+Sans, embedded so pages and PDFs look the same on every machine, which adds about 63 KB to a page. A profile with its
+own `fonts.css`, or that sets `--pk-font` in `theme.css`, does not carry it. The wordmark is Space Grotesk SemiBold,
+drawn as outlines. Source files for other uses are in [`docs/brand/`](brand/), and `scripts/build_brand.py` regenerates all of them.
 
 ## Settings
 

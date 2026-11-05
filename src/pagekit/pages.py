@@ -334,7 +334,7 @@ def build_page(profile: Profile, page: Page) -> None:
             _favicon_html(profile),
             f'<script type="application/json" id="pagekit-meta">{meta_json}</script>',
             profile.concat("head.html"),
-            f"<style>\n{profile.concat('fonts.css')}\n{profile.theme()}\n{component_css}\n</style>",
+            f"<style>\n{profile.fonts()}\n{profile.theme()}\n{component_css}\n</style>",
         )
         if part
     )
@@ -370,7 +370,7 @@ def build_page(profile: Profile, page: Page) -> None:
         marker = "\x00pagekit-content\x00"
         document = _render(profile.read("template.html"), {**values, "content": marker}).replace(marker, source)
     try:
-        document = expand_diagrams(document, page.dir, profile.concat("fonts.css"), profile.theme())
+        document = expand_diagrams(document, page.dir, profile.fonts(), profile.theme())
         document = expand_icons(document, profile)
     except (DiagramError, IconError) as exc:
         raise PageError(str(exc)) from exc

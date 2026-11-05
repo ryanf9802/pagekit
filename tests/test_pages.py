@@ -381,6 +381,31 @@ def test_builtin_pages_carry_the_pagekit_brand(home: Path) -> None:
     assert "Made with pagekit" in document
 
 
+def test_builtin_pages_embed_their_font(home: Path) -> None:
+    document = make(load_profile()).index.read_text()
+    assert 'font-family: "IBM Plex Sans";' in document and "data:font/woff2;base64," in document
+
+
+def test_a_profile_with_its_own_font_does_not_carry_the_builtin_font(home: Path) -> None:
+    repo, directory = _profile_in(home, "")
+    (directory / "fonts.css").write_text('@font-face { font-family: "Mine"; src: url("data:font/woff2;base64,AAAA"); }')
+    document = make(load_profile(repo)).index.read_text()
+    assert 'font-family: "Mine"' in document
+    assert 'font-family: "IBM Plex Sans";' not in document
+
+
+def test_a_profile_that_sets_a_system_font_does_not_carry_the_builtin_font(home: Path) -> None:
+    repo, directory = _profile_in(home, "")
+    (directory / "theme.css").write_text(":root { --pk-font: Georgia, serif; }")
+    assert 'font-family: "IBM Plex Sans";' not in make(load_profile(repo)).index.read_text()
+
+
+def test_a_profile_that_only_changes_colors_keeps_the_builtin_font(home: Path) -> None:
+    repo, directory = _profile_in(home, "")
+    (directory / "theme.css").write_text(":root { --pk-accent: #123456; }")
+    assert 'font-family: "IBM Plex Sans";' in make(load_profile(repo)).index.read_text()
+
+
 def test_a_profile_with_its_own_brand_inherits_no_pagekit_logo(home: Path) -> None:
     repo, _ = _profile_in(home, 'brand = "Acme"')
     document = make(load_profile(repo)).index.read_text()
