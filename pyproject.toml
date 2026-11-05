@@ -22,5 +22,12 @@ packages = ["src/pagekit"]
 testpaths = ["tests"]
 markers = ["posix: needs a POSIX shell script or symlink, so it is skipped on Windows"]
 
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
 [dependency-groups]
-dev = ["pymupdf>=1.24", "pytest>=8"]
+dev = [
+    "pymupdf>=1.24",
+    "pytest>=8",
+    "ruff>=0.17.3",
+]

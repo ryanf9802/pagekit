@@ -1,0 +1,1 @@
+Follow [CONTRIBUTING.md](CONTRIBUTING.md).

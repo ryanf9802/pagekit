@@ -1,0 +1,20 @@
+name: Triage
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  # Issue forms apply a category label, but an issue created another way may have none.
+  needs-triage:
+    if: join(github.event.issue.labels.*.name, '') == ''
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh issue edit "$ISSUE" --repo "$REPO" --add-label needs-triage
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}

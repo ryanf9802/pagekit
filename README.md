@@ -105,11 +105,9 @@ Pages you have already built keep their look until you rebuild them.
 | [Serving pages](docs/serving.md) | The page index, SSH, and your other devices |
 | [Command reference](docs/commands.md) | Every command and environment variable |
 
-## Development
+## Contributing
 
-```bash
-uv run --group dev pytest
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
