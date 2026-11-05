@@ -262,6 +262,9 @@ def _logo_html(profile: Profile, brand: str) -> str:
         parts.append(f'<picture>{source}<img class="pk-logo" src="{_data_uri(logo)}" alt="{alt}"></picture>')
     if wordmark:
         parts.append(f'<img class="pk-wordmark" src="{_data_uri(wordmark)}" alt="{html.escape(brand)}">')
+    print_logo = profile.file("logo-print.png")
+    if print_logo:
+        parts.append(f'<img class="pk-logo-print" src="{_data_uri(print_logo)}" alt="{html.escape(brand)}">')
     return "".join(parts)
 
 

@@ -52,6 +52,7 @@ pagekit init --name acme --brand "Acme" --local   # or personal: ~/.pagekit/prof
 | `INSTRUCTIONS.md` | content and voice rules, printed by `pagekit new` | concatenated |
 | `template.html` | page shell with `{{head}}`, `{{logo}}`, `{{brand}}`, `{{title}}`, `{{summary}}`, `{{content}}`, `{{footer}}` | nearest wins |
 | `logo.svg`, `logo-dark.svg` | header icon, with an optional dark-mode version | nearest wins |
+| `logo-print.png` | the full logo as one image for print, which saves about 3 to 5 KB per PDF sheet over vector logos | nearest wins |
 | `wordmark.svg` | drawn name beside the icon, replacing the typed `brand`; dark ink, inverted to white in dark mode | nearest wins |
 | `components/*.html` | components specific to this profile; prefer the shared ones below | nearest wins, by name |
 | `SAVE.md` | steps printed after `pagekit save`, such as writing a matching document | nearest wins |

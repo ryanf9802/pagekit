@@ -272,6 +272,17 @@ def test_wordmark_joins_the_icon_and_carries_the_brand_name(home: Path) -> None:
     assert re.search(r'class="pk-wordmark" src="[^"]+" alt="Acme"', document)
 
 
+def test_print_logo_is_added_only_when_the_profile_has_one(home: Path) -> None:
+    repo = home / "repo"
+    directory = repo / ".pagekit" / "profile"
+    init_profile(directory, "acme", "builtin", "Acme")
+    (directory / "logo.svg").write_text("<svg/>")
+    profile = load_profile(repo)
+    assert 'class="pk-logo-print"' not in make(profile).index.read_text()
+    (directory / "logo-print.png").write_bytes(b"png")
+    assert 'class="pk-logo-print" src="data:image/png;base64,cG5n"' in make(profile).index.read_text()
+
+
 def test_pack_inlines_assets(home: Path) -> None:
     profile = load_profile()
     page, _ = new_page(profile, "shot", "Shot", None, "slots")

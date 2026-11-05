@@ -99,6 +99,7 @@ p { margin: 0 0 12px; }
 }
 .pk-logo { display: block; width: 24px; height: 24px; }
 .pk-header picture { flex: none; }
+.pk-logo-print { display: none; }
 .pk-wordmark { display: block; flex: none; width: auto; height: 15px; margin-left: -4px; }
 .pk-wordmark ~ .pk-brand { display: none; }
 /* A wordmark is drawn in dark ink, so it is inverted to white in dark mode. */
@@ -317,29 +318,19 @@ td > .pk-choices, th > .pk-choices { margin: -3px 0; }
 }
 .pk-comment-done:hover, .pk-comment-count:hover { text-decoration: underline; text-underline-offset: 2px; }
 .pk-comment-count { flex: none; margin-left: auto; }
-/* Status is a colored Lucide icon beside plain text, so it reads without relying on a pill. */
+/* Status is small uppercase colored text, with no box and no fill. */
 .pk-badge {
-  --pk-badge-color: var(--pk-muted);
-  color: var(--pk-text);
-  font-weight: 500;
+  color: var(--pk-muted);
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   white-space: nowrap;
 }
-.pk-badge-success, .pk-badge-warning, .pk-badge-danger, .pk-badge-info { --pk-badge-mask: none; }
-.pk-badge-success::before, .pk-badge-warning::before, .pk-badge-danger::before, .pk-badge-info::before {
-  content: "";
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  margin-right: 4px;
-  vertical-align: -0.15em;
-  background: var(--pk-badge-color);
-  -webkit-mask: var(--pk-badge-mask) center / contain no-repeat;
-  mask: var(--pk-badge-mask) center / contain no-repeat;
-}
-.pk-badge-success { --pk-badge-color: var(--pk-success); --pk-badge-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIC8+PHBhdGggZD0ibTE2IDktNS41IDUuNUw4IDEyIiAvPjwvc3ZnPg=="); }
-.pk-badge-warning { --pk-badge-color: var(--pk-warning); --pk-badge-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTIxLjczIDE4LTgtMTRhMiAyIDAgMCAwLTMuNDggMGwtOCAxNEEyIDIgMCAwIDAgNCAyMWgxNmEyIDIgMCAwIDAgMS43My0zIiAvPjxwYXRoIGQ9Ik0xMiA5djQiIC8+PHBhdGggZD0iTTEyIDE3aC4wMSIgLz48L3N2Zz4="); }
-.pk-badge-danger { --pk-badge-color: var(--pk-danger); --pk-badge-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDE2aC4wMSIgLz48cGF0aCBkPSJNMTIgOHY0IiAvPjxwYXRoIGQ9Ik0xNS4zMTIgMmEyIDIgMCAwIDEgMS40MTQuNTg2bDQuNjg4IDQuNjg4QTIgMiAwIDAgMSAyMiA4LjY4OHY2LjYyNGEyIDIgMCAwIDEtLjU4NiAxLjQxNGwtNC42ODggNC42ODhhMiAyIDAgMCAxLTEuNDE0LjU4Nkg4LjY4OGEyIDIgMCAwIDEtMS40MTQtLjU4NmwtNC42ODgtNC42ODhBMiAyIDAgMCAxIDIgMTUuMzEyVjguNjg4YTIgMiAwIDAgMSAuNTg2LTEuNDE0bDQuNjg4LTQuNjg4QTIgMiAwIDAgMSA4LjY4OCAyeiIgLz48L3N2Zz4="); }
-.pk-badge-info { --pk-badge-color: var(--pk-accent); --pk-badge-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIC8+PHBhdGggZD0iTTEyIDE2di00IiAvPjxwYXRoIGQ9Ik0xMiA4aC4wMSIgLz48L3N2Zz4="); }
+.pk-badge-success { color: var(--pk-success); }
+.pk-badge-warning { color: var(--pk-warning); }
+.pk-badge-danger { color: var(--pk-danger); }
+.pk-badge-info { color: var(--pk-accent); }
 .pk-icon { display: inline-block; flex: none; width: 1em; height: 1em; vertical-align: -0.125em; }
 
 .pk-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
@@ -448,14 +439,15 @@ details > :last-child { margin-bottom: 0; }
 }
 @media print {
   :root { color-scheme: light; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  html { scroll-padding-block: 0; }
+  /* Sizes are in rem, so this one root scales all printed text from 14px. */
+  html { font-size: 14px; scroll-padding-block: 0; }
   body {
     display: table;
     width: 100%;
     min-height: 0;
     padding: 0;
     background: #fff !important;
-    font-size: 10.5pt;
+    font-size: 1rem;
     line-height: 1.45;
   }
   .pk-header {
@@ -467,6 +459,9 @@ details > :last-child { margin-bottom: 0; }
     border: 0;
     break-inside: avoid;
   }
+  /* One image is stored once in a PDF. The vector logo is redrawn on every sheet. */
+  .pk-header:has(.pk-logo-print) picture, .pk-header:has(.pk-logo-print) .pk-wordmark { display: none; }
+  .pk-logo-print { display: block; flex: none; width: auto; height: 26px; }
   .pk-header .pk-bar { display: flex; align-items: center; gap: 10px; height: 12mm; padding-bottom: 3mm; }
   .pk-header-title { margin-left: auto; padding-left: 0 !important; border-left: 0 !important; font-size: 8.5pt; opacity: 1; }
   .pk-print-spacer { display: table-footer-group; break-inside: avoid; }
@@ -490,8 +485,8 @@ details > :last-child { margin-bottom: 0; }
   .pk-has-comment::after { display: none; }
   .pk-main { display: table-row-group; }
   .pk-section { margin-top: 20px; }
-  h1 { font-size: 20pt; }
-  h2 { font-size: 13pt; }
+  h1 { font-size: 1.625rem; }
+  h2 { font-size: 1.125rem; }
   h1, h2, h3, h4, .pk-card-head, p:has(+ pre), p:has(+ .pk-table-wrap), p:has(+ .pk-figure), p:has(+ .pk-grid) { break-after: avoid; }
   .pk-card, .pk-callout, .pk-kpi, .pk-figure, tr, pre, blockquote { break-inside: avoid; }
   .pk-divider { break-inside: avoid; break-after: avoid; }
@@ -499,12 +494,6 @@ details > :last-child { margin-bottom: 0; }
   details > summary { margin-left: 0; padding: 0; }
   details > summary::before { display: none; }
   details > :not(summary) { margin-left: 0; }
-  /* No masks in print: a print dialog can render them with stray marks. Colors are fixed here. */
-  .pk-badge-success::before, .pk-badge-warning::before, .pk-badge-danger::before, .pk-badge-info::before { -webkit-mask: none; mask: none; }
-  .pk-badge-success::before { background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMGY3YTNkIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIC8+PHBhdGggZD0ibTE2IDktNS41IDUuNUw4IDEyIiAvPjwvc3ZnPg==") center / contain no-repeat; }
-  .pk-badge-warning::before { background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYTg1YjAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTIxLjczIDE4LTgtMTRhMiAyIDAgMCAwLTMuNDggMGwtOCAxNEEyIDIgMCAwIDAgNCAyMWgxNmEyIDIgMCAwIDAgMS43My0zIiAvPjxwYXRoIGQ9Ik0xMiA5djQiIC8+PHBhdGggZD0iTTEyIDE3aC4wMSIgLz48L3N2Zz4=") center / contain no-repeat; }
-  .pk-badge-danger::before { background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYzIyYTFmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDE2aC4wMSIgLz48cGF0aCBkPSJNMTIgOHY0IiAvPjxwYXRoIGQ9Ik0xNS4zMTIgMmEyIDIgMCAwIDEgMS40MTQuNTg2bDQuNjg4IDQuNjg4QTIgMiAwIDAgMSAyMiA4LjY4OHY2LjYyNGEyIDIgMCAwIDEtLjU4NiAxLjQxNGwtNC42ODggNC42ODhhMiAyIDAgMCAxLTEuNDE0LjU4Nkg4LjY4OGEyIDIgMCAwIDEtMS40MTQtLjU4NmwtNC42ODgtNC42ODhBMiAyIDAgMCAxIDIgMTUuMzEyVjguNjg4YTIgMiAwIDAgMSAuNTg2LTEuNDE0bDQuNjg4LTQuNjg4QTIgMiAwIDAgMSA4LjY4OCAyeiIgLz48L3N2Zz4=") center / contain no-repeat; }
-  .pk-badge-info::before { background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjQ1N2M1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIC8+PHBhdGggZD0iTTEyIDE2di00IiAvPjxwYXRoIGQ9Ik0xMiA4aC4wMSIgLz48L3N2Zz4=") center / contain no-repeat; }
   thead { display: table-header-group; }
   th { white-space: normal; }
   pre { overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; }
