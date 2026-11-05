@@ -186,6 +186,17 @@ def test_logo_is_inlined(home: Path) -> None:
     assert f"data:image/svg+xml;base64,{encoded}" in page.index.read_text()
 
 
+def test_header_uses_the_on_dark_logo_when_there_is_one(home: Path) -> None:
+    repo = home / "repo"
+    directory = repo / ".pagekit" / "profile"
+    init_profile(directory, "acme", "builtin", "Acme")
+    (directory / "logo.svg").write_text("<svg id='light'/>")
+    (directory / "logo-dark.svg").write_text("<svg id='dark'/>")
+    document = make(load_profile(repo)).index.read_text()
+    assert base64.b64encode(b"<svg id='dark'/>").decode() in document
+    assert base64.b64encode(b"<svg id='light'/>").decode() not in document
+
+
 def test_pack_inlines_assets(home: Path) -> None:
     profile = load_profile()
     page, _ = new_page(profile, "shot", "Shot", None, "slots")

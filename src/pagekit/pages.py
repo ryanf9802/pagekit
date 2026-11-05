@@ -250,12 +250,11 @@ def _data_uri(path: Path) -> str:
 
 
 def _logo_html(profile: Profile, brand: str) -> str:
-    light = profile.file("logo.svg")
-    if not light:
+    # The header bar is dark in both themes, so the on-dark logo wins when a profile has one.
+    logo = profile.file("logo-dark.svg") or profile.file("logo.svg")
+    if not logo:
         return ""
-    dark = profile.file("logo-dark.svg")
-    source = f'<source media="(prefers-color-scheme: dark)" srcset="{_data_uri(dark)}">' if dark else ""
-    return f'<picture>{source}<img class="pk-logo" src="{_data_uri(light)}" alt="{html.escape(brand)}"></picture>'
+    return f'<img class="pk-logo" src="{_data_uri(logo)}" alt="{html.escape(brand)}">'
 
 
 def _render(template: str, values: dict[str, str]) -> str:

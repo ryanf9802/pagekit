@@ -3,6 +3,8 @@
 - Write content, not chrome. The profile supplies the header, theme, and footer.
 - Use `--pk-*` tokens and `pk-*` classes. Never hard-code a color: every page must
   work in light and dark mode.
+- Let color carry meaning: add `pk-tone-warning`, `pk-tone-danger`, `pk-tone-success`, or
+  `pk-tone-accent-2` to a `pk-card` or `pk-kpi`, and use `pk-badge-*` for status.
 - Reference images as `assets/<file>`. Delete assets you stop using.
 - Every form control needs a stable, unique `name` that says what it answers, keyed
   to the item it belongs to (`F-01.decision`, `F-01.notes`). Answers come back to
