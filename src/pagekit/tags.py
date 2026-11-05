@@ -8,6 +8,7 @@ because it reads files and keeps a cache.
 from __future__ import annotations
 
 import html
+import math
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -138,8 +139,45 @@ def _contents(attrs: dict[str, str], headings: list[Heading]) -> str:
     return "".join(parts)
 
 
+_SPARK_W, _SPARK_H, _SPARK_PAD = 96, 28, 3
+_SPARK_MIN_POINTS, _SPARK_MAX_POINTS = 2, 60
+
+
+def _number(value: float) -> str:
+    return f"{value:g}"
+
+
+def _spark(attrs: dict[str, str], headings: list[Heading]) -> str:
+    raw = attrs.get("values", "")
+    try:
+        values = [float(part) for part in raw.split(",")] if raw.strip() else []
+    except ValueError:
+        raise TagError(f'<pk-spark>: values must be numbers separated by commas, not "{raw}"') from None
+    if not _SPARK_MIN_POINTS <= len(values) <= _SPARK_MAX_POINTS or not all(math.isfinite(v) for v in values):
+        raise TagError(f"<pk-spark>: values needs {_SPARK_MIN_POINTS} to {_SPARK_MAX_POINTS} numbers, e.g. values=\"3,5,4,8\"")
+    low, high = min(values), max(values)
+    span = high - low
+    inner_w, inner_h = _SPARK_W - 2 * _SPARK_PAD, _SPARK_H - 2 * _SPARK_PAD
+    points = []
+    for index, value in enumerate(values):
+        x = _SPARK_PAD + inner_w * index / (len(values) - 1)
+        y = _SPARK_PAD + inner_h * (0.5 if span == 0 else 1 - (value - low) / span)
+        points.append((x, y))
+    line = " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
+    end_x, end_y = points[-1]
+    summary = f"{len(values)} points, from {_number(values[0])} to {_number(values[-1])}, low {_number(low)}, high {_number(high)}"
+    label = attrs.get("label", "").strip()
+    text = html.escape(f"{label}: {summary}" if label else f"Trend: {summary}", quote=True)
+    return (
+        f'<svg class="pk-spark" viewBox="0 0 {_SPARK_W} {_SPARK_H}" width="{_SPARK_W}" height="{_SPARK_H}" '
+        f'role="img" aria-label="{text}"><polyline class="pk-spark-line" points="{line}"/>'
+        f'<circle class="pk-spark-end" cx="{end_x:.1f}" cy="{end_y:.1f}" r="2.5"/></svg>'
+    )
+
+
 _TAGS: dict[str, tuple[Callable[[dict[str, str], list[Heading]], str], set[str]]] = {
     "contents": (_contents, {"max-level", "title"}),
+    "spark": (_spark, {"values", "label"}),
 }
 
 

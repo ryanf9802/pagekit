@@ -412,6 +412,9 @@ td > .pk-choices, th > .pk-choices { margin: -3px 0; }
 }
 .pk-kpi-value { font-size: 1.25rem; font-weight: 650; font-variant-numeric: tabular-nums; line-height: 1.2; letter-spacing: -0.01em; }
 .pk-kpi-label { color: var(--pk-muted); font-size: 0.75rem; }
+.pk-spark { display: block; max-width: 100%; margin-top: 6px; overflow: visible; }
+.pk-spark-line { fill: none; stroke: var(--pk-accent); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.pk-spark-end { fill: var(--pk-accent); }
 
 .pk-figure { margin: 12px 0; }
 .pk-figure img { display: block; border: 1px solid var(--pk-border); border-radius: var(--pk-radius); }

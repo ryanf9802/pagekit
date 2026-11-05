@@ -24,6 +24,28 @@ The list is built from the page's headings, in order and nested by level, with e
 
 For a hand-written list that adds a summary or groups sections into parts, use the `contents-card` component.
 
+## Sparkline
+
+```html
+<div class="pk-kpi">
+  <div class="pk-kpi-value">3.1 s</div>
+  <div class="pk-kpi-label">Median build time</div>
+  <pk-spark values="3.9,3.6,3.4,3.5,3.1" label="Build time, last five weeks"></pk-spark>
+</div>
+```
+
+A small trend line for a KPI tile, drawn as inline SVG in the theme's accent color, with a dot on the last value.
+
+| Attribute | Meaning | Default |
+| --- | --- | --- |
+| `values` | 2 to 60 numbers separated by commas, oldest first | required |
+| `label` | What the numbers are, read aloud by screen readers | `Trend` |
+
+- The line is scaled to the tile, from the lowest value to the highest. It shows the shape, not the amounts, so keep
+  the amounts in the tile's value and label.
+- Screen readers hear the label followed by the first, last, lowest, and highest values.
+- It works in light mode, dark mode, and print, and needs no browser or script.
+
 ## Adding a tag
 
 Tags live in `src/pagekit/tags.py`. A tag is a function that takes its attributes and the page's headings and returns
