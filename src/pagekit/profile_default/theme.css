@@ -592,13 +592,14 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
 @media print {
   :root { color-scheme: light; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   /* Sizes are in rem, so this one root scales all printed text from 14px. */
-  html { background: #fff; font-size: 14px; scroll-padding-block: 0; }
+  /* No canvas color: paper is white, and a painted canvas would cover the page number. */
+  html { background: none; font-size: 14px; scroll-padding-block: 0; }
   body {
     display: table;
     width: 100%;
     min-height: 0;
     padding: 0;
-    background: #fff !important;
+    background: none !important;
     font-size: 1rem;
     line-height: 1.45;
   }
