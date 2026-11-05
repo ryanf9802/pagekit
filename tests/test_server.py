@@ -118,3 +118,15 @@ def test_page_reports_a_phone_link_only_when_set_up(home: Path) -> None:
     assert page.phone_url() == ""
     set_public_url("https://pages.example.ts.net")
     assert page.phone_url() == "https://pages.example.ts.net/p/default/demo/"
+
+
+def test_index_can_be_installed_as_an_app(home: Path, port: int) -> None:
+    status, body, _ = request(port, "/")
+    assert status == 200 and b'rel="manifest"' in body
+    status, body, response = request(port, "/manifest.webmanifest")
+    manifest = json.loads(body)
+    assert status == 200 and response.headers["Content-Type"] == "application/manifest+json"
+    assert manifest["display"] == "standalone" and manifest["start_url"] == "/"
+    for icon in manifest["icons"]:
+        status, body, response = request(port, icon["src"])
+        assert status == 200 and response.headers["Content-Type"] == "image/png" and body.startswith(b"\x89PNG")

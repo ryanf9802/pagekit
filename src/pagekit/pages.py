@@ -327,7 +327,7 @@ def build_page(profile: Profile, page: Page) -> None:
         part
         for part in (
             '<meta charset="utf-8">',
-            '<meta name="viewport" content="width=device-width, initial-scale=1">',
+            '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">',
             f"<title>{title}</title>",
             f'<script type="application/json" id="pagekit-meta">{meta_json}</script>',
             profile.concat("head.html"),

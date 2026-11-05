@@ -132,6 +132,11 @@ p { margin: 0 0 12px; }
   white-space: nowrap;
 }
 .pk-home:hover { text-decoration: underline; }
+.pk-home, .pk-pdf { display: inline-flex; align-items: center; justify-content: center; }
+.pk-home .pk-icon, .pk-pdf .pk-icon { display: none; width: 20px; height: 20px; }
+.pk-pdf:disabled { animation: pk-pulse 1s ease-in-out infinite; }
+.pk-pdf-failed { color: var(--pk-danger); }
+@keyframes pk-pulse { 50% { opacity: 0.35; } }
 .pk-pdf {
   flex: none;
   margin-left: auto;
@@ -277,7 +282,9 @@ td > .pk-choices, th > .pk-choices { margin: -3px 0; }
   white-space: nowrap;
 }
 .pk-id[role="button"] { cursor: pointer; }
-.pk-id[role="button"]:hover { color: var(--pk-accent); text-decoration: underline; text-underline-offset: 2px; }
+@media (hover: hover) {
+  .pk-id[role="button"]:hover { color: var(--pk-accent); text-decoration: underline; text-underline-offset: 2px; }
+}
 .pk-has-comment { color: var(--pk-accent); }
 .pk-has-comment::after {
   content: "";
@@ -404,6 +411,11 @@ details > :last-child { margin-bottom: 0; }
   .pk-main { padding-top: 24px; }
   .pk-footer-meta > span:not(:first-child) { display: none; }
   .pk-footer:has(.pk-comment-count:not([hidden])) .pk-footer-meta { display: none; }
+  .pk-choices label, label.pk-choices { min-height: 44px; font-size: 1rem; }
+  .pk-choices input[type="radio"], .pk-choices input[type="checkbox"] { width: 18px; height: 18px; }
+  td > .pk-choices, th > .pk-choices { min-height: 36px; }
+  details > summary { min-height: 44px; }
+  th, td { padding: 8px; }
   .pk-comment {
     position: fixed;
     top: auto;
@@ -413,8 +425,36 @@ details > :last-child { margin-bottom: 0; }
     width: auto;
     border-width: 1px 0 0;
     border-radius: var(--pk-radius) var(--pk-radius) 0 0;
+    bottom: var(--pk-keyboard, 0);
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    transition: bottom 100ms ease-out;
   }
+  .pk-comment textarea { min-height: 88px; font-size: 16px; }
+  .pk-comment-done { min-width: 44px; min-height: 44px; margin: -8px -6px -8px 0; font-size: 1rem; }
   .pk-choices label, label.pk-choices { width: 100%; }
+}
+/* Phones. Screen only, so it never reaches print. */
+@media screen and (max-width: 640px) {
+  .pk-header .pk-bar { display: contents; }
+  .pk-bar-label { display: none; }
+  .pk-home, .pk-pdf { width: 40px; height: 44px; margin: -4px 0; font-size: 0; }
+  .pk-pdf { margin-left: auto; }
+  .pk-pdf + .pk-home { margin-right: -10px; }
+  .pk-home:not(.pk-pdf + .pk-home) { margin-right: -10px; }
+  .pk-home .pk-icon, .pk-pdf .pk-icon { display: block; }
+  .pk-header { padding-top: max(8px, env(safe-area-inset-top)); gap: 8px; transition: transform 180ms ease; }
+  .pk-footer { padding-bottom: max(8px, env(safe-area-inset-bottom)); transition: transform 180ms ease; }
+  .pk-bars-hidden .pk-header { transform: translateY(-100%); }
+  .pk-bars-hidden .pk-footer { transform: translateY(100%); }
+  #pk-export { min-height: 40px; }
+  .pk-comment-count { min-height: 40px; }
+  /* A small ID keeps its look, with a thumb-sized area around it. */
+  .pk-id[role="button"] { position: relative; }
+  .pk-id[role="button"]::before { content: ""; position: absolute; inset: -13px -8px; }
+}
+@media (pointer: coarse) {
+  a, button, label, summary, .pk-id, input { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]), select, textarea { font-size: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }

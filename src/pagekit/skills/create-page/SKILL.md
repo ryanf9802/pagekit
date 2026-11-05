@@ -35,7 +35,8 @@ page belongs to. Do not hand-roll chrome: the profile owns the theme, header, an
    wide, where `document.documentElement.scrollWidth` must not exceed the window width,
    and in dark mode. `pagekit check` cannot see layout.
 
-5. Report the URL when the server is up, and the `phone:` link too when the build prints one. Otherwise run `pagekit send <slug>` so the file
+5. When the server is up, report both links every time, labeled, without asking which device the
+   user is on: the `url:` as the desktop link and, when the build prints one, the `phone:` link. Otherwise run `pagekit send <slug>` so the file
    lands in the user's dropbucket: a `file://` path does not reach a browser on another
    machine.
 

@@ -130,9 +130,10 @@ def test_icons_are_embedded_only_when_used_and_unknown_names_fail(home: Path) ->
     profile = load_profile()
     page = make(profile, body='<p><i data-icon="circle-check"></i> Ready <i data-icon="x" aria-label="Close"></i></p>')
     document = page.index.read_text()
-    assert document.count('class="pk-icon"') == 2
+    body = document.split('<footer class="pk-footer"')[0]
+    assert body.count('class="pk-icon"') == 2
     assert 'role="img" aria-label="Close"' in document and 'data-icon=' not in document
-    assert 'class="pk-icon"' not in make(profile, slug="plain").index.read_text()
+    assert 'class="pk-icon"' not in make(profile, slug="plain").index.read_text().split('<footer class="pk-footer"')[0]
     page.content.write_text('<i data-icon="not-a-real-icon"></i>')
     with pytest.raises(PageError, match="no icon named"):
         build_page(profile, page)
@@ -154,6 +155,13 @@ def test_profile_fonts_are_embedded_before_the_theme(home: Path) -> None:
     (directory / "fonts.css").write_text('@font-face { font-family: "Acme Sans"; }')
     document = make(load_profile(repo)).index.read_text()
     assert document.index('"Acme Sans"') < document.index("--pk-accent")
+
+
+def test_header_action_icons_are_embedded_in_the_page_script(home: Path) -> None:
+    document = make(load_profile()).index.read_text()
+    assert 'data-icon="download"' not in document and 'data-icon="layout-grid"' not in document
+    assert document.count('class="pk-icon"') == 2
+    assert "viewport-fit=cover" in document
 
 
 def test_title_is_escaped(home: Path) -> None:

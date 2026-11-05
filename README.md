@@ -36,7 +36,8 @@ tailscale serve --bg 8766
 pagekit install-service --public-url https://HOST.TAILNET.ts.net
 ```
 
-The server then accepts that one extra name, and builds print a `phone:` link. Use `tailscale serve`, never
+The server then accepts that one extra name, builds print a `phone:` link, and the index can be added
+to a phone's home screen as an app (Chrome menu, then Add to Home screen). Use `tailscale serve`, never
 `funnel`, which is public. The server still listens on localhost only.
 
 ## Profiles

@@ -20,6 +20,12 @@ _LOCAL_HOST = re.compile(r"^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$")
 _PAGE_PATH = re.compile(r"^/p/([a-z0-9-]+)/([a-z0-9-]+)(/.*)?$")
 _SAVED_PATH = re.compile(r"^/saved/([a-z0-9-]+\.html)$")
 _INTERNAL_FILES = {"page.toml", "content.html"}
+# What a phone needs to install the index as an app.
+_APP_FILES = {
+    "/manifest.webmanifest": ("manifest.webmanifest", "application/manifest+json"),
+    "/icon-192.png": ("icon-192.png", "image/png"),
+    "/icon-512.png": ("icon-512.png", "image/png"),
+}
 _PRUNE_INTERVAL_SECONDS = 600.0
 _PDF_PATH = re.compile(r"^/api/pdf/([a-z0-9-]+)/([a-z0-9-]+)$")
 _MAX_STATE_BYTES = 2_000_000
@@ -93,6 +99,9 @@ def make_handler():
             path = urlsplit(self.path).path
             if path == "/":
                 return self._send(200, index, "text/html; charset=utf-8")
+            if path in _APP_FILES:
+                name, ctype = _APP_FILES[path]
+                return self._send(200, resources.files("pagekit").joinpath("static", name).read_bytes(), ctype)
             if path == "/api/pdf":
                 return self._json(200, {"available": bool(find_chrome())})
             if path == "/api/pages":

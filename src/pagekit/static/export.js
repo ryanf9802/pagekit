@@ -8,6 +8,7 @@
   var SKIP = { button: 1, submit: 1, reset: 1, image: 1, hidden: 1, password: 1 };
   var STORE_KEY = "pagekit:" + meta.profile + "/" + meta.slug + ":" + meta.rev;
   var labelTimer;
+  var narrowScreen = window.matchMedia("(max-width: 640px)");
 
   function nameOf(el) {
     return el.getAttribute("data-pk-name") || el.getAttribute("name") || el.id || "";
@@ -328,6 +329,16 @@
     commentBox.style.setProperty("--pk-x", Math.max(8, Math.min(rect.left, maxLeft)) + window.scrollX + "px");
     commentBox.style.setProperty("--pk-y", top + window.scrollY + "px");
     commentArea.focus();
+    if (narrowScreen.matches) el.scrollIntoView({ block: "center" });
+    placeCommentSheet();
+  }
+
+  /* On a phone the box is a bottom sheet, and the keyboard covers the page without resizing it. */
+  function placeCommentSheet() {
+    var view = window.visualViewport;
+    if (!commentBox || commentBox.hidden || !view) return;
+    var covered = Math.max(0, window.innerHeight - view.height - view.offsetTop);
+    commentBox.style.setProperty("--pk-keyboard", covered + "px");
   }
 
   function nextCommented() {
@@ -503,11 +514,16 @@
       var pdf = document.createElement("button");
       pdf.type = "button";
       pdf.className = "pk-pdf";
-      pdf.textContent = "Download PDF";
+      pdf.title = "Download PDF";
+      pdf.setAttribute("aria-label", "Download PDF");
+      pdf.innerHTML = '<i data-icon="download"></i><span class="pk-bar-label">Download PDF</span>';
+      var pdfLabel = pdf.querySelector(".pk-bar-label");
       bar.insertBefore(pdf, before);
       pdf.addEventListener("click", function () {
         pdf.disabled = true;
-        pdf.textContent = "Generating...";
+        pdf.classList.remove("pk-pdf-failed");
+        pdf.setAttribute("aria-label", "Generating PDF");
+        pdfLabel.textContent = "Generating...";
         fetch("/api/pdf/" + parts[2] + "/" + parts[3], {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -523,9 +539,12 @@
           link.click();
           link.remove();
           setTimeout(function () { URL.revokeObjectURL(link.href); }, 10000);
-          pdf.textContent = "Download PDF";
+          pdfLabel.textContent = "Download PDF";
+          pdf.setAttribute("aria-label", "Download PDF");
         }).catch(function () {
-          pdf.textContent = "PDF failed, try again";
+          pdf.classList.add("pk-pdf-failed");
+          pdfLabel.textContent = "PDF failed, try again";
+          pdf.setAttribute("aria-label", "PDF failed, try again");
         }).finally(function () {
           pdf.disabled = false;
         });
@@ -541,12 +560,51 @@
     var home = document.createElement("a");
     home.className = "pk-home";
     home.href = "/";
-    home.textContent = "All pages";
+    home.title = "All pages";
+    home.setAttribute("aria-label", "All pages");
+    home.innerHTML = '<i data-icon="layout-grid"></i><span class="pk-bar-label">All pages</span>';
     /* Answers are saved in the browser and this stays in the same tab, so no prompt. */
     home.addEventListener("click", function () { leavingForIndex = true; });
     headerBar.appendChild(home);
     addPdfButton(headerBar, home);
   }
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", placeCommentSheet);
+    window.visualViewport.addEventListener("scroll", placeCommentSheet);
+  }
+
+  /* On a phone the bars step aside while reading down, and return on any scroll up. */
+  var lastScroll = window.scrollY;
+  function isTyping() {
+    var active = document.activeElement;
+    return !!active && (active.tagName === "TEXTAREA" || active.tagName === "SELECT" || active.tagName === "INPUT" || active.isContentEditable);
+  }
+  function showBars() {
+    document.body.classList.remove("pk-bars-hidden");
+  }
+  window.addEventListener("scroll", function () {
+    var y = window.scrollY;
+    if (!narrowScreen.matches) return showBars();
+    if (Math.abs(y - lastScroll) < 8) return;
+    var atEnd = y + window.innerHeight >= document.documentElement.scrollHeight - 40;
+    var reading = y > lastScroll && y > 80 && !atEnd && !isTyping();
+    document.body.classList.toggle("pk-bars-hidden", reading);
+    lastScroll = y;
+  }, { passive: true });
+  document.addEventListener("focusin", function () { if (isTyping()) showBars(); });
+  narrowScreen.addEventListener("change", showBars);
+  window.addEventListener("beforeprint", showBars);
+
+  /* The phone's address bar matches the page's own bars. */
+  var barColor = document.createElement("meta");
+  barColor.name = "theme-color";
+  document.head.appendChild(barColor);
+  function matchBarColor() {
+    barColor.content = getComputedStyle(document.documentElement).getPropertyValue("--pk-surface").trim();
+  }
+  matchBarColor();
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", matchBarColor);
 
   /* The header shows the page title once the main heading has scrolled away. */
   var heading = document.querySelector("h1");
