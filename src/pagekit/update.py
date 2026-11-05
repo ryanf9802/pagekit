@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -63,10 +64,36 @@ def _require_clone(root: Path | None) -> Path:
     return root
 
 
-def _fetch_target(clone: Path, follow_main: bool) -> tuple[str, str]:
+def update_settings_file() -> Path:
+    return Path.home() / ".pagekit" / "update.toml"
+
+
+def resolve_follow(flag: str | None = None) -> tuple[str, str]:
+    """What to follow, "releases" or "main", and where that came from: "flag", "file", or "default"."""
+    if flag:
+        return flag, "flag"
+    path = update_settings_file()
+    try:
+        text = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return "releases", "default"
+    except OSError as exc:
+        raise UpdateError(f"{path} could not be read: {exc}") from exc
+    try:
+        value = tomllib.loads(text).get("follow")
+    except tomllib.TOMLDecodeError as exc:
+        raise UpdateError(f"{path} is not valid TOML: {exc}") from exc
+    if value is None:
+        return "releases", "default"
+    if value not in ("releases", "main"):
+        raise UpdateError(f'{path}: follow must be "releases" or "main", not {value!r}')
+    return value, "file"
+
+
+def _fetch_target(clone: Path, follow: str | None) -> tuple[str, str]:
     """Fetches, and names what to move to: the newest release, or origin/main. Returns (ref, release name or "")."""
     _git(clone, "fetch", "--tags", "origin", BRANCH)
-    if follow_main:
+    if resolve_follow(follow)[0] == "main":
         return f"origin/{BRANCH}", ""
     releases = _lines(_git(clone, "tag", "--list", RELEASE_TAGS, "--sort=-version:refname"))
     if not releases:
@@ -74,10 +101,10 @@ def _fetch_target(clone: Path, follow_main: bool) -> tuple[str, str]:
     return releases[0], releases[0]
 
 
-def pending_commits(root: Path | None = None, follow_main: bool = False) -> list[str]:
+def pending_commits(root: Path | None = None, follow: str | None = None) -> list[str]:
     """Fetches, and lists what an update would bring in. Changes nothing else."""
     clone = _require_clone(root or clone_dir())
-    target, _ = _fetch_target(clone, follow_main)
+    target, _ = _fetch_target(clone, follow)
     return _lines(_git(clone, "log", "--format=%s", f"HEAD..{target}"))
 
 
@@ -94,7 +121,7 @@ def _restart_server() -> str:
     return "restart by hand"
 
 
-def update(root: Path | None = None, follow_main: bool = False) -> UpdateResult:
+def update(root: Path | None = None, follow: str | None = None) -> UpdateResult:
     clone = _require_clone(root or clone_dir())
     # Untracked files are left alone by a pull, and agent worktrees often sit inside a clone.
     if _git(clone, "status", "--porcelain", "--untracked-files=no"):
@@ -102,7 +129,7 @@ def update(root: Path | None = None, follow_main: bool = False) -> UpdateResult:
     branch = _git(clone, "rev-parse", "--abbrev-ref", "HEAD")
     if branch != BRANCH:
         raise UpdateError(f"{clone} is on {branch}: switch it to {BRANCH}, then update again")
-    target, version = _fetch_target(clone, follow_main)
+    target, version = _fetch_target(clone, follow)
     before = _git(clone, "rev-parse", "HEAD")
     # A clone already ahead of the release stays where it is, so an update never moves backwards.
     _git(clone, "merge", "--ff-only", target)

@@ -36,7 +36,7 @@ from .pages import (
     set_public_url,
 )
 from .pdf import render_pdf
-from .update import UpdateError, pending_commits, update
+from .update import UpdateError, pending_commits, resolve_follow, update, update_settings_file
 from .profiles import (
     EXTRA_PROFILES_SUBDIR,
     PROFILE_SUBDIR,
@@ -320,13 +320,16 @@ WantedBy=default.target
 
 def cmd_update(args) -> int:
     try:
+        follow, source = resolve_follow(args.follow)
+        if follow == "main":
+            print("following main" + (f", as set in {update_settings_file()}" if source == "file" else ""))
         if args.check:
-            commits = pending_commits(follow_main=args.main)
+            commits = pending_commits(follow=follow)
             for commit in commits:
                 print(f"  {commit}")
             print(f"{len(commits)} update(s) available: run pagekit update" if commits else "pagekit is up to date")
             return 0
-        result = update(follow_main=args.main)
+        result = update(follow=follow)
     except UpdateError as exc:
         print(f"pagekit: {exc}", file=sys.stderr)
         return 1
@@ -446,7 +449,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("update", help="update pagekit to the newest release, and restart the server if needed")
     p.add_argument("--check", action="store_true", help="list what an update would bring in, and change nothing")
-    p.add_argument("--main", action="store_true", help="follow the main branch instead of the newest release")
+    follow = p.add_mutually_exclusive_group()
+    follow.add_argument("--main", dest="follow", action="store_const", const="main",
+                        help="follow the main branch, whatever ~/.pagekit/update.toml says")
+    follow.add_argument("--releases", dest="follow", action="store_const", const="releases",
+                        help="follow the newest release, whatever ~/.pagekit/update.toml says")
     p.set_defaults(fn=cmd_update)
 
     p = sub.add_parser("serve", help="run the optional page index")
