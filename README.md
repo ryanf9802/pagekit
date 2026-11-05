@@ -81,7 +81,7 @@ profile before using it from a repo you do not trust.
 
 There are three layers, and each has one job:
 
-- **Core**, in this repo: callout, divider, table, grid, tile row, status, collapsed section,
+- **Core**, in this repo: callout, divider, diagram, table, grid, tile row, status, collapsed section,
   figure, before and after, finding card, and decision card. These change only by deliberate choice.
 - **Your library**, in `~/.pagekit/library/`: anything an agent builds that core does not cover.
   Agents add to it as they work, with no user involved, and one library serves every profile.
@@ -109,6 +109,15 @@ embeds only those it uses, so pages stay small and work offline. Refresh them wi
 pagekit icons WORD          search by name or tag
 <i data-icon="NAME"></i>    use one in a page; an unknown name fails the build
 ```
+
+## Diagrams
+
+Write `assets/NAME.mmd` (Mermaid flowchart source with a `title` and `desc` at the top), then add
+`<pk-diagram src="assets/NAME.mmd"></pk-diagram>`. The build draws it once with the vendored Mermaid
+(MIT license, `src/pagekit/static/mermaid-LICENSE`) in local Chromium, using the profile's font to
+measure text, and caches the result beside the page. The output is plain inline SVG with no Mermaid
+styling or script, so colors follow the theme and the page stays offline. A build needs Chrome only
+when a diagram has changed. `pagekit component show diagram` has the full rules.
 
 ## Agent workflow
 

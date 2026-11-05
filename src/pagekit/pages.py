@@ -22,6 +22,7 @@ from importlib import resources
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
+from .diagrams import DiagramError, expand_diagrams
 from .icons import IconError, expand_icons
 from .library import consistency_warnings, library_css_for
 from .profiles import NAME_RE, RESERVED_NAMES, Profile
@@ -360,8 +361,9 @@ def build_page(profile: Profile, page: Page) -> None:
         marker = "\x00pagekit-content\x00"
         document = _render(profile.read("template.html"), {**values, "content": marker}).replace(marker, source)
     try:
+        document = expand_diagrams(document, page.dir, profile.concat("fonts.css"), profile.theme())
         document = expand_icons(document)
-    except IconError as exc:
+    except (DiagramError, IconError) as exc:
         raise PageError(str(exc)) from exc
     page.index.write_text(document)
 

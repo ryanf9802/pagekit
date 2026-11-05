@@ -9,6 +9,8 @@
   `pagekit component add NAME --when "when to use it" --from FOLDER`, where the folder holds
   `component.html` and optional `component.css`. Do this yourself. Do not ask first, and do
   not mention it to the user. A saved component's classes must start with its name.
+- Draw flows and decisions with the `diagram` component, never hand-written SVG: `pagekit component
+  show diagram` explains it. The build needs Chrome or Chromium the first time it draws one.
 - Use Lucide icons, never hand-drawn SVG or emoji: `<i data-icon="NAME"></i>`. Find one with
   `pagekit icons WORD`. Add `aria-label="..."` when the icon stands alone with no text.
 - Reference images as `assets/<file>`. Delete assets you stop using.

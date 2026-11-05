@@ -365,6 +365,53 @@ td > .pk-choices, th > .pk-choices { margin: -3px 0; }
 .pk-figure img { display: block; border: 1px solid var(--pk-border); border-radius: var(--pk-radius); }
 .pk-figure figcaption { margin-top: 6px; color: var(--pk-muted); font-size: 0.875rem; }
 
+/* Diagrams: colors come only from here, so they follow the theme in light, dark, and print. */
+.pk-diagram {
+  margin: 12px 0;
+  padding: 10px 12px 12px;
+  background: var(--pk-surface);
+  border: 1px solid var(--pk-border);
+  border-radius: var(--pk-radius-small);
+}
+.pk-diagram figcaption {
+  margin: 0 0 6px;
+  color: var(--pk-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.pk-diagram-scroll { overflow-x: auto; }
+.pk-diagram svg {
+  display: block;
+  width: 100%;
+  max-width: var(--pk-diagram-w, none);
+  height: auto;
+  margin: 0 auto;
+  fill: var(--pk-text);
+  font-family: var(--pk-font);
+  font-size: 15px;
+}
+.pk-diagram-node :is(rect, circle, ellipse, polygon, path) { fill: var(--pk-surface); stroke: var(--pk-muted); stroke-width: 1; }
+.pk-diagram-tone-strong :is(rect, circle, ellipse, polygon, path) { stroke: var(--pk-text); }
+.pk-diagram-tone-neutral :is(rect, circle, ellipse, polygon, path) { fill: var(--pk-surface-2); }
+.pk-diagram-tone-accent :is(rect, circle, ellipse, polygon, path) { fill: var(--pk-surface-2); stroke: var(--pk-accent); }
+.pk-diagram-tone-danger :is(rect, circle, ellipse, polygon, path) { stroke: var(--pk-danger); }
+.pk-diagram-tone-muted :is(rect, circle, ellipse, polygon, path) { stroke-dasharray: 4 3; }
+.pk-diagram text, .pk-diagram tspan { fill: var(--pk-text); stroke: none; }
+.pk-diagram-flowchart-link { fill: none; stroke: var(--pk-muted); stroke-width: 1; }
+.pk-diagram-edge-thickness-thick { stroke-width: 2; }
+.pk-diagram-edge-pattern-dashed { stroke-dasharray: 5 3; }
+.pk-diagram-edge-pattern-dotted { stroke-dasharray: 2 2; }
+.pk-diagram-marker { fill: var(--pk-muted); stroke: var(--pk-muted); stroke-dasharray: none; }
+.pk-diagram-marker.pk-diagram-cross { stroke-width: 1; }
+.pk-diagram-edgeLabel rect { fill: var(--pk-surface); stroke: none; opacity: 1; }
+/* Mermaid draws label text as HTML inside the SVG. */
+.pk-diagram foreignObject div { display: table-cell; max-width: 420px; color: var(--pk-text); line-height: 1.5; text-align: center; white-space: nowrap; }
+.pk-diagram foreignObject p { margin: 0; }
+.pk-diagram-edgeLabel p { background: var(--pk-surface); }
+.pk-diagram-note { margin: 8px 0 0; color: var(--pk-muted); font-size: 0.8125rem; line-height: 1.4; }
+
 .pk-table-wrap {
   margin: 8px 0;
   overflow-x: auto;
@@ -444,6 +491,8 @@ details > :last-child { margin-bottom: 0; }
 }
 /* Phones. Screen only, so it never reaches print. */
 @media screen and (max-width: 640px) {
+  /* Keeps diagram text readable: a wide diagram scrolls inside its card instead of shrinking. */
+  .pk-diagram svg { min-width: calc(var(--pk-diagram-w, 0px) * 0.85); }
   .pk-header .pk-bar { display: contents; }
   .pk-bar-label { display: none; }
   .pk-home, .pk-pdf { width: 40px; height: 44px; margin: -4px 0; font-size: 0; }
@@ -533,6 +582,11 @@ details > :last-child { margin-bottom: 0; }
   .pk-has-comment { color: var(--pk-muted); }
   .pk-has-comment::after { display: none; }
   .pk-main { display: table-row-group; }
+  .pk-diagram { padding: 6px 8px 8px; break-inside: avoid; }
+  .pk-diagram figcaption { margin-bottom: 3px; }
+  .pk-diagram-scroll { overflow: visible; }
+  .pk-diagram svg { max-height: 8.5cm; }
+  .pk-diagram-note { margin-top: 4px; font-size: 0.75rem; }
   .pk-section { margin-top: 20px; }
   h1 { font-size: 1.625rem; }
   h2 { font-size: 1.125rem; }

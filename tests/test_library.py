@@ -33,7 +33,7 @@ def page_with(body: str):
 def test_core_components_all_say_when_to_use_them(home: Path) -> None:
     core = [c for c in list_components(load_profile()) if c.source == "core"]
     names = {c.name for c in core}
-    assert {"callout", "divider", "table", "grid", "finding-card", "decision-card", "figure"} <= names
+    assert {"callout", "diagram", "divider", "table", "grid", "finding-card", "decision-card", "figure"} <= names
     assert all(c.when and "<" not in c.when for c in core)
 
 

@@ -1,0 +1,25 @@
+<!-- A flow or decision drawn as a flowchart: write assets/NAME.mmd and use this tag. -->
+<!--
+  assets/NAME.mmd holds Mermaid flowchart source, starting with the caption and alt text:
+
+    ---
+    title: What happens to each record
+    desc: Two to four sentences saying what the diagram shows, for readers who cannot see it.
+    ---
+    flowchart TB
+      q["Matches a project?"]
+      q -->|Yes| u["Updated"]
+      q -->|No| n["Not created"]
+      class q strong
+      class u accent
+      class n neutral
+
+  Tones: strong (a question), neutral (nothing changes), accent (something changes), danger (blocked),
+  muted (a side note). Tone supports the label and never replaces it. Colors come from the theme, so
+  classDef and style are refused. Use rectangles rather than diamonds, which grow very tall. Keep node
+  lines to about 30 characters with <br/>, edge labels to 1 to 3 words, and node ids in lowercase.
+  Anything inside the tag becomes a note below the diagram. Wide diagrams scroll sideways on a phone.
+-->
+<pk-diagram src="assets/NAME.mmd">
+  <p class="pk-diagram-note">An optional note.</p>
+</pk-diagram>
