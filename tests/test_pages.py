@@ -463,7 +463,8 @@ def test_banned_wording_fails_with_the_line_and_reason(home: Path) -> None:
     profile = load_profile(repo)
     page = make(profile, body="<p>Fine.</p>\n<p>Date is tbd.</p>")
     errors = check_page(profile, page).errors
-    assert errors == ["banned wording 'tbd' on line 2 of content.html (state what is true now)"]
+    assert len(errors) == 1
+    assert errors[0].startswith("banned wording 'tbd' on line ") and "of index.html (state what is true now)" in errors[0]
 
 
 def test_banned_wording_ignores_markup_and_comments_and_can_match_case(home: Path) -> None:
@@ -471,6 +472,14 @@ def test_banned_wording_ignores_markup_and_comments_and_can_match_case(home: Pat
     profile = load_profile(repo)
     body = '<!-- secret --><p class="secret" title="secret">SECRET</p>'
     assert not check_page(profile, make(profile, body=body)).errors
+
+
+def test_banned_wording_reads_generated_text_but_not_the_page_chrome(home: Path) -> None:
+    repo, _ = _profile_in(home, 'footer = "Prepared by secret"\n[[banned]]\npattern = "secret"\n')
+    profile = load_profile(repo)
+    assert not check_page(profile, make(profile, body="<p>Fine.</p>")).errors
+    errors = check_page(profile, make(profile, body="<pk-contents></pk-contents><h2>Secret</h2>")).errors
+    assert errors and all("banned wording" in e for e in errors)
 
 
 def test_a_bad_banned_pattern_is_reported(home: Path) -> None:
@@ -482,6 +491,26 @@ def test_a_bad_banned_pattern_is_reported(home: Path) -> None:
 def test_builtin_pages_embed_their_font(home: Path) -> None:
     document = make(load_profile()).index.read_text()
     assert 'font-family: "IBM Plex Sans";' in document and "data:font/woff2;base64," in document
+
+
+def test_builtin_pages_embed_their_code_font(home: Path) -> None:
+    document = make(load_profile()).index.read_text()
+    assert 'font-family: "IBM Plex Mono";' in document and '--pk-mono: "IBM Plex Mono"' in document
+
+
+def test_a_profile_with_its_own_text_font_keeps_the_builtin_code_font(home: Path) -> None:
+    repo, directory = _profile_in(home, "")
+    (directory / "fonts.css").write_text('@font-face { font-family: "Mine"; src: url("data:font/woff2;base64,AAAA"); }')
+    document = make(load_profile(repo)).index.read_text()
+    assert 'font-family: "IBM Plex Mono";' in document
+
+
+def test_a_profile_that_sets_a_code_font_does_not_carry_the_builtin_one(home: Path) -> None:
+    repo, directory = _profile_in(home, "")
+    (directory / "theme.css").write_text(":root { --pk-mono: Courier, monospace; }")
+    document = make(load_profile(repo)).index.read_text()
+    assert 'font-family: "IBM Plex Mono";' not in document
+    assert 'font-family: "IBM Plex Sans";' in document
 
 
 def test_a_profile_with_its_own_font_does_not_carry_the_builtin_font(home: Path) -> None:

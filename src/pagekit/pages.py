@@ -385,7 +385,10 @@ def build_page(profile: Profile, page: Page) -> None:
     page.index.write_text(document, encoding="utf-8")
 
 
-_HIDDEN_BLOCK_RE = re.compile(r"<!--.*?-->|<(script|style)\b.*?</\1\s*>", re.DOTALL | re.IGNORECASE)
+# Not what a reader sees as page content: comments, scripts, styles, the head, the footer, and the header bar.
+_HIDDEN_BLOCK_RE = re.compile(
+    r"<!--.*?-->|<(script|style|head)\b.*?</\1\s*>|<(footer|header)\b[^>]*\bpk-\2\b.*?</\2\s*>", re.DOTALL | re.IGNORECASE
+)
 _ANY_TAG_RE = re.compile(r"<[^>]*>")
 
 
@@ -490,12 +493,12 @@ def run_profile_check(profile: Profile, page: Page) -> list[str]:
 
 
 def _banned_wording(profile: Profile, page: Page) -> list[str]:
-    """The profile's [[banned]] list, checked against the words a reader sees. Line numbers are kept."""
+    """The profile's [[banned]] list, checked against the built page, so diagram text counts. Line numbers are kept."""
     rules = profile.config.get("banned", [])
     if not rules:
         return []
     keep_lines = lambda match: "\n" * match.group(0).count("\n")  # noqa: E731
-    text = _HIDDEN_BLOCK_RE.sub(keep_lines, page.content.read_text(encoding="utf-8"))
+    text = _HIDDEN_BLOCK_RE.sub(keep_lines, page.index.read_text(encoding="utf-8"))
     text = _ANY_TAG_RE.sub(keep_lines, text)
     errors = []
     for rule in rules:
@@ -510,7 +513,7 @@ def _banned_wording(profile: Profile, page: Page) -> list[str]:
         for number, line in enumerate(text.splitlines(), 1):
             for match in compiled.finditer(html.unescape(line)):
                 detail = f" ({why})" if why else ""
-                errors.append(f"banned wording {match.group(0)!r} on line {number} of content.html{detail}")
+                errors.append(f"banned wording {match.group(0)!r} on line {number} of index.html{detail}")
     return errors
 
 

@@ -60,8 +60,9 @@ With no profile, pages carry the pagekit logo, name, and ember colors. Every par
 | `--pk-accent` | `#c8431c` | `#ff7a50` |
 
 `--pk-accent` is darker than the logo's ember in light mode so links and button text stay readable. Text is IBM Plex
-Sans, embedded so pages and PDFs look the same on every machine, which adds about 63 KB to a page. A profile with its
-own `fonts.css`, or that sets `--pk-font` in `theme.css`, does not carry it. The wordmark is Space Grotesk SemiBold,
+Sans and code is IBM Plex Mono, both embedded so pages and PDFs look the same on every machine, which adds about 103 KB
+to a page. A profile with its own `fonts.css`, or that sets `--pk-font` in `theme.css`, does not carry Plex Sans. One
+that sets `--pk-mono` does not carry Plex Mono. The wordmark is Space Grotesk SemiBold,
 drawn as outlines. Source files for other uses are in [`docs/brand/`](brand/), and `scripts/build_brand.py` regenerates all of them.
 
 ## Settings
@@ -124,8 +125,8 @@ the page's last good version, or leaves no page if it is new, and `pagekit save`
 ## Banned wording
 
 A profile can list words its pages must never use, with no script. Each `pattern` is a regular expression, matched
-against the words a reader sees, ignoring case unless `case_sensitive = true`. A match fails the build, and `why`
-appears in the message.
+against the words a reader sees in the built page, including text in diagrams, and ignoring case unless
+`case_sensitive = true`. A match fails the build, and `why` appears in the message.
 
 ```toml
 [[banned]]

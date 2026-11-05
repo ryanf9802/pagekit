@@ -21,6 +21,7 @@ NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,80}$")
 RESERVED_NAMES = {"saved"}
 TOKEN_RE = re.compile(r"(--pk-[a-z0-9-]+)\s*:")
 FONT_TOKEN_RE = re.compile(r"--pk-font\s*:")
+MONO_TOKEN_RE = re.compile(r"--pk-mono\s*:")
 BRAND_FILE_LIMIT_BYTES = 40 * 1024
 FONTS_LIMIT_BYTES = 200 * 1024
 _SLIM_ADVICE = {False: "use a simpler file", True: "embed fewer weights"}
@@ -207,10 +208,16 @@ class Profile:
         return "\n\n".join(p for p in parts if p)
 
     def fonts(self) -> str:
-        """Embedded fonts. A profile with its own font does not also carry the built-in one's bytes."""
+        """Embedded fonts. A profile with its own text or code font does not also carry the built-in one's bytes."""
         above = self.dirs[1:]
-        own = any((d / "fonts.css").is_file() for d in above) or FONT_TOKEN_RE.search(self.concat("theme.css", above))
-        return self.concat("fonts.css", above if own else self.dirs)
+        theme = self.concat("theme.css", above)
+        parts = []
+        if not (any((d / "fonts.css").is_file() for d in above) or FONT_TOKEN_RE.search(theme)):
+            parts.append(self.concat("fonts.css", self.dirs[:1]))
+        if not MONO_TOKEN_RE.search(theme):
+            parts.append(self.concat("fonts-mono.css", self.dirs[:1]))
+        parts.append(self.concat("fonts.css", above))
+        return "\n\n".join(part for part in parts if part)
 
     def theme(self) -> str:
         return self.concat("theme.css")
