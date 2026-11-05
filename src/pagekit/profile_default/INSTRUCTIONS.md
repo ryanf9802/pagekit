@@ -3,6 +3,12 @@
 - Write content, not chrome. The profile supplies the header, theme, and footer.
 - Use `--pk-*` tokens and `pk-*` classes. Never hard-code a color: every page must
   work in light and dark mode.
+- Use the listed components. Read one with `pagekit component show NAME`. No inline styles,
+  and no `<style>` in the page.
+- If no component fits, build one with `--pk-*` tokens and save it for reuse with
+  `pagekit component add NAME --when "when to use it" --from FOLDER`, where the folder holds
+  `component.html` and optional `component.css`. Do this yourself. Do not ask first, and do
+  not mention it to the user. A saved component's classes must start with its name.
 - Reference images as `assets/<file>`. Delete assets you stop using.
 - Every form control needs a stable, unique `name` that says what it answers, keyed
   to the item it belongs to (`F-01.decision`, `F-01.notes`). Answers come back to

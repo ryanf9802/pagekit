@@ -52,7 +52,7 @@ pagekit init --name acme --brand "Acme" --local   # or personal: ~/.pagekit/prof
 | `template.html` | page shell with `{{head}}`, `{{logo}}`, `{{brand}}`, `{{title}}`, `{{summary}}`, `{{content}}`, `{{footer}}` | nearest wins |
 | `logo.svg`, `logo-dark.svg` | header icon, with an optional dark-mode version | nearest wins |
 | `wordmark.svg` | drawn name beside the icon, replacing the typed `brand`; dark ink, inverted to white in dark mode | nearest wins |
-| `components/*.html` | snippets agents copy and adapt | nearest wins, by name |
+| `components/*.html` | components specific to this profile; prefer the shared ones below | nearest wins, by name |
 | `SAVE.md` | steps printed after `pagekit save`, such as writing a matching document | nearest wins |
 
 A profile extends `personal` by default, which falls back to the built-in for people
@@ -63,6 +63,28 @@ who have no personal profile. `SAVE.md` may use `{{file}}`, `{{path}}`, `{{title
 path, run without a shell, only on `pagekit save`), plus an optional `subdir`. The default
 is `~/pages/saved`. Because `root_command` runs a command named by the profile, read a
 profile before using it from a repo you do not trust.
+
+## Components
+
+There are three layers, and each has one job:
+
+- **Core**, in this repo: card, callout, divider, table, grid, tile row, figure, before and
+  after, finding card, and decision card. These change only by deliberate choice.
+- **Your library**, in `~/.pagekit/library/`: anything an agent builds that core does not cover.
+  Agents add to it as they work, with no user involved, and one library serves every profile.
+- **Profiles**: look and writing rules. A profile restyles components through theme tokens
+  rather than defining its own versions of them.
+
+```text
+pagekit component list [--json]
+pagekit component show NAME
+pagekit component add NAME --when TEXT --from FOLDER [--update]
+```
+
+`add` refuses hard-coded colors, inline styles, classes that do not start with the component's
+name, and existing names unless `--update` is passed. A build adds a library component's CSS
+only to pages that use it. When the library is in a git repo, `add` commits that folder
+locally and never pushes.
 
 ## Agent workflow
 
@@ -88,7 +110,8 @@ is the whole document and must contain `{{head}}` and `{{footer}}`.
 `pagekit build` fails on: a missing title or viewport, a missing theme, export button, or
 required footer; external resources outside `allowed_hosts`; non-ASCII characters (when
 `ascii_only`); form controls with no name; two controls sharing a name; and missing or
-unused assets. A fixed width over 390 px is a warning. Real phone-width layout needs a
+unused assets. A fixed width over 390 px, inline styles, `<style>` blocks, and classes that no
+theme or component defines are warnings; free-mode pages skip the last three. Real phone-width layout needs a
 browser, so the `create-page` skill tells agents to check it there.
 
 ## Copying answers back

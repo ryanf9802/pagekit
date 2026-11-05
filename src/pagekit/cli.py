@@ -9,6 +9,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from .library import ComponentError, add_component, find_component, list_components
 from .pages import (
     DEFAULT_PORT,
     PHONE_WIDTH_PX,
@@ -49,11 +50,9 @@ def _print_profile(profile: Profile) -> None:
     print(f"profile: {profile.name}")
     print("layers: " + " > ".join(str(d) for d in profile.dirs))
     print("theme tokens: " + ", ".join(profile.tokens()))
-    components = profile.components()
-    if components:
-        print("components (copy and adapt):")
-        for name, path in components.items():
-            print(f"  {name}: {path}")
+    print("components (pagekit component show NAME):")
+    for component in list_components(profile):
+        print(f"  {component.name}: {component.when}")
     instructions = profile.instructions()
     if instructions:
         print("\n--- profile instructions ---")
@@ -128,6 +127,32 @@ def cmd_save(args) -> int:
         print("\n--- required next step ---")
         print(result.instructions)
         print("--- end ---")
+    return 0
+
+
+def cmd_component_list(args) -> int:
+    components = list_components(_profile(args))
+    if args.json:
+        rows = [{"name": c.name, "source": c.source, "when": c.when, "path": str(c.html)} for c in components]
+        print(json.dumps(rows, indent=2))
+        return 0
+    for component in components:
+        print(f"{component.name} [{component.source}]: {component.when}")
+    return 0
+
+
+def cmd_component_show(args) -> int:
+    component = find_component(_profile(args), args.name)
+    print(component.html.read_text().rstrip())
+    if component.css:
+        print(f"\n/* {component.css} (added to pages automatically) */")
+        print(component.css.read_text().rstrip())
+    return 0
+
+
+def cmd_component_add(args) -> int:
+    target = add_component(_profile(args), args.name, args.when, Path(args.source).expanduser(), args.update)
+    print(f"saved: {target}")
     return 0
 
 
@@ -255,6 +280,24 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--local", action="store_true", help="personal profile for this folder: kept under ~/.pagekit, nothing added to the project")
     p.set_defaults(fn=cmd_init)
 
+    p = sub.add_parser("component", help="list, show, or save reusable components")
+    component = p.add_subparsers(dest="component_cmd", required=True)
+    q = component.add_parser("list", help="core, profile, and library components with when to use each")
+    q.add_argument("--json", action="store_true")
+    q.add_argument("--profile", help=profile_help)
+    q.set_defaults(fn=cmd_component_list)
+    q = component.add_parser("show", help="print a component's markup and styles")
+    q.add_argument("name")
+    q.add_argument("--profile", help=profile_help)
+    q.set_defaults(fn=cmd_component_show)
+    q = component.add_parser("add", help="save a new component to the library")
+    q.add_argument("name")
+    q.add_argument("--when", required=True, help="one line on when to use it")
+    q.add_argument("--from", dest="source", required=True, help="folder with component.html and optional component.css")
+    q.add_argument("--update", action="store_true", help="replace the library's copy, for every page on its next build")
+    q.add_argument("--profile", help=profile_help)
+    q.set_defaults(fn=cmd_component_add)
+
     p = sub.add_parser("serve", help="run the optional page index")
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=DEFAULT_PORT)
@@ -270,7 +313,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         return args.fn(args)
-    except (PageError, ProfileError) as exc:
+    except (PageError, ProfileError, ComponentError) as exc:
         print(f"pagekit: {exc}", file=sys.stderr)
         return 1
 

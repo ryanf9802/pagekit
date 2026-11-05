@@ -22,6 +22,7 @@ from importlib import resources
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
+from .library import consistency_warnings, library_css_for
 from .profiles import NAME_RE, RESERVED_NAMES, Profile
 
 DEFAULT_PORT = 8766
@@ -287,6 +288,8 @@ def build_page(profile: Profile, page: Page) -> None:
         "rev": hashlib.sha256(page.content.read_bytes()).hexdigest()[:12],
     }
     meta_json = json.dumps(export_meta).replace("<", "\\u003c")
+    source = page.content.read_text()
+    component_css = library_css_for(source)
     head = "\n".join(
         part
         for part in (
@@ -295,7 +298,7 @@ def build_page(profile: Profile, page: Page) -> None:
             f"<title>{title}</title>",
             f'<script type="application/json" id="pagekit-meta">{meta_json}</script>',
             profile.concat("head.html"),
-            f"<style>\n{profile.theme()}\n</style>",
+            f"<style>\n{profile.theme()}\n{component_css}\n</style>",
         )
         if part
     )
@@ -321,7 +324,6 @@ def build_page(profile: Profile, page: Page) -> None:
         "brand": html.escape(brand),
         "logo": _logo_html(profile, brand),
     }
-    source = page.content.read_text()
     if page.meta.get("mode") == "free":
         for required in ("{{head}}", "{{footer}}"):
             if required not in source:
@@ -463,6 +465,8 @@ def check_page(profile: Profile, page: Page) -> CheckResult:
         if int(width) > PHONE_WIDTH_PX:
             warnings.append(f"fixed width of {width}px may scroll sideways on a phone")
             break
+    if page.meta.get("mode") != "free":
+        warnings.extend(consistency_warnings(profile, page.content.read_text()))
     return CheckResult(errors, warnings)
 
 

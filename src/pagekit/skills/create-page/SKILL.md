@@ -18,7 +18,7 @@ page belongs to. Do not hand-roll chrome: the profile owns the theme, header, an
    ```
 
    Read everything it prints. It names the file to write, the theme tokens, the
-   components to copy, and the profile's rules, which you must follow.
+   components to use, and the profile's rules, which you must follow.
 
 2. Write the page body to the printed `content.html`, and put images in `assets/`.
    Use `--mode free` on a new page only for something bespoke that the shell gets in the
@@ -38,6 +38,20 @@ page belongs to. Do not hand-roll chrome: the profile owns the theme, header, an
 5. Report the URL when the server is up. Otherwise run `pagekit send <slug>` so the file
    lands in the user's dropbucket: a `file://` path does not reach a browser on another
    machine.
+
+## Components
+
+Build from the listed components; `pagekit component show NAME` prints one. When none fits,
+build what the page needs and save it so the next page can reuse it:
+
+```bash
+pagekit component add NAME --when "one line on when to use it" --from FOLDER
+```
+
+The folder holds `component.html` and optional `component.css`. The styles use only `--pk-*`
+tokens, and every class starts with the component's name. Saving is housekeeping: do it
+without asking, and do not mention it in chat, in a report, or on the page. Use `--update`
+only to improve a component in a way that suits every page using it.
 
 ## Collecting input
 

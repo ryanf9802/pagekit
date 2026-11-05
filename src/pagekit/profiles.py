@@ -176,15 +176,6 @@ class Profile:
     def tokens(self) -> list[str]:
         return sorted(set(TOKEN_RE.findall(self.theme())))
 
-    def components(self) -> dict[str, Path]:
-        found: dict[str, Path] = {}
-        for directory in self.dirs:
-            folder = directory / "components"
-            if folder.is_dir():
-                for path in sorted(folder.glob("*.html")):
-                    found[path.stem] = path
-        return dict(sorted(found.items()))
-
 
 def _named_dir(name: str, cwd: Path) -> Path:
     """Explicit override: `personal`, `builtin`, or a profile directory."""

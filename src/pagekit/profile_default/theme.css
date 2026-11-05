@@ -227,6 +227,20 @@ input, progress { accent-color: var(--pk-accent); }
   border-radius: var(--pk-radius-small);
   box-shadow: var(--pk-shadow);
 }
+.pk-callout { margin: 8px 0; padding: 8px 14px; background: var(--pk-surface-2); border-radius: var(--pk-radius-small); }
+.pk-callout > :first-child { margin-top: 0; }
+.pk-callout > :last-child { margin-bottom: 0; }
+.pk-callout-title {
+  margin: 0 0 2px;
+  color: var(--pk-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.pk-divider { margin: 36px 0 12px; padding-top: 12px; border-top: 1px solid var(--pk-border); }
+.pk-divider > h2 { margin: 0 0 2px; font-size: 1.375rem; }
+.pk-divider > p { margin: 0; color: var(--pk-muted); font-size: 0.9375rem; }
 .pk-card > :first-child { margin-top: 0; }
 .pk-card > :last-child { margin-bottom: 0; }
 .pk-card-head { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; margin-bottom: 6px; }
@@ -417,7 +431,8 @@ details > summary { cursor: pointer; font-weight: 500; }
   h1 { font-size: 20pt; }
   h2 { font-size: 13pt; }
   h1, h2, h3, h4, .pk-card-head, p:has(+ pre), p:has(+ .pk-table-wrap) { break-after: avoid; }
-  .pk-card, .pk-kpi, .pk-figure, tr, pre, blockquote { break-inside: avoid; }
+  .pk-card, .pk-callout, .pk-kpi, .pk-figure, tr, pre, blockquote { break-inside: avoid; }
+  .pk-divider { break-inside: avoid; break-after: avoid; }
   .pk-table-wrap { overflow: visible; }
   thead { display: table-header-group; }
   th { white-space: normal; }
