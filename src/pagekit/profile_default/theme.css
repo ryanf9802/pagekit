@@ -12,7 +12,7 @@
   --pk-success: #0f7a3d;
   --pk-warning: #a85b00;
   --pk-danger: #c22a1f;
-  --pk-shadow: 0 1px 2px rgb(16 24 40 / 6%);
+  --pk-shadow: none;
   --pk-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --pk-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --pk-radius: 10px;
@@ -180,7 +180,7 @@ p { margin: 0 0 12px; }
 
 input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]), select, textarea {
   width: 100%;
-  padding: 8px 10px;
+  padding: 5px 8px;
   background: var(--pk-surface);
   color: var(--pk-text);
   border: 1px solid var(--pk-border);
@@ -191,22 +191,22 @@ input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]), se
 input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]):focus,
 select:focus,
 textarea:focus { border-color: var(--pk-accent); outline: 1px solid var(--pk-accent); outline-offset: 0; }
-textarea { display: block; min-height: 64px; resize: vertical; }
+textarea { display: block; min-height: 44px; resize: vertical; }
 label { font-weight: 500; }
 input, progress { accent-color: var(--pk-accent); }
-.pk-field { display: grid; gap: 4px; margin: 14px 0 0; }
+.pk-field { display: grid; gap: 2px; margin: 8px 0 0; }
 .pk-field > label { font-size: 0.875rem; }
-.pk-choices { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; margin: 14px 0 0; padding: 0; border: 0; }
-.pk-choices legend { margin-bottom: 8px; padding: 0; }
+.pk-choices { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; margin: 8px 0 0; padding: 0; border: 0; }
+.pk-choices legend { margin-bottom: 4px; padding: 0; }
 .pk-choices label, label.pk-choices {
   display: inline-flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
-  padding: 6px 12px;
+  padding: 2px 8px;
   background: var(--pk-surface);
   border: 1px solid var(--pk-border);
   border-radius: var(--pk-radius-small);
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   font-weight: 400;
   cursor: pointer;
   transition: border-color 120ms ease, background-color 120ms ease;
@@ -220,17 +220,17 @@ input, progress { accent-color: var(--pk-accent); }
 .pk-help { color: var(--pk-muted); font-size: 0.875rem; }
 
 .pk-card {
-  margin: 12px 0;
-  padding: 18px 20px;
+  margin: 8px 0;
+  padding: 10px 14px;
   background: var(--pk-surface);
   border: 1px solid var(--pk-border);
-  border-radius: var(--pk-radius);
+  border-radius: var(--pk-radius-small);
   box-shadow: var(--pk-shadow);
 }
 .pk-card > :first-child { margin-top: 0; }
 .pk-card > :last-child { margin-bottom: 0; }
-.pk-card-head { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin-bottom: 10px; }
-.pk-card-head > h3, .pk-card-head > h4 { flex: 1 1 100%; margin: 0; order: 1; font-size: 1.0625rem; }
+.pk-card-head { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; margin-bottom: 6px; }
+.pk-card-head > h3, .pk-card-head > h4 { flex: 1 1 100%; margin: 0; order: 1; font-size: 1rem; }
 .pk-id {
   display: inline-block;
   color: var(--pk-muted);
@@ -295,31 +295,31 @@ input, progress { accent-color: var(--pk-accent); }
 .pk-badge-danger { background: color-mix(in srgb, var(--pk-danger) 13%, transparent); color: var(--pk-danger); }
 
 .pk-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
-.pk-kpis { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 0 0 8px; }
+.pk-kpis { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 0 0 8px; }
 .pk-kpi {
-  padding: 14px 18px;
+  padding: 8px 12px;
   background: var(--pk-surface);
   border: 1px solid var(--pk-border);
-  border-radius: var(--pk-radius);
+  border-radius: var(--pk-radius-small);
   box-shadow: var(--pk-shadow);
 }
-.pk-kpi-value { font-size: 1.625rem; font-weight: 650; font-variant-numeric: tabular-nums; line-height: 1.2; letter-spacing: -0.01em; }
-.pk-kpi-label { margin-top: 2px; color: var(--pk-muted); font-size: 0.8125rem; }
+.pk-kpi-value { font-size: 1.25rem; font-weight: 650; font-variant-numeric: tabular-nums; line-height: 1.2; letter-spacing: -0.01em; }
+.pk-kpi-label { color: var(--pk-muted); font-size: 0.75rem; }
 
 .pk-figure { margin: 12px 0; }
 .pk-figure img { display: block; border: 1px solid var(--pk-border); border-radius: var(--pk-radius); }
 .pk-figure figcaption { margin-top: 6px; color: var(--pk-muted); font-size: 0.875rem; }
 
 .pk-table-wrap {
-  margin: 12px 0;
+  margin: 8px 0;
   overflow-x: auto;
   background: var(--pk-surface);
   border: 1px solid var(--pk-border);
-  border-radius: var(--pk-radius);
+  border-radius: var(--pk-radius-small);
   box-shadow: var(--pk-shadow);
 }
 table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; line-height: 1.5; }
-th, td { padding: 10px 14px; border-bottom: 1px solid var(--pk-border); text-align: left; vertical-align: top; }
+th, td { padding: 6px 10px; border-bottom: 1px solid var(--pk-border); text-align: left; vertical-align: top; }
 tr:last-child > td { border-bottom: 0; }
 th {
   background: color-mix(in srgb, var(--pk-surface-2) 55%, transparent);
@@ -335,7 +335,6 @@ details > summary { cursor: pointer; font-weight: 500; }
 @media (max-width: 560px) {
   h1 { font-size: 1.5rem; }
   .pk-main { padding-top: 24px; }
-  .pk-card { padding: 16px; }
   .pk-footer-meta > span:not(:first-child) { display: none; }
   .pk-footer:has(.pk-comment-count:not([hidden])) .pk-footer-meta { display: none; }
   .pk-comment {
@@ -419,13 +418,11 @@ details > summary { cursor: pointer; font-weight: 500; }
   h2 { font-size: 13pt; }
   h1, h2, h3, h4, .pk-card-head, p:has(+ pre), p:has(+ .pk-table-wrap) { break-after: avoid; }
   .pk-card, .pk-kpi, .pk-figure, tr, pre, blockquote { break-inside: avoid; }
-  .pk-card, .pk-kpi, .pk-table-wrap { box-shadow: none; }
   .pk-table-wrap { overflow: visible; }
   thead { display: table-header-group; }
-  th, td { padding: 6px 10px; }
   th { white-space: normal; }
   pre { overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; }
-  textarea { field-sizing: content; min-height: 36px; resize: none; }
+  textarea { field-sizing: content; resize: none; }
   .pk-figure img { max-height: 180mm; width: auto; }
   .pk-main a[href^="http"]::after { content: " (" attr(href) ")"; color: var(--pk-muted); font-size: 0.85em; overflow-wrap: anywhere; }
 }
