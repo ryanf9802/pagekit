@@ -47,7 +47,8 @@ pagekit init --name acme --brand "Acme" --local   # or personal: ~/.pagekit/prof
 | --- | --- | --- |
 | `profile.toml` | name, `extends`, brand, footer, `copyright` (adds a copyright notice for that holder to the footer), `ascii_only`, `allowed_hosts`, `[save]` | deep merge |
 | `theme.css` | `--pk-*` tokens and styles; redefine tokens for light and dark | concatenated |
-| `head.html` | extra head tags, such as a web font | concatenated |
+| `fonts.css` | `@font-face` rules with embedded static fonts, so pages work offline and PDFs stay small | concatenated |
+| `head.html` | extra head tags | concatenated |
 | `INSTRUCTIONS.md` | content and voice rules, printed by `pagekit new` | concatenated |
 | `template.html` | page shell with `{{head}}`, `{{logo}}`, `{{brand}}`, `{{title}}`, `{{summary}}`, `{{content}}`, `{{footer}}` | nearest wins |
 | `logo.svg`, `logo-dark.svg` | header icon, with an optional dark-mode version | nearest wins |

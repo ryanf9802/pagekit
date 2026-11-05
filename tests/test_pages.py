@@ -142,8 +142,18 @@ def test_icon_search_finds_by_name_and_tag(home: Path) -> None:
     from pagekit.icons import search_icons
 
     assert search_icons("circle-check")[0] == "circle-check"
-    assert "triangle-alert" in search_icons("warning")
+    assert "triangle-alert" in search_icons("alert")
+    assert "file-warning" in search_icons("warning")
     assert search_icons("zzzznothing") == []
+
+
+def test_profile_fonts_are_embedded_before_the_theme(home: Path) -> None:
+    repo = home / "repo"
+    directory = repo / ".pagekit" / "profile"
+    init_profile(directory, "acme", "builtin", "Acme")
+    (directory / "fonts.css").write_text('@font-face { font-family: "Acme Sans"; }')
+    document = make(load_profile(repo)).index.read_text()
+    assert document.index('"Acme Sans"') < document.index("--pk-accent")
 
 
 def test_title_is_escaped(home: Path) -> None:

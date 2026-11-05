@@ -299,7 +299,7 @@ def build_page(profile: Profile, page: Page) -> None:
             f"<title>{title}</title>",
             f'<script type="application/json" id="pagekit-meta">{meta_json}</script>',
             profile.concat("head.html"),
-            f"<style>\n{profile.theme()}\n{component_css}\n</style>",
+            f"<style>\n{profile.concat('fonts.css')}\n{profile.theme()}\n{component_css}\n</style>",
         )
         if part
     )
