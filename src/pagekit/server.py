@@ -45,7 +45,7 @@ def _resolve_page_file(profile: str, slug: str, relative: str) -> Path | None:
 
 def make_handler():
     # The index lists pages from every profile, so it always carries pagekit's own brand.
-    index = render_index(load_profile(override="builtin")).encode()
+    index = render_index(load_profile(override="builtin", overrides=False)).encode()
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "pagekit"

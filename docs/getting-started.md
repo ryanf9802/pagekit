@@ -67,6 +67,7 @@ it by hand.
 | `~/pages/<profile>/<slug>/` | Each page: `content.html`, `assets/`, and the built `index.html` |
 | `~/.pagekit/profile/` | Your personal profile, if you make one |
 | `~/.pagekit/profiles/` | Profiles kept outside their projects |
+| `~/.pagekit/overrides/` | [Settings for this machine](profiles.md#overrides), layered on top of any profile |
 | `~/.pagekit/library/` | Components saved for reuse |
 
 Set `PAGEKIT_HOME` to keep pages somewhere other than `~/pages`. There is no database: the folders are the

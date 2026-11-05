@@ -30,6 +30,42 @@ the pagekit logo and footer. A profile extends the built-in profile by default, 
 for everyone. Use `--extends personal` to build on your personal profile instead, which falls back to the built-in
 profile for people who have none.
 
+## More than one profile in a repo
+
+A repo can offer several, such as one for internal pages and one for customer documents. `.pagekit/profile/` stays the
+default, and the rest go in `.pagekit/profiles/`:
+
+```bash
+pagekit init --also --name acme-public --when "Customer or public facing documents"
+```
+
+Give every profile a `when` in its `profile.toml`. `pagekit new` and `pagekit profile` print the other choices with their
+`when`, and agents use that to pick one without asking. Select one by name from anywhere in the repo:
+
+```bash
+pagekit new report --profile acme-public
+```
+
+## Overrides
+
+Some settings belong to one machine: a command only you have, or a folder in your home. A committed profile cannot hold
+those, so they live outside the repo and pagekit layers them on top of whichever profile applies:
+
+```text
+~/.pagekit/overrides/all/       every profile
+~/.pagekit/overrides/acme/      only the profile named acme
+```
+
+Because they are keyed by profile name and never in the repo, they cannot be committed by accident, need no `.gitignore`
+entry, and work in every worktree and clone.
+
+An override can hold only `profile.toml` with `[save]` or `[send]`, `SAVE.md`, and `INSTRUCTIONS.md`, whose rules are
+added to the profile's. pagekit refuses anything else, so an override cannot change how a shared profile looks or
+remove a check it requires. `pagekit profile` lists any that apply.
+
+A profile in a repo that names a path on this machine gets a warning on every build, as that path will not exist for
+teammates.
+
 ## Files
 
 | File | Purpose | When layered |
@@ -45,7 +81,7 @@ profile for people who have none.
 | `logo-print.png` | The full logo as one image for print, which saves about 3 to 5 KB per PDF sheet over a vector logo | Nearest wins |
 | `wordmark.svg` | Drawn name beside the icon, replacing the typed `brand`; dark ink, inverted to white in dark mode | Nearest wins |
 | `icons/` | [Your own icons](icons.md#your-own-icons) | Nearest wins, by name |
-| `components/*.html` | Components specific to this profile; prefer the [shared ones](components.md) | Nearest wins, by name |
+| `components/*.html`, `components/*.css` | Components specific to this profile, with optional styles included only on pages that use them; prefer the [shared ones](components.md) | Nearest wins, by name |
 | `SAVE.md` | Steps printed after `pagekit save`, such as writing a matching document | Nearest wins |
 
 ## The default brand
@@ -79,6 +115,7 @@ small. Source files for other uses are in [`docs/brand/`](brand/), and `scripts/
 | --- | --- |
 | `name` | The profile's name, and its folder under the pages root |
 | `extends` | The profile to build on: `builtin` (the default), `personal`, or a path |
+| `when` | One line on which pages this profile is for, which agents use to [choose between profiles](#more-than-one-profile-in-a-repo) |
 | `brand` | Name in the header, unless `wordmark.svg` replaces it |
 | `footer` | Footer text, required on every page |
 | `copyright` | Adds a copyright notice for this holder to the footer |
@@ -123,6 +160,9 @@ A profile can require its own check on every `pagekit build` and `pagekit check`
 [checks]
 command = ["python3", "/path/to/lint.py"]
 ```
+
+To keep the script with a profile in a repo, write `{profile}/checks/lint.py`, which points to the folder of the
+profile that sets the command.
 
 The command runs without a shell, in the page's folder, with the built `index.html` and the page folder as its
 last two arguments. A non-zero exit prints its output as errors and fails the command. A failed build keeps

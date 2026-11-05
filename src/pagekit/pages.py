@@ -386,7 +386,7 @@ def build_page(profile: Profile, page: Page) -> None:
         "rev": hashlib.sha256(page.content.read_bytes()).hexdigest()[:12],
     }
     source = add_image_sizes(page.content.read_text(encoding="utf-8"), page.dir)
-    head = _head_html(profile, title, export_meta, library_css_for(source))
+    head = _head_html(profile, title, export_meta, library_css_for(source, profile))
     summary_html = f'<p class="pk-summary">{html.escape(summary)}</p>' if summary else ""
     values = _shell_values(profile, head, title, summary_html, built)
     if page.meta.get("mode") == "free":
@@ -486,7 +486,7 @@ def run_profile_check(profile: Profile, page: Page) -> list[str]:
         return ['profile check: [checks] command must be a list, like ["python3", "lint.py"]']
     try:
         result = subprocess.run(
-            [*command, str(page.index), str(page.dir)],
+            [*(part.replace("{profile}", str(profile.checks_layer())) for part in command), str(page.index), str(page.dir)],
             cwd=page.dir,
             capture_output=True,
             text=True, encoding="utf-8", errors="replace",
@@ -564,6 +564,7 @@ def check_page(profile: Profile, page: Page) -> CheckResult:
             break
     if page.meta.get("mode") != "free":
         warnings.extend(consistency_warnings(profile, page.content.read_text(encoding="utf-8")))
+    warnings.extend(profile.machine_path_warnings())
     hook_errors = run_profile_check(profile, page)
     return CheckResult(errors + hook_errors, warnings, hook_failed=bool(hook_errors))
 

@@ -88,7 +88,8 @@ def list_components(profile: Profile) -> list[Component]:
         if folder.is_dir():
             source = "core" if index == 0 else "profile"
             for path in sorted(folder.glob("*.html")):
-                found[path.stem] = Component(path.stem, _when_from_html(path), source, path)
+                css = path.with_suffix(".css")
+                found[path.stem] = Component(path.stem, _when_from_html(path), source, path, css if css.is_file() else None)
     for component in library_components():
         found.setdefault(component.name, component)
     return sorted(found.values(), key=lambda c: ({"core": 0, "profile": 1, "library": 2}[c.source], c.name))
@@ -175,19 +176,19 @@ def add_component(profile: Profile, name: str, when: str, source: Path, update: 
     return target
 
 
-def library_css_for(document: str) -> str:
-    """CSS for only the library components this page uses, so the theme does not grow."""
+def library_css_for(document: str, profile: Profile) -> str:
+    """CSS for only the library and profile components this page uses, so the theme does not grow."""
     used = html_classes(document)
     parts = []
-    for component in library_components():
+    for component in list_components(profile):
         if component.css and css_classes(component.css.read_text(encoding="utf-8")) & used:
             parts.append(f"/* component: {component.name} */\n{component.css.read_text(encoding="utf-8").strip()}")
     return "\n".join(parts)
 
 
-def library_classes() -> set[str]:
+def library_classes(profile: Profile) -> set[str]:
     found: set[str] = set()
-    for component in library_components():
+    for component in list_components(profile):
         if component.css:
             found |= css_classes(component.css.read_text(encoding="utf-8"))
     return found
@@ -202,7 +203,7 @@ def consistency_warnings(profile: Profile, document: str) -> list[str]:
     tags = len(_STYLE_TAG_RE.findall(document))
     if tags:
         warnings.append(f"{tags} <style> block(s) in the page: use a component, or save a new one with pagekit component add")
-    undefined = sorted(html_classes(document) - css_classes(profile.theme()) - library_classes())
+    undefined = sorted(html_classes(document) - css_classes(profile.theme()) - library_classes(profile))
     if undefined:
         warnings.append(f"classes no theme or component defines: {', '.join(undefined)}")
     return warnings

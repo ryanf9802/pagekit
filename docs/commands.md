@@ -23,7 +23,7 @@ pagekit prune [--older-than-days N] [--dry-run]
 
 ```text
 pagekit profile           print the resolved profile and its instructions
-pagekit init [--name NAME] [--brand BRAND] [--extends PROFILE] [--personal | --local]
+pagekit init [--name NAME] [--brand BRAND] [--when TEXT] [--extends PROFILE] [--personal | --local | --also]
                           create a profile
 ```
 

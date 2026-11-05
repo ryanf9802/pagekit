@@ -18,7 +18,9 @@ To change how pages look in a project or for the user, use the `setup-profile` s
    ```
 
    Read everything it prints. It names the file to write, the theme tokens, the
-   components to use, and the profile's rules, which you must follow.
+   components to use, and the profile's rules, which you must follow. If it lists other
+   profiles here, pick the one whose `when` fits the page, without asking, and add
+   `--profile NAME` to every command for that page.
 
 2. Write the page body to the printed `content.html`, and put images in `assets/`.
    Use `--mode free` on a new page only for something bespoke that the shell gets in the

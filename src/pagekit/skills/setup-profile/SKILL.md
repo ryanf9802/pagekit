@@ -17,7 +17,7 @@ profile is for, because the profile comes from the working directory.
 
 ## 1. See what applies now
 
-Run `pagekit profile`. Its first lines name the profile and list its layers. If the last layer is the profile the
+Run `pagekit profile`. Its first lines name the profile, its folder, and any overrides. If that is the profile the
 person means, skip to step 4 and change it.
 
 ## 2. Choose where it lives
@@ -31,6 +31,11 @@ The request usually says which. If not, ask, and default to the first row inside
 | Personal | `pagekit init --personal` | This person, wherever no other profile applies |
 
 The profile is named after the folder, or `personal`. Use `--name` if the person wants another name.
+
+A repo can offer more than one profile, such as one for internal pages and one for customer documents. Add the others
+with `pagekit init --also --name NAME --when "WHEN"`, which puts them in `.pagekit/profiles/NAME`. Every profile in a
+repo with more than one needs a `when` in its `profile.toml`, saying in one line which pages it is for, because that is
+how agents choose. Agents select one with `--profile NAME`.
 
 A repo profile builds on the built-in profile, so a committed one looks the same for everyone. Add
 `--extends personal` only if the person wants it to build on their personal profile, and only on a private one.
@@ -54,8 +59,7 @@ Show what you found and ask which to use. Use nothing they have not confirmed.
 
 ## 5. Make it theirs
 
-Ask about each of these in turn, in plain language. Everything is optional. Put the results in the folder that
-`pagekit profile` lists last.
+Ask about each of these in turn, in plain language. Everything is optional. Put the results where step 6 says.
 
 | Ask about | What to do with the answer |
 | --- | --- |
@@ -72,7 +76,32 @@ In `theme.css`, keep dark values under `@media screen and (prefers-color-scheme:
 Replace the starter text in `INSTRUCTIONS.md`, or delete the file if they have no rules: `pagekit new` prints it to
 every agent.
 
-## 6. Prove it works
+## 6. Put each setting in the right place
+
+Decide this yourself. Do not ask the person to choose, and say where you put each setting in one line.
+
+For a repo profile, the test is: **would this work, and be wanted, on a teammate's machine?**
+
+| Setting | Goes in | Why |
+| --- | --- | --- |
+| Brand, theme, fonts, logos, footer, shared writing rules | The profile's folder | It is what the pages are |
+| A check script kept in the repo | The profile's folder, as `{profile}/checks/NAME` in `[checks]` | Everyone has it |
+| A home folder path, or a tool only this person uses | `~/.pagekit/overrides/PROFILE/` | Only exists for them |
+| Steps that use this person's own skills or notes | `~/.pagekit/overrides/PROFILE/` | Same reason |
+| Writing rules only this person wants | `~/.pagekit/overrides/PROFILE/INSTRUCTIONS.md` | Others did not ask for them |
+| A send tool everyone on the team has | The profile's folder | Ask only here, if you cannot tell whether the team has it |
+
+Settings this person wants for every profile, such as their `[send]` command, go in `~/.pagekit/overrides/all/`. Never
+add overrides to a repo or to `.gitignore`: they live outside it so they cannot be committed and still work in
+worktrees.
+
+Overrides can only hold `[save]`, `[send]`, `SAVE.md`, and `INSTRUCTIONS.md`. pagekit refuses anything else, so an
+override never changes how a shared profile looks or what it must pass. For a private or personal profile, everything
+can stay in the profile's own folder.
+
+`pagekit build` warns if a profile in a repo names a path on this machine. Treat that as a mistake and move the setting.
+
+## 7. Prove it works
 
 From the same folder:
 
@@ -86,11 +115,11 @@ mode if you can drive a browser. Give the person the link or file and ask if it 
 
 Fix anything they do not like in the profile rather than in the page, then rebuild.
 
-## 7. Finish
+## 8. Finish
 
 Say in a few lines what the profile is, where it lives, and where it applies. Then:
 
-- For a shared repo profile, tell them to commit `.pagekit/profile/`. Commit it only if they ask.
+- For a shared repo profile, tell them to commit `.pagekit/`. Commit it only if they ask.
 - Otherwise, if the folder is worth keeping, suggest version control or a backup.
 - Mention that existing pages keep their old look until rebuilt with `pagekit build SLUG`, and that the check page
   deletes itself after 30 days.
