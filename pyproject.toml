@@ -23,4 +23,4 @@ testpaths = ["tests"]
 markers = ["posix: needs a POSIX shell script or symlink, so it is skipped on Windows"]
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = ["pymupdf>=1.24", "pytest>=8"]
