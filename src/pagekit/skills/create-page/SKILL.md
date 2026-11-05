@@ -1,11 +1,10 @@
 ---
 name: create-page
-description: Create or update a local, consistently branded HTML page with pagekit, including forms whose answers the user copies back into the session. Use when the user asks for a "page", or a skill says to build one; when the user says to save or keep a page; and when pasted text contains a `pagekit-response` block. Not for a request that says "artifact", which goes to the Artifact tool.
+description: Create or update a local, consistently branded HTML page with pagekit, including forms whose answers the user copies back into the session. Use when the user asks for a "page", or a skill says to build one; when the user says to save or keep a page; and when pasted text contains a `pagekit-response` block.
 ---
 
 # Create a page
 
-The word decides the medium: "page" means pagekit, "artifact" means the Artifact tool.
 The profile comes from the working directory, so run every command from the project the
 page belongs to. Do not hand-roll chrome: the profile owns the theme, header, and footer.
 

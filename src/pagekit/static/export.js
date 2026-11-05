@@ -144,12 +144,8 @@
     var count = collect().length;
     var fields = count + (count === 1 ? " field" : " fields");
     var notes = commentedIds().length;
-    if (!notes) {
-      status("Copied " + fields + ". Paste it into Claude Code.", "Copied " + fields + ", paste into Claude", true);
-      return;
-    }
-    var both = fields + ", " + notes + (notes === 1 ? " comment" : " comments");
-    status("Copied " + both + ". Paste it into Claude Code.", "Copied " + both, true);
+    var summary = notes ? fields + ", " + notes + (notes === 1 ? " comment" : " comments") : fields;
+    status("Copied " + summary + ".", "Copied " + summary, true);
   }
 
   function copy() {

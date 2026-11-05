@@ -33,7 +33,7 @@ def test_project_profile_wins_and_extends_personal(home: Path) -> None:
     (personal_dir() / "theme.css").write_text(":root { --pk-from-personal: 1; }")
     repo = home / "repo"
     init_profile(repo / ".pagekit" / "profile", "acme", "personal", "Acme")
-    worktree = repo / ".claude" / "worktrees" / "feature"
+    worktree = repo / ".worktrees" / "feature"
     worktree.mkdir(parents=True)
 
     profile = load_profile(worktree)
@@ -48,7 +48,7 @@ def test_project_profile_wins_and_extends_personal(home: Path) -> None:
 def test_local_project_mapping_adds_nothing_to_the_project(home: Path) -> None:
     init_profile(personal_dir(), "personal", "builtin", "Me")
     repo = home / "repo"
-    worktree = repo / ".claude" / "worktrees" / "feature"
+    worktree = repo / ".worktrees" / "feature"
     worktree.mkdir(parents=True)
     init_profile(local_profile_dir("acme"), "acme", "personal", "Acme")
     register_project(repo, local_profile_dir("acme"))

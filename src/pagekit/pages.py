@@ -96,12 +96,8 @@ def set_public_url(url: str) -> None:
 
 
 def default_session() -> str:
-    name = os.environ.get("PAGEKIT_SESSION", "").strip()
-    if not name and os.environ.get("CLAUDE_JOB_DIR"):
-        name = Path(os.environ["CLAUDE_JOB_DIR"]).name
-    if not name:
-        name = os.environ.get("CLAUDE_CODE_SESSION_ID", "")[:8]
-    return " ".join(name.split())[:40]
+    """Who made a page, shown on the index, for tools that set PAGEKIT_SESSION."""
+    return " ".join(os.environ.get("PAGEKIT_SESSION", "").split())[:40]
 
 
 def _now_iso() -> str:

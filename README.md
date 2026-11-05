@@ -15,7 +15,7 @@ user can answer a form and paste the result back into the session.
 ```bash
 uv tool install --editable .      # puts `pagekit` on PATH
 pagekit init --personal --name personal --brand "Your Name"
-ln -s "$PWD/src/pagekit/skills/create-page" ~/.claude/skills/create-page
+ln -s "$PWD/src/pagekit/skills/create-page" YOUR_AGENT_SKILLS_FOLDER/create-page
 ```
 
 Optional, the page index on `http://localhost:8766`:
