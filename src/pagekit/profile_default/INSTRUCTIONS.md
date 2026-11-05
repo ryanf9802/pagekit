@@ -1,6 +1,7 @@
 ## Page rules
 
 - Write content, not chrome. The profile supplies the header, theme, and footer.
+- The header already shows the page title as the `<h1>`. Do not repeat it: start at `<h2>`.
 - Use `--pk-*` tokens and `pk-*` classes. Never hard-code a color: every page must
   work in light and dark mode.
 - Use the listed components. Read one with `pagekit component show NAME`. No inline styles,

@@ -42,10 +42,11 @@ Every build runs these checks, and `pagekit check` runs them alone.
 **Warnings** do not:
 
 - A fixed width over 390 px
+- An `<h1>` in `content.html`, because the header already shows the page title
 - Inline styles and `<style>` blocks
 - Classes that no theme or component defines
 
-Free-mode pages skip the last two. Real phone-width layout needs a browser, so check that by eye at 390 px,
+Free-mode pages skip the last three. Real phone-width layout needs a browser, so check that by eye at 390 px,
 where `document.documentElement.scrollWidth` should not exceed the window width.
 
 ## Sharing

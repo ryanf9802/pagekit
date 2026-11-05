@@ -134,10 +134,32 @@ def test_check_warns_on_styling_that_bypasses_components(home: Path, tmp_path: P
     assert check_page(profile, page).warnings == []
 
 
+@pytest.mark.parametrize("heading", ["<h1>Title</h1>", '<H1 class="pk-x">Title</H1>'])
+def test_check_warns_when_content_repeats_the_title_as_an_h1(home: Path, heading: str) -> None:
+    profile, page = page_with(f"{heading}<p>Body</p>")
+    result = check_page(profile, page)
+    assert result.ok
+    assert any(warning.startswith("content.html has an <h1>") for warning in result.warnings)
+
+
+@pytest.mark.parametrize("body", ["<h2>Section</h2>", "<!-- <h1>Old</h1> --><h2>Section</h2>", "<header>Not a heading</header>"])
+def test_check_does_not_warn_without_an_h1(home: Path, body: str) -> None:
+    profile, page = page_with(body)
+    assert check_page(profile, page).warnings == []
+
+
+def test_a_new_page_scaffold_does_not_warn_about_an_h1(home: Path) -> None:
+    profile = load_profile()
+    page, _ = new_page(profile, "fresh", "Fresh", None, "slots")
+    assert "<h1>" in page.content.read_text()
+    build_page(profile, page)
+    assert not any("<h1>" in warning for warning in check_page(profile, page).warnings)
+
+
 def test_free_mode_skips_consistency_warnings(home: Path) -> None:
     profile = load_profile()
     page, _ = new_page(profile, "free", "Free", None, "free")
-    page.content.write_text(page.content.read_text().replace("<main", '<main style="margin:1px"'))
+    page.content.write_text(page.content.read_text().replace("<main", '<main style="margin:1px"').replace("<main", "<h1>Title</h1><main", 1))
     build_page(profile, page)
     assert check_page(profile, page).warnings == []
 
