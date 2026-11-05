@@ -544,7 +544,7 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
 /* Phones. Screen only, so it never reaches print. */
 @media screen and (max-width: 640px) {
   /* Keeps diagram text readable: a wide diagram scrolls inside its card instead of shrinking. */
-  .pk-diagram svg { min-width: calc(var(--pk-diagram-w, 0px) * 0.85); }
+  .pk-diagram svg.pk-diagram-wide { min-width: var(--pk-diagram-w); }
   .pk-header .pk-bar { display: contents; }
   .pk-bar-label { display: none; }
   .pk-home, .pk-pdf { width: 40px; height: 44px; margin: -4px 0; font-size: 0; }
@@ -639,7 +639,8 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
   .pk-diagram { padding: 6px 8px 8px; break-inside: avoid; }
   .pk-diagram figcaption { margin-bottom: 3px; }
   .pk-diagram-scroll { overflow: visible; }
-  .pk-diagram svg { max-height: 8.5cm; }
+  /* Scales with each diagram, so a tall simple chain does not take over a sheet. */
+  .pk-diagram svg { max-height: min(8.5cm, calc(var(--pk-diagram-h, 8.5cm) * 0.72)); }
   .pk-diagram-note { margin-top: 4px; font-size: 0.75rem; }
   .pk-section { margin-top: 20px; }
   h1 { font-size: 1.625rem; }

@@ -22,8 +22,9 @@ flowchart TB
   class u accent
 """
 RAW = (
-    '<svg id="flow" width="100%" style="max-width: 518.3px;" role="graphics-document document" '
+    '<svg id="flow" width="100%" viewBox="0 0 518.3 200.4" style="max-width: 518.3px;" role="graphics-document document" '
     'aria-roledescription="flowchart-v2"><style>#flow{fill:#333}</style>'
+    '<filter id="s"><feFlood flood-color="#000000"/></filter>'
     '<g class="node default strong flowchart-label" style="fill:#111"><rect style="stroke:#222" fill="#000000"/></g>'
     '<path class="edge-thickness-normal flowchart-link" style="stroke-width:2"/></svg>'
 )
@@ -62,9 +63,11 @@ def test_only_flowcharts_are_supported() -> None:
 
 def test_themed_svg_removes_mermaid_styling_and_adds_alt_text() -> None:
     svg = themed_svg(RAW, "flow", "A <title>", "A description")
+    assert "<filter" not in svg and "flood-color" not in svg
     assert "<style" not in svg and "#111" not in svg and "#000000" not in svg and "#333" not in svg
-    assert re.findall(r'style="([^"]*)"', svg) == ["--pk-diagram-w:518px"]
+    assert re.findall(r'style="([^"]*)"', svg) == ["--pk-diagram-h:200px;--pk-diagram-w:518px"]
     assert 'class="pk-diagram-node pk-diagram-tone-strong"' in svg
+    assert 'class="pk-diagram-wide"' in svg
     assert 'class="pk-diagram-flowchart-link"' in svg
     assert 'role="img" aria-labelledby="flow-t flow-d"' in svg
     assert '<title id="flow-t">A &lt;title&gt;</title>' in svg
@@ -99,6 +102,13 @@ def test_build_expands_the_tag_and_counts_the_source_as_used(chrome: Path) -> No
     assert 'class="pk-diagram-note">Note.</p></figure>' in document
     result = check_page(profile, page)
     assert result.ok and result.warnings == []
+
+
+def test_tag_class_goes_on_the_figure(chrome: Path) -> None:
+    profile, page = page_with_diagram()
+    page.content.write_text('<pk-diagram src="assets/flow.mmd" class="glance-left"></pk-diagram>')
+    build_page(profile, page)
+    assert '<figure class="pk-diagram glance-left" id="diagram-flow">' in page.index.read_text()
 
 
 def test_diagrams_redraw_only_when_the_source_changes(chrome: Path) -> None:

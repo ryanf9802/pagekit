@@ -18,7 +18,11 @@ from pathlib import Path
 
 from .browser import find_chrome
 
-_TAG_RE = re.compile(r"""<pk-diagram\s+src\s*=\s*["']assets/([a-z0-9][a-z0-9-]*\.mmd)["']\s*>(.*?)</pk-diagram>""", re.DOTALL)
+_TAG_RE = re.compile(
+    r"""<pk-diagram\s+src\s*=\s*["']assets/([a-z0-9][a-z0-9-]*\.mmd)["']"""
+    r"""(?:\s+class\s*=\s*["']([^"']*)["'])?\s*>(.*?)</pk-diagram>""",
+    re.DOTALL,
+)
 _FRONT_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 _ELEMENT_RE = re.compile(r"<(\w+)\b[^>]*?>")
 _OUTPUT_RE = re.compile(r'<textarea id="out">(.*?)</textarea>', re.DOTALL)
@@ -30,7 +34,9 @@ _KEEP = {
 TONES = {"strong", "neutral", "accent", "danger", "muted"}
 _TIMEOUT_SECONDS = 90
 # Changing this redraws every diagram.
-_PIPELINE_VERSION = "1"
+_PIPELINE_VERSION = "2"
+# Wider than this, a diagram scrolls on a phone rather than shrinking its text.
+_WIDE_PX = 440
 _CACHE_DIR = ".diagram-cache"
 # Sizes and spacing only. Colors come from the theme, through the classes added below.
 _MERMAID_CONFIG = {
@@ -132,6 +138,8 @@ def themed_svg(raw: str, svg_id: str, title: str, desc: str) -> str:
     """Remove Mermaid's own styling, keeping only the classes the theme styles."""
     svg = re.sub(r"<style>.*?</style>", "", raw, flags=re.DOTALL)
     svg = re.sub(r"<(linear|radial)Gradient.*?</\1Gradient>", "", svg, flags=re.DOTALL)
+    # Mermaid's shadow filter is unused here, and it carries a fixed color.
+    svg = re.sub(r"<filter\b.*?</filter>", "", svg, flags=re.DOTALL)
     width = re.search(r"max-width:\s*([\d.]+)px", svg[: svg.index(">")])
 
     def element(match: re.Match) -> str:
@@ -148,7 +156,13 @@ def themed_svg(raw: str, svg_id: str, title: str, desc: str) -> str:
         return tag
 
     svg = _ELEMENT_RE.sub(element, svg)
-    natural = f' style="--pk-diagram-w:{round(float(width.group(1)))}px"' if width else ""
+    box = re.search(r'viewBox="[\d.-]+ [\d.-]+ ([\d.]+) ([\d.]+)"', svg)
+    natural = ""
+    if width:
+        height = f"--pk-diagram-h:{round(float(box.group(2)))}px;" if box else ""
+        natural = f' style="{height}--pk-diagram-w:{round(float(width.group(1)))}px"'
+        if float(width.group(1)) > _WIDE_PX:
+            svg = re.sub(r"^<svg\b", '<svg class="pk-diagram-wide"', svg, count=1)
     labels = f'role="img" aria-labelledby="{svg_id}-t {svg_id}-d"{natural}'
     svg = re.sub(r'\saria-roledescription="[^"]*"', "", svg, count=1)
     svg = re.sub(r'\srole="[^"]*"', "", svg, count=1)
@@ -186,7 +200,7 @@ def expand_diagrams(document: str, page_dir: Path, fonts_css: str, theme: str) -
     """Replace each <pk-diagram> with its figure. Anything inside the tag becomes a note below it."""
 
     def figure(match: re.Match) -> str:
-        filename, note = match.group(1), match.group(2).strip()
+        filename, extra, note = match.group(1), match.group(2) or "", match.group(3).strip()
         source = page_dir / "assets" / filename
         if not source.is_file():
             raise DiagramError(f"missing diagram source: assets/{filename}")
@@ -196,7 +210,8 @@ def expand_diagrams(document: str, page_dir: Path, fonts_css: str, theme: str) -
         svg = _cached_svg(page_dir, text, svg_id, fonts_css, theme)
         label = html.escape(f"Diagram: {title}", quote=True)
         return (
-            f'<figure class="pk-diagram" id="diagram-{svg_id}"><figcaption>{html.escape(title)}</figcaption>'
+            f'<figure class="{html.escape(f"pk-diagram {extra}".strip(), quote=True)}" id="diagram-{svg_id}">'
+            f"<figcaption>{html.escape(title)}</figcaption>"
             f"<!-- Mermaid source: assets/{filename} -->"
             f'<div class="pk-diagram-scroll" tabindex="0" role="region" aria-label="{label}">{svg}</div>'
             f"{note}</figure>"
