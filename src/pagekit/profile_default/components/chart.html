@@ -1,0 +1,24 @@
+<!-- Numbers drawn as a bar, line, area, scatter, or pie chart: write assets/NAME.json and use this tag. -->
+<!--
+  assets/NAME.json holds the title, a description for readers who cannot see the chart, and the data:
+
+    {
+      "type": "line",
+      "title": "Build time by week",
+      "desc": "Median build time fell from 3.9 to 3.1 seconds over five weeks.",
+      "labels": ["W1", "W2", "W3", "W4", "W5"],
+      "series": [{"name": "Median", "values": [3.9, 3.6, 3.4, 3.5, 3.1]}],
+      "unit": " s"
+    }
+
+  type: bar (add "horizontal": true for long names), line, area, or scatter. A pie needs 3 to 6 slices; to
+  compare parts, a bar is clearer. Scatter has no labels: each series has "points": [[x, y], ...] instead.
+  Optional: x_label and y_label name the axes, and unit follows each number. Two or more series get a legend.
+  Colors come from the theme, so there is nothing to set. At most 6 series (3 for area and scatter): fold the
+  smallest into Other, or draw two charts. Every chart gets a "Show the data as a table" section.
+  Anything inside the tag becomes a note below the chart, and class="..." on the tag goes on the figure.
+  To show two or three charts in a row, put them in the grid component; each needs its own data file.
+-->
+<pk-chart src="assets/NAME.json">
+  <p class="pk-diagram-note">An optional note.</p>
+</pk-chart>

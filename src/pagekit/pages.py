@@ -22,6 +22,7 @@ from importlib import resources
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
+from .charts import ChartError, expand_charts
 from .diagrams import DiagramError, expand_diagrams
 from .icons import IconError, expand_icons
 from .images import add_image_sizes
@@ -416,8 +417,9 @@ def build_page(profile: Profile, page: Page) -> None:
         document = _fill_template(profile, values, source)
     try:
         document = expand_diagrams(document, page.dir, profile.fonts(), profile.theme())
+        document = expand_charts(document, page.dir)
         document = expand_icons(document, profile)
-    except (DiagramError, IconError) as exc:
+    except (DiagramError, ChartError, IconError) as exc:
         raise PageError(str(exc)) from exc
     page.index.write_text(document, encoding="utf-8")
 

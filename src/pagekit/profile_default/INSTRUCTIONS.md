@@ -12,6 +12,9 @@
   not mention it to the user. A saved component's classes must start with its name.
 - Draw flows and decisions with the `diagram` component, never hand-written SVG: `pagekit component
   show diagram` explains it. The build needs Chrome or Chromium the first time it draws one.
+- Draw numbers with the `chart` component, never hand-written SVG or a script from the web: `pagekit
+  component show chart` explains it. A bar, line, or area chart usually answers better than a table of
+  trends; a table is still right for exact values, and every chart carries one.
 - Use icons, never hand-drawn SVG, emoji, or CSS background images: `<i data-icon="NAME"></i>`. Find
   one with `pagekit icons WORD`. Add `tone="blue"` for color (blue, purple, green, teal, orange,
   success, warning, danger, accent, muted), and `aria-label="..."` when it stands alone with no text.

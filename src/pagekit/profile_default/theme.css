@@ -17,6 +17,14 @@
   --pk-success: #0f7a3d;
   --pk-warning: #a85b00;
   --pk-danger: #c22a1f;
+  --pk-series-1: #2a78d6;
+  --pk-series-2: #eb6834;
+  --pk-series-3: #1baf7a;
+  --pk-series-4: #eda100;
+  --pk-series-5: #e87ba4;
+  --pk-series-6: #008300;
+  --pk-series-7: #6250d6;
+  --pk-series-8: #e34948;
   --pk-shadow: none;
   --pk-font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --pk-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -46,6 +54,14 @@
     --pk-success: #6cc79a;
     --pk-warning: #e0a458;
     --pk-danger: #f0807a;
+    --pk-series-1: #3987e5;
+    --pk-series-2: #d95926;
+    --pk-series-3: #199e70;
+    --pk-series-4: #c98500;
+    --pk-series-5: #d55181;
+    --pk-series-6: #008300;
+    --pk-series-7: #9085e9;
+    --pk-series-8: #e66767;
     --pk-shadow: none;
   }
 }
@@ -463,6 +479,51 @@ td > .pk-choices, th > .pk-choices { margin: -3px 0; }
 .pk-diagram-edge-thickness-thick { stroke-width: 2; }
 .pk-diagram-edge-pattern-dashed { stroke-dasharray: 5 3; }
 .pk-diagram-edge-pattern-dotted { stroke-dasharray: 2 2; }
+
+/* Charts: every color is a class here, so a chart follows the theme in light, dark, and print. */
+.pk-chart {
+  margin: 12px 0;
+  padding: 10px 12px 12px;
+  background: var(--pk-surface);
+  border: 1px solid var(--pk-border);
+  border-radius: var(--pk-radius-small);
+}
+.pk-chart figcaption {
+  margin: 0 0 6px;
+  color: var(--pk-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+/* The drawing and its legend share one column, so the legend stays under the chart however wide the card is. */
+.pk-chart-plot { max-width: 520px; margin: 0 auto; }
+.pk-chart-of-pie .pk-chart-plot { max-width: 360px; }
+.pk-chart-svg { display: block; width: 100%; height: auto; font-family: var(--pk-font); font-size: 13px; }
+.pk-chart-of-pie .pk-chart-svg { max-width: 220px; margin: 0 auto; }
+.pk-chart-of-pie .pk-chart-legend { justify-content: center; }
+.pk-chart-tick, .pk-chart-axis-title { fill: var(--pk-muted); font-size: 12px; }
+.pk-chart-tick { font-variant-numeric: tabular-nums; }
+.pk-chart-value { fill: var(--pk-text); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pk-chart-grid, .pk-chart-axis { vector-effect: non-scaling-stroke; stroke-width: 1; }
+.pk-chart-grid { stroke: var(--pk-border); }
+.pk-chart-axis { stroke: var(--pk-muted); opacity: 0.6; }
+.pk-chart-bar { fill: var(--pk-chart-color); }
+.pk-chart-line { fill: none; stroke: var(--pk-chart-color); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.pk-chart-wash { fill: var(--pk-chart-color); opacity: 0.1; }
+.pk-chart-dot, .pk-chart-slice { fill: var(--pk-chart-color); stroke: var(--pk-surface); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.pk-chart-s1 { --pk-chart-color: var(--pk-series-1); }
+.pk-chart-s2 { --pk-chart-color: var(--pk-series-2); }
+.pk-chart-s3 { --pk-chart-color: var(--pk-series-3); }
+.pk-chart-s4 { --pk-chart-color: var(--pk-series-4); }
+.pk-chart-s5 { --pk-chart-color: var(--pk-series-5); }
+.pk-chart-s6 { --pk-chart-color: var(--pk-series-6); }
+.pk-chart-s7 { --pk-chart-color: var(--pk-series-7); }
+.pk-chart-s8 { --pk-chart-color: var(--pk-series-8); }
+.pk-chart-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 10px 0 0; padding: 0; list-style: none; font-size: 0.875rem; }
+.pk-chart-key { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 2px; background: var(--pk-chart-color); }
+.pk-chart-legend-value { margin-left: 6px; color: var(--pk-muted); font-variant-numeric: tabular-nums; }
+.pk-chart-data { margin-top: 10px; font-size: 0.875rem; }
 .pk-diagram-marker { fill: var(--pk-muted); stroke: var(--pk-muted); stroke-dasharray: none; }
 .pk-diagram-marker.pk-diagram-cross { stroke-width: 1; }
 .pk-diagram-edgeLabel rect { fill: var(--pk-surface); stroke: none; opacity: 1; }
@@ -702,6 +763,9 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
   /* Scales with each diagram, so a tall simple chain does not take over a sheet. */
   .pk-diagram svg { max-height: min(8.5cm, calc(var(--pk-diagram-h, 8.5cm) * 0.72)); }
   .pk-diagram-note { margin-top: 4px; font-size: 0.75rem; }
+  /* A chart stays on one sheet with its title, legend, and data table, as a diagram does. */
+  .pk-chart { padding: 6px 8px 8px; break-inside: avoid; }
+  .pk-chart figcaption { margin-bottom: 3px; break-after: avoid; }
   .pk-section { margin-top: 20px; }
   h1 { font-size: 1.625rem; }
   h2 { font-size: 1.125rem; }

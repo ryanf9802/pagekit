@@ -1,8 +1,8 @@
 """Tags a page writes and the build replaces with generated content.
 
 To add one, write a function that takes the tag's attributes and the page's headings and returns
-HTML, then list it in _TAGS with the attributes it accepts. <pk-diagram> is handled in diagrams.py,
-because it reads files and keeps a cache.
+HTML, then list it in _TAGS with the attributes it accepts. <pk-diagram> and <pk-chart> are handled in
+diagrams.py and charts.py, because they read files.
 """
 
 from __future__ import annotations
@@ -37,7 +37,8 @@ class _Found:
 
 
 _TAG_RE = re.compile(r"<pk-([a-z][a-z0-9-]*)((?:\s+[a-z-]+(?:=\"[^\"]*\")?)*)\s*(?:/>|>\s*</pk-\1>)", re.IGNORECASE)
-_OPEN_TAG_RE = re.compile(r"<pk-(?!diagram\b)([a-z][a-z0-9-]*)", re.IGNORECASE)
+_FILE_TAGS = {"diagram", "chart"}
+_OPEN_TAG_RE = re.compile(r"<pk-(?!(?:diagram|chart)\b)([a-z][a-z0-9-]*)", re.IGNORECASE)
 _ATTR_RE = re.compile(r"([a-z-]+)(?:=\"([^\"]*)\")?", re.IGNORECASE)
 _HEADING_RE = re.compile(r"^h([1-6])$")
 _NOT_SLUG_RE = re.compile(r"[^a-z0-9]+")
@@ -191,7 +192,7 @@ def expand_tags(source: str) -> str:
 
     def replace(match: re.Match) -> str:
         name = match.group(1).lower()
-        if name == "diagram":
+        if name in _FILE_TAGS:
             return match.group(0)
         if name not in _TAGS:
             raise TagError(f"unknown tag <pk-{name}>: available tags are {', '.join(f'<pk-{t}>' for t in sorted(_TAGS))}")

@@ -466,7 +466,7 @@ def test_a_mistake_in_a_spark_tag_stops_the_build(home: Path, body: str, message
         ('<pk-contents max-level="9"></pk-contents><h2>A</h2>', "max-level must be a number"),
         ('<pk-contents depth="2"></pk-contents><h2>A</h2>', "no attribute 'depth'"),
         ("<pk-contents></pk-contents>", "no headings"),
-        ("<pk-chart></pk-chart>", "unknown tag <pk-chart>"),
+        ("<pk-gauge></pk-gauge>", "unknown tag <pk-gauge>"),
         ("<pk-contents>", "malformed"),
     ],
 )
