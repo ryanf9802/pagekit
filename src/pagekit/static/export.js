@@ -218,6 +218,30 @@
   var button = document.getElementById("pk-export");
   if (button) button.addEventListener("click", copy);
 
+  /* A heading row becomes a real <thead>, so it repeats on every printed sheet. */
+  Array.prototype.forEach.call(document.querySelectorAll("table"), function (table) {
+    var first = table.rows[0];
+    if (table.tHead || !first) return;
+    var allHeadings = Array.prototype.every.call(first.cells, function (c) { return c.tagName === "TH"; });
+    if (allHeadings) table.createTHead().appendChild(first);
+  });
+
+  /* Collapsed sections print open, then return to how they were. */
+  var closedForPrint = [];
+  window.addEventListener("beforeprint", function () {
+    /* Added to, not replaced: print can fire this twice before afterprint. */
+    Array.prototype.forEach.call(document.querySelectorAll("details"), function (d) {
+      if (!d.open) {
+        closedForPrint.push(d);
+        d.open = true;
+      }
+    });
+  });
+  window.addEventListener("afterprint", function () {
+    closedForPrint.forEach(function (d) { d.open = false; });
+    closedForPrint = [];
+  });
+
   /* The header shows the page title once the main heading has scrolled away. */
   var heading = document.querySelector("h1");
   if (heading && window.IntersectionObserver) {

@@ -21,7 +21,7 @@
   --pk-bar-height: 52px;
   --pk-gutter: max(16px, calc((100% - var(--pk-max-width)) / 2 + 16px));
 }
-@media (prefers-color-scheme: dark) {
+@media screen and (prefers-color-scheme: dark) {
   :root {
     --pk-bg: #16181c;
     --pk-surface: #1f2228;
@@ -101,7 +101,7 @@ p { margin: 0 0 12px; }
 .pk-wordmark { display: block; flex: none; width: auto; height: 15px; margin-left: -4px; }
 .pk-wordmark ~ .pk-brand { display: none; }
 /* A wordmark is drawn in dark ink, so it is inverted to white in dark mode. */
-@media (prefers-color-scheme: dark) {
+@media screen and (prefers-color-scheme: dark) {
   .pk-wordmark { filter: brightness(0) invert(1); }
 }
 @media (max-width: 400px) {
@@ -290,8 +290,26 @@ details > summary { cursor: pointer; font-weight: 500; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+/* Print: light colors always. The running header and footer are @page margin boxes,
+   written at build time (see print_css), because they repeat on every sheet. */
 @media print {
-  body { display: block; }
-  .pk-header, .pk-footer { position: static; backdrop-filter: none; }
-  .pk-footer .pk-button { display: none; }
+  :root { color-scheme: light; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  html { scroll-padding-block: 0; }
+  body { display: block; min-height: 0; background: #fff !important; font-size: 10.5pt; line-height: 1.45; }
+  .pk-header, .pk-footer { display: none; }
+  .pk-main { max-width: none; padding: 0; }
+  .pk-section { margin-top: 20px; }
+  h1 { font-size: 20pt; }
+  h2 { font-size: 13pt; }
+  h1, h2, h3, h4, .pk-card-head, p:has(+ pre), p:has(+ .pk-table-wrap) { break-after: avoid; }
+  .pk-card, .pk-kpi, .pk-figure, tr, pre, blockquote { break-inside: avoid; }
+  .pk-card, .pk-kpi, .pk-table-wrap { box-shadow: none; }
+  .pk-table-wrap { overflow: visible; }
+  thead { display: table-header-group; }
+  th, td { padding: 6px 10px; }
+  th { white-space: normal; }
+  pre { overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; }
+  textarea { field-sizing: content; min-height: 36px; resize: none; }
+  .pk-figure img { max-height: 180mm; width: auto; }
+  .pk-main a[href^="http"]::after { content: " (" attr(href) ")"; color: var(--pk-muted); font-size: 0.85em; overflow-wrap: anywhere; }
 }

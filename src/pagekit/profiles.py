@@ -226,11 +226,12 @@ footer = "{brand}"
 # subdir = "Pages"
 """
 
-_STARTER_THEME = """/* Override only what differs. Redefine tokens for both light and dark. */
+_STARTER_THEME = """/* Override only what differs. Redefine tokens for both light and dark.
+   Keep "screen and" on the dark block so pages always print in light colors. */
 :root {
   --pk-accent: #1f6feb;
 }
-@media (prefers-color-scheme: dark) {
+@media screen and (prefers-color-scheme: dark) {
   :root {
     --pk-accent: #8fb0f0;
   }

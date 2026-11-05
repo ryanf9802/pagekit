@@ -112,6 +112,13 @@ fields:
 Password and hidden inputs are never exported. Answers survive a reload and a style-only
 rebuild in `localStorage`, and reset when `content.html` changes.
 
+## Printing
+
+Pages print in light colors, with the header and footer repeated on every sheet, page
+numbers, collapsed sections opened, and wide tables and code wrapped rather than clipped.
+A profile's dark tokens must stay under `@media screen and (prefers-color-scheme: dark)`
+for this to hold. Use `<thead>` so a table's header row repeats across sheets.
+
 ## Expiry
 
 `pagekit prune` deletes pages not updated for 30 days (`$PAGEKIT_TTL_DAYS`, `0` disables).
