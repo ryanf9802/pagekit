@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .pages import server_running
+from .version import Version, from_metadata, parse_describe
 
 BRANCH = "main"
 # Every release is a tag like v0.1.7, made by CI once a merge to main has passed.
@@ -23,8 +24,9 @@ class UpdateError(Exception):
 
 @dataclass
 class UpdateResult:
-    # The release moved to, or "" when following main.
-    version: str = ""
+    # The version the clone was at, and the one it is at now, as printed by --version.
+    before: str = ""
+    after: str = ""
     commits: list[str] = field(default_factory=list)
     new_skills: list[Path] = field(default_factory=list)
     reinstalled: bool = False
@@ -90,22 +92,53 @@ def resolve_follow(flag: str | None = None) -> tuple[str, str]:
     return value, "file"
 
 
-def _fetch_target(clone: Path, follow: str | None) -> tuple[str, str]:
-    """Fetches, and names what to move to: the newest release, or origin/main. Returns (ref, release name or "")."""
+def _fetch_target(clone: Path, follow: str | None) -> str:
+    """Fetches, and names what to move to: the newest release, or origin/main."""
     _git(clone, "fetch", "--tags", "origin", BRANCH)
     if resolve_follow(follow)[0] == "main":
-        return f"origin/{BRANCH}", ""
+        return f"origin/{BRANCH}"
     releases = _lines(_git(clone, "tag", "--list", RELEASE_TAGS, "--sort=-version:refname"))
     if not releases:
         raise UpdateError("no release has been published yet: run pagekit update --main to follow main instead")
-    return releases[0], releases[0]
+    return releases[0]
+
+
+def version_of(clone: Path, ref: str | None = None) -> Version:
+    """The version at a commit, or of the clone's working tree (which can be dirty) when no commit is given."""
+    describe = ["describe", "--tags", "--long", "--match", RELEASE_TAGS, "--always"]
+    # git refuses --dirty together with a commit, and a commit has no working tree to be dirty.
+    return parse_describe(_git(clone, *describe, ref or "--dirty"))
+
+
+def installed_version() -> Version:
+    """The version this install is at: read from its clone, so an update is reflected at once. A plain install has none."""
+    clone = clone_dir()
+    if clone is not None:
+        try:
+            return version_of(clone)
+        except UpdateError:
+            pass  # No git, or a clone git cannot read: the package's own version is the best left.
+    return from_metadata()
+
+
+@dataclass
+class Pending:
+    commits: list[str]
+    # The version the clone is at, and the one an update would move it to.
+    current: Version
+    target: Version
+
+
+def check(root: Path | None = None, follow: str | None = None) -> Pending:
+    """Fetches, and says what an update would bring in. Changes nothing else."""
+    clone = _require_clone(root or clone_dir())
+    target = _fetch_target(clone, follow)
+    commits = _lines(_git(clone, "log", "--format=%s", f"HEAD..{target}"))
+    return Pending(commits, version_of(clone), version_of(clone, target))
 
 
 def pending_commits(root: Path | None = None, follow: str | None = None) -> list[str]:
-    """Fetches, and lists what an update would bring in. Changes nothing else."""
-    clone = _require_clone(root or clone_dir())
-    target, _ = _fetch_target(clone, follow)
-    return _lines(_git(clone, "log", "--format=%s", f"HEAD..{target}"))
+    return check(root, follow).commits
 
 
 def _restart_server() -> str:
@@ -129,14 +162,19 @@ def update(root: Path | None = None, follow: str | None = None) -> UpdateResult:
     branch = _git(clone, "rev-parse", "--abbrev-ref", "HEAD")
     if branch != BRANCH:
         raise UpdateError(f"{clone} is on {branch}: switch it to {BRANCH}, then update again")
-    target, version = _fetch_target(clone, follow)
+    target = _fetch_target(clone, follow)
     before = _git(clone, "rev-parse", "HEAD")
+    was = version_of(clone)
     # A clone already ahead of the release stays where it is, so an update never moves backwards.
     _git(clone, "merge", "--ff-only", target)
     after = _git(clone, "rev-parse", "HEAD")
     if before == after:
-        return UpdateResult()
-    result = UpdateResult(version=version, commits=_lines(_git(clone, "log", "--format=%s", f"{before}..{after}")))
+        return UpdateResult(before=str(was), after=str(was))
+    result = UpdateResult(
+        before=str(was),
+        after=str(version_of(clone)),
+        commits=_lines(_git(clone, "log", "--format=%s", f"{before}..{after}")),
+    )
     added = _git(clone, "diff", "--name-only", "--diff-filter=A", before, after, "--", "src/pagekit/skills")
     result.new_skills = [clone / Path(name).parent for name in _lines(added) if Path(name).name == "SKILL.md"]
     # An editable install follows the clone, so only new dependencies need a reinstall.

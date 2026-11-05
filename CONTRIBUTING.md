@@ -45,6 +45,10 @@ request titles. A failed run makes no release, so users stay on the last good ve
 passes. For a new minor version, such as `v0.2.0`, create the release by hand on a commit where CI has passed, and
 automatic releases carry on from it.
 
+The version is the release tag. `pagekit --version` reads it from git, so there is no number to bump. Leave the `version`
+in `pyproject.toml` alone: it is a placeholder the build needs, and changing that file makes every machine reinstall on
+its next update.
+
 `pagekit update` follows the newest release. `pagekit update --main` follows `main` instead, which is what to use to try a
 merge before it is released. A machine you develop on can follow `main` every time with `follow = "main"` in
 `~/.pagekit/update.toml`; see [Getting started](docs/getting-started.md#keep-it-up-to-date).

@@ -85,6 +85,31 @@ Then plain `pagekit update` follows `main` there, and says so. `--releases` foll
 `--main` follows `main` for one run on a machine that follows releases. A flag always beats the file. A value other than
 `"releases"` or `"main"` is an error that names the file.
 
+### Which version is this
+
+```bash
+pagekit --version
+```
+
+At a release it prints that release, such as `pagekit 0.1.8`. A machine that follows `main` is usually past the last
+release, so it prints the release, the commits since it, and the commit: `pagekit 0.1.8+3.g1234abc` is three commits
+after 0.1.8, at commit `1234abc`. A `.dirty` on the end means the clone has uncommitted changes. If git cannot tell
+(a shallow clone with no tags), it counts from `0.0.0`.
+
+The version is read from the clone's git history each time, never stored, so it is right straight after an update. It
+counts from the release tags the clone has, and `pagekit update` or `pagekit update --check` fetches new ones. So a
+commit that CI has just released still reads as `0.1.8+1.g...` until the next fetch turns it into `0.1.9`. The number of
+the next release is not known until CI tags it, which is why a machine on `main` shows how far past the last one it is.
+
+`pagekit update` and `pagekit update --check` name both versions, in either mode:
+
+```text
+updated pagekit 0.1.8 -> 0.1.9 with 3 change(s):
+updated pagekit 0.1.9+1.g0aebe28 -> 0.1.9+4.g1234abc with 3 change(s):
+2 update(s) available (0.1.8 -> 0.1.9): run pagekit update
+pagekit 0.1.9 is up to date
+```
+
 ## Where things live
 
 | Path | Holds |

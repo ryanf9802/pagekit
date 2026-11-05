@@ -36,7 +36,7 @@ from .pages import (
     set_public_url,
 )
 from .pdf import render_pdf
-from .update import UpdateError, pending_commits, resolve_follow, update, update_settings_file
+from .update import UpdateError, check, installed_version, resolve_follow, update, update_settings_file
 from .profiles import (
     EXTRA_PROFILES_SUBDIR,
     PROFILE_SUBDIR,
@@ -324,20 +324,22 @@ def cmd_update(args) -> int:
         if follow == "main":
             print("following main" + (f", as set in {update_settings_file()}" if source == "file" else ""))
         if args.check:
-            commits = pending_commits(follow=follow)
-            for commit in commits:
+            pending = check(follow=follow)
+            for commit in pending.commits:
                 print(f"  {commit}")
-            print(f"{len(commits)} update(s) available: run pagekit update" if commits else "pagekit is up to date")
+            if pending.commits:
+                print(f"{len(pending.commits)} update(s) available ({pending.current} -> {pending.target}): run pagekit update")
+            else:
+                print(f"pagekit {pending.current} is up to date")
             return 0
         result = update(follow=follow)
     except UpdateError as exc:
         print(f"pagekit: {exc}", file=sys.stderr)
         return 1
     if not result.commits:
-        print("pagekit is up to date")
+        print(f"pagekit {result.after} is up to date")
         return 0
-    target = f" to {result.version}" if result.version else ""
-    print(f"updated pagekit{target} with {len(result.commits)} change(s):")
+    print(f"updated pagekit {result.before} -> {result.after} with {len(result.commits)} change(s):")
     for commit in result.commits:
         print(f"  {commit}")
     if result.reinstalled:
@@ -367,8 +369,20 @@ def cmd_install_service(args) -> int:
     return 0
 
 
+class _ShowVersion(argparse.Action):
+    """--version. It asks git only when it is used, since every other command would pay for the call."""
+
+    def __init__(self, option_strings, dest, **kwargs):
+        super().__init__(option_strings, dest, nargs=0, default=argparse.SUPPRESS, help="show the version and exit")
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        print(f"pagekit {installed_version()}")
+        parser.exit()
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="pagekit", description=__doc__)
+    parser.add_argument("--version", action=_ShowVersion)
     sub = parser.add_subparsers(dest="cmd", required=True)
     profile_help = "personal, builtin, a profile this repo offers, or a directory (default: nearest to the working directory)"
 
