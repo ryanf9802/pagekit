@@ -234,6 +234,10 @@ input, progress { accent-color: var(--pk-accent); }
   border-color: var(--pk-accent);
 }
 /* Cancels the option's own padding and border, so its text lines up with the rest of the row. */
+/* A lone checkbox is block level, so its margin collapses with the text above like every other control. */
+label.pk-choices { display: flex; width: fit-content; }
+/* Answer controls sit the same distance from what is above and below them. */
+p:has(+ .pk-choices), p:has(+ .pk-field) { margin-bottom: 8px; }
 td > .pk-choices, th > .pk-choices { margin: -3px 0; }
 .pk-help { color: var(--pk-muted); font-size: 0.875rem; }
 
