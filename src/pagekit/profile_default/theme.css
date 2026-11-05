@@ -117,7 +117,10 @@ p { margin: 0 0 12px; }
 }
 .pk-footer a { color: inherit; }
 .pk-logo { display: block; width: 24px; height: 24px; }
-.pk-header picture { flex: none; }
+.pk-logo, .pk-wordmark { flex: none; }
+/* A wordmark is drawn in dark ink, so it is inverted to white on the bar. */
+.pk-wordmark { display: block; width: auto; height: 15px; margin-left: -4px; filter: brightness(0) invert(1); }
+.pk-wordmark ~ .pk-brand { display: none; }
 .pk-brand { flex: none; font-weight: 650; letter-spacing: -0.005em; }
 .pk-brand:empty { display: none; }
 .pk-header-title {
@@ -131,6 +134,9 @@ p { margin: 0 0 12px; }
   transition: opacity 150ms ease;
 }
 .pk-brand:not(:empty) ~ .pk-header-title { padding-left: 12px; border-left: 1px solid var(--pk-bar-border); }
+@media (max-width: 400px) {
+  .pk-wordmark { height: 13px; }
+}
 .pk-brand:empty ~ .pk-header-title, .pk-scrolled .pk-header-title { opacity: 1; }
 .pk-footer-meta { display: flex; gap: 8px; min-width: 0; white-space: nowrap; }
 .pk-footer-meta > span:empty { display: none; }

@@ -252,9 +252,14 @@ def _data_uri(path: Path) -> str:
 def _logo_html(profile: Profile, brand: str) -> str:
     # The header bar is dark in both themes, so the on-dark logo wins when a profile has one.
     logo = profile.file("logo-dark.svg") or profile.file("logo.svg")
-    if not logo:
-        return ""
-    return f'<img class="pk-logo" src="{_data_uri(logo)}" alt="{html.escape(brand)}">'
+    wordmark = profile.file("wordmark.svg")
+    parts = []
+    if logo:
+        alt = "" if wordmark else html.escape(brand)
+        parts.append(f'<img class="pk-logo" src="{_data_uri(logo)}" alt="{alt}">')
+    if wordmark:
+        parts.append(f'<img class="pk-wordmark" src="{_data_uri(wordmark)}" alt="{html.escape(brand)}">')
+    return "".join(parts)
 
 
 def _render(template: str, values: dict[str, str]) -> str:

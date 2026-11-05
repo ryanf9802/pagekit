@@ -197,6 +197,18 @@ def test_header_uses_the_on_dark_logo_when_there_is_one(home: Path) -> None:
     assert base64.b64encode(b"<svg id='light'/>").decode() not in document
 
 
+def test_wordmark_joins_the_icon_and_carries_the_brand_name(home: Path) -> None:
+    repo = home / "repo"
+    directory = repo / ".pagekit" / "profile"
+    init_profile(directory, "acme", "builtin", "Acme")
+    (directory / "logo.svg").write_text("<svg id='icon'/>")
+    (directory / "wordmark.svg").write_text("<svg id='word'/>")
+    document = make(load_profile(repo)).index.read_text()
+    assert base64.b64encode(b"<svg id='word'/>").decode() in document
+    assert re.search(r'class="pk-logo" src="[^"]+" alt=""', document)
+    assert re.search(r'class="pk-wordmark" src="[^"]+" alt="Acme"', document)
+
+
 def test_pack_inlines_assets(home: Path) -> None:
     profile = load_profile()
     page, _ = new_page(profile, "shot", "Shot", None, "slots")
