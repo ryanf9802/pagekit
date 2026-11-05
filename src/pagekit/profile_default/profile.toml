@@ -3,5 +3,3 @@ brand = ""
 footer = ""
 ascii_only = true
 allowed_hosts = ["cdn.jsdelivr.net", "cdnjs.cloudflare.com", "unpkg.com"]
-# Generated PDFs only. Ctrl+P uses @page in theme.css.
-pdf_margin = "6mm 7.5mm"

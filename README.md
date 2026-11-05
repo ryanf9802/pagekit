@@ -172,7 +172,8 @@ builds a tagged PDF with bookmarks from the page's headings, including answers t
 `pagekit pdf SLUG [--out FILE]` does the same from the command line. Both use a local Chrome or
 Chromium (`$PAGEKIT_CHROME` overrides the search); with none found, the button does not appear.
 Tagging makes these PDFs larger than Ctrl+P output.
-Their margins come from `pdf_margin` in `profile.toml` (default `6mm 7.5mm`), separate from Ctrl+P.
+Their margins default to `0.15in 0.25in` (top and bottom, then sides). A profile can set its own with
+`pdf_margin` in `profile.toml`. Ctrl+P keeps the margins in the theme.
 
 ## Printing
 

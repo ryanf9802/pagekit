@@ -59,9 +59,10 @@ def test_generated_pdfs_use_their_own_margins_and_ctrl_p_keeps_its_own(chrome: P
     page = built_page()
     render_pdf(page, tmp_path / "out.pdf")
     rendered = Path(f"{chrome}.html").read_text()
-    assert "@page { margin: 6mm 7.5mm; }" in rendered
-    assert rendered.index("margin: 12mm 15mm") < rendered.index("margin: 6mm 7.5mm")
-    assert "margin: 6mm 7.5mm; }" not in page.index.read_text()
+    assert "@page { margin: 0.15in 0.25in; }" in rendered
+    assert rendered.index("margin: 12mm 15mm") < rendered.index("margin: 0.15in 0.25in")
+    assert "margin: 0.15in 0.25in; }" not in page.index.read_text()
+    assert "pdf_margin" not in page.meta
 
 
 def test_a_profile_can_set_its_own_pdf_margin(chrome: Path, tmp_path: Path, home: Path) -> None:

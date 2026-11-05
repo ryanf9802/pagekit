@@ -16,7 +16,7 @@ from .pages import Page, PageError
 _CHROME_NAMES = ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "chrome", "msedge")
 _MAC_CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 _TIMEOUT_SECONDS = 120
-DEFAULT_PDF_MARGIN = "6mm 7.5mm"
+DEFAULT_PDF_MARGIN = "0.15in 0.25in"
 
 
 def find_chrome() -> str | None:
