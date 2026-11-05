@@ -1,7 +1,7 @@
 # Contributing
 
-`pagekit update` pulls `main`, so every merge reaches users straight away. Everything here exists to keep `main` safe to
-ship.
+`pagekit update` moves users to the newest release, and every merge to `main` becomes a release once CI passes on the
+merged commit. So a merge reaches users within minutes, and everything here exists to keep `main` safe to ship.
 
 ## Set up
 
@@ -34,6 +34,17 @@ To try your changes as the `pagekit` command, run `uv run pagekit`, or `uv tool 
 5. **Merge** once CI passes. Pull requests are squash merged, and the branch is deleted automatically.
 
 Direct pushes to `main` are refused, for everyone.
+
+## Releases
+
+You do not cut releases. After a merge, CI runs again on the merged commit. When it passes, a release job tags that commit
+with the next patch version (`v0.1.7`, then `v0.1.8`) and publishes a GitHub release whose notes list the merged pull
+request titles. A failed run makes no release, so users stay on the last good version until a fix or a revert merges and
+passes. For a new minor version, such as `v0.2.0`, create the release by hand on a commit where CI has passed, and
+automatic releases carry on from it.
+
+`pagekit update` follows the newest release. `pagekit update --main` follows `main` instead, which is what to use to try a
+merge before it is released.
 
 ## Issue labels
 

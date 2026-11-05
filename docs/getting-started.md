@@ -62,15 +62,16 @@ it by hand.
 
 ## Keep it up to date
 
-Ask your agent to "update pagekit", and it will pull in the latest version and tell you what changed. To do it yourself:
+Ask your agent to "update pagekit", and it will pull in the newest release and tell you what changed. To do it yourself:
 
 ```bash
 pagekit update --check    # list what an update would bring in
-pagekit update            # pull it in, reinstall if needed, and restart the server
+pagekit update            # move to the newest release, reinstall if needed, and restart the server
+pagekit update --main     # follow the main branch instead, to try changes before they are released
 ```
 
 `pagekit update` runs from the clone, and stops without changing anything if the clone has uncommitted changes or is on
-another branch. It names any new skill to link. Pages already built keep their old look until you run
+another branch. It never moves a clone backwards, so a clone ahead of the newest release (after `--main`) stays put. It names any new skill to link. Pages already built keep their old look until you run
 `pagekit build SLUG`.
 
 ## Where things live
