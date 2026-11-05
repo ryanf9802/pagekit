@@ -7,6 +7,8 @@ name = "pagekit"
 version = "0.1.0"
 description = "Profile-driven, self-contained HTML pages for coding agents: consistent branding, copy-back forms, automatic expiry."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = []
 

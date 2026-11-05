@@ -50,3 +50,7 @@ Then give your agent the skill in `src/pagekit/skills/create-page`, and ask it f
 ```bash
 uv run --group dev pytest
 ```
+
+## License
+
+[MIT](LICENSE). The bundled Lucide icons and Mermaid keep their own licenses, in `src/pagekit/static/`.
