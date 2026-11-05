@@ -172,6 +172,48 @@ def test_every_chart_type_starts_its_plot_at_the_same_height_so_a_row_of_them_li
     assert len(set(tops.values())) == 1, tops
 
 
+def _geometry(spec: dict) -> dict:
+    """Where a column-style chart's plot starts and stops, and its first and last mark, from the drawing itself."""
+    svg = draw_chart("x.json", parse_spec("x.json", json.dumps(spec)))
+    grid = re.search(r'class="pk-chart-grid" x1="([^"]*)" y1="[^"]*" x2="([^"]*)"', svg)
+    first_last = re.search(r'<polyline class="pk-chart-line [^"]*" points="([^"]*)"', svg)
+    bands = [(float(x), float(w)) for x, w in re.findall(r'<rect class="pk-chart-hit" x="([^"]*)" y="[^"]*" width="([^"]*)"', svg)]
+    out = {"left": float(grid.group(1)), "right": float(grid.group(2)), "bands": bands, "svg": svg}
+    if first_last:
+        points = [tuple(map(float, p.split(","))) for p in first_last.group(1).split(" ")]
+        out["first"], out["last"] = points[0][0], points[-1][0]
+    return out
+
+
+@pytest.mark.parametrize("kind", ["line", "area"])
+def test_a_line_or_area_chart_runs_edge_to_edge(kind: str) -> None:
+    geometry = _geometry(KINDS[kind])
+    assert geometry["first"] == geometry["left"] and geometry["last"] == geometry["right"]
+
+
+def test_a_bar_chart_keeps_a_gap_at_each_end_because_a_bar_needs_room() -> None:
+    svg = _geometry(BAR)["svg"]
+    first_bar = float(re.search(r'<path class="pk-chart-bar [^"]*" d="M([\d.]+),', svg).group(1))
+    assert first_bar > _geometry(BAR)["left"] + 10
+
+
+@pytest.mark.parametrize("kind", ["bar", "line", "area"])
+def test_the_tooltip_bands_cover_the_plot_without_gaps_or_overlaps(kind: str) -> None:
+    geometry = _geometry(KINDS[kind])
+    bands = geometry["bands"]
+    assert bands[0][0] == pytest.approx(geometry["left"]) and bands[-1][0] + bands[-1][1] == pytest.approx(geometry["right"])
+    for (x, width), (next_x, _) in zip(bands, bands[1:], strict=False):
+        assert x + width == pytest.approx(next_x, abs=0.2)
+
+
+def test_a_wide_label_at_either_end_is_not_clipped_by_the_edge_of_the_drawing() -> None:
+    spec = {**LINE, "labels": ["Week number one", "Week 2", "Week number three"]}
+    svg = draw_chart("x.json", parse_spec("x.json", json.dumps(spec)))
+    for x, label in re.findall(r'class="pk-chart-tick" x="([^"]*)" y="[^"]*" text-anchor="middle">(Week[^<]*)<', svg):
+        half = len(label) * 6.8 / 2
+        assert float(x) - half >= 0 and float(x) + half <= 420, label
+
+
 class _Tips(HTMLParser):
     """Collects each data-tip the way a browser reads it, so escaping mistakes show up as wrong text."""
 

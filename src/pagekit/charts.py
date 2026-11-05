@@ -303,25 +303,39 @@ def _draw_columns(spec: dict) -> tuple[str, int]:
     ticks = nice_ticks(*_range(spec, zero=kind != "line"))
     texts = tick_text(ticks, unit)
     labelled = kind == "bar" and len(series) == 1 and len(labels) <= 12
-    left = 10 + max(_width(t) for t in texts)
+    # A line or area runs edge to edge, with its first and last points on the edges of the plot. A bar needs room
+    # on both sides, so each label owns a band and the bars sit in the middle. Either way the labels sit under
+    # the marks, so an end label's margin grows to keep it from being clipped at the edge of the drawing.
+    edge_to_edge = kind != "bar"
+    # The axis numbers sit a little further out when a point can land on the edge, so a dot never touches one.
+    gap = 10 if edge_to_edge else 6
+    left = 4 + gap + max(_width(t) for t in texts)
+    right = 12
+    if edge_to_edge:
+        left, right = max(left, _width(labels[0]) / 2 + 4), max(right, _width(labels[-1]) / 2 + 4)
     top = _top(spec)
     bottom = 26 + (18 if spec["x_label"] else 0)
-    x0, x1, y0, y1 = left, _W - 12, top, _H - bottom
+    x0, x1, y0, y1 = left, _W - right, top, _H - bottom
     low, high = ticks[0], ticks[-1]
 
     def at(value: float) -> float:
         return y1 - (value - low) / (high - low) * (y1 - y0)
 
-    slot = (x1 - x0) / len(labels)
+    # The distance between neighbouring marks, and where label i's mark is.
+    slot = (x1 - x0) / (len(labels) - 1 if edge_to_edge else len(labels))
+
+    def pos(i: int) -> float:
+        return x0 + slot * i if edge_to_edge else x0 + slot * (i + 0.5)
+
     out = []
     if spec["y_label"]:
         out.append(_label(4, 12, spec["y_label"], "pk-chart-axis-title", "start"))
     for tick, text in zip(ticks, texts, strict=True):
-        out += [_line("pk-chart-grid", x0, at(tick), x1, at(tick)), _label(x0 - 6, at(tick) + 4, text, "pk-chart-tick", "end")]
+        out += [_line("pk-chart-grid", x0, at(tick), x1, at(tick)), _label(x0 - gap, at(tick) + 4, text, "pk-chart-tick", "end")]
     base = at(0) if low <= 0 <= high else y1
     out.append(_line("pk-chart-axis", x0, base, x1, base))
     every = max(1, math.ceil((max(_width(label) for label in labels) + 8) / slot))
-    out += [_label(x0 + slot * (i + 0.5), y1 + 16, label, "pk-chart-tick") for i, label in enumerate(labels) if i % every == 0]
+    out += [_label(pos(i), y1 + 16, label, "pk-chart-tick") for i, label in enumerate(labels) if i % every == 0]
     if spec["x_label"]:
         out.append(_label((x0 + x1) / 2, _H - 4, spec["x_label"], "pk-chart-axis-title"))
 
@@ -329,15 +343,17 @@ def _draw_columns(spec: dict) -> tuple[str, int]:
     hits = []
     for i, label in enumerate(labels):
         rows = [(item["name"], plain(item["values"][i]) + unit, j + 1) for j, item in enumerate(series)]
-        cross = "" if kind == "bar" else _line("pk-chart-cross", x0 + slot * (i + 0.5), y0, x0 + slot * (i + 0.5), y1)
-        band = _hit("pk-chart-hit", x0 + slot * i, y0 - _HEADROOM, slot, y1 - y0 + _HEADROOM, _tip(label, rows))
+        cross = "" if kind == "bar" else _line("pk-chart-cross", pos(i), y0, pos(i), y1)
+        # The band covers half the way to each neighbour, and stops at the edge of the plot.
+        start, end = max(x0, pos(i) - slot / 2), min(x1, pos(i) + slot / 2)
+        band = _hit("pk-chart-hit", start, y0 - _HEADROOM, end - start, y1 - y0 + _HEADROOM, _tip(label, rows))
         hits.append(f'<g class="pk-chart-point">{cross}{band}</g>')
 
     if kind == "bar":
         thick = min(_BAR_MAX, (slot * 0.72 - _GAP * (len(series) - 1)) / len(series))
         group = len(series) * thick + _GAP * (len(series) - 1)
         for i in range(len(labels)):
-            start = x0 + slot * (i + 0.5) - group / 2
+            start = pos(i) - group / 2
             for j, item in enumerate(series):
                 value = item["values"][i]
                 if value == 0:
@@ -350,7 +366,7 @@ def _draw_columns(spec: dict) -> tuple[str, int]:
 
     dots = []
     for j, item in enumerate(series):
-        points = [(x0 + slot * (i + 0.5), at(v)) for i, v in enumerate(item["values"])]
+        points = [(pos(i), at(v)) for i, v in enumerate(item["values"])]
         path = " ".join(f"{_f(x)},{_f(y)}" for x, y in points)
         if kind == "area":
             edge = f"M{_f(points[0][0])},{_f(base)} L{path.replace(' ', ' L')} L{_f(points[-1][0])},{_f(base)} Z"
