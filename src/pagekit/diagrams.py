@@ -114,14 +114,14 @@ def _draw(source: str, svg_id: str, fonts_css: str, font_family: str) -> str:
         raise DiagramError("drawing a diagram needs Chrome or Chromium: set PAGEKIT_CHROME to its path")
     with tempfile.TemporaryDirectory(prefix="pagekit-diagram-") as folder:
         page = Path(folder) / "draw.html"
-        page.write_text(_render_page(source, svg_id, fonts_css, font_family))
+        page.write_text(_render_page(source, svg_id, fonts_css, font_family), encoding="utf-8")
         command = [
             chrome, "--headless=new", "--no-sandbox", "--disable-gpu", "--allow-file-access-from-files",
             "--virtual-time-budget=20000", f"--user-data-dir={folder}/profile", "--dump-dom", page.as_uri(),
         ]  # fmt: skip
         try:
             result = subprocess.run(
-                command, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=_TIMEOUT_SECONDS
+                command, capture_output=True, text=True, encoding="utf-8", errors="replace", stdin=subprocess.DEVNULL, timeout=_TIMEOUT_SECONDS
             )
         except (OSError, subprocess.TimeoutExpired) as exc:
             raise DiagramError(f"drawing failed: {exc}") from exc
@@ -187,12 +187,12 @@ def _cached_svg(page_dir: Path, source_text: str, svg_id: str, fonts_css: str, t
     cache = page_dir / _CACHE_DIR
     path = cache / f"{svg_id}-{key}.svg"
     if path.is_file():
-        return path.read_text()
+        return path.read_text(encoding="utf-8")
     svg = themed_svg(_draw(source, svg_id, fonts_css, family), svg_id, title, desc)
     cache.mkdir(exist_ok=True)
     for old in cache.glob(f"{svg_id}-*.svg"):
         old.unlink()
-    path.write_text(svg)
+    path.write_text(svg, encoding="utf-8")
     return svg
 
 
@@ -204,7 +204,7 @@ def expand_diagrams(document: str, page_dir: Path, fonts_css: str, theme: str) -
         source = page_dir / "assets" / filename
         if not source.is_file():
             raise DiagramError(f"missing diagram source: assets/{filename}")
-        text = source.read_text()
+        text = source.read_text(encoding="utf-8")
         svg_id = filename[: -len(".mmd")]
         title = parse_source(filename, text)[0]
         svg = _cached_svg(page_dir, text, svg_id, fonts_css, theme)

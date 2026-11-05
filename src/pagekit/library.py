@@ -58,7 +58,7 @@ def html_classes(document: str) -> set[str]:
 
 
 def _when_from_html(path: Path) -> str:
-    match = _FIRST_COMMENT_RE.match(path.read_text())
+    match = _FIRST_COMMENT_RE.match(path.read_text(encoding="utf-8"))
     return " ".join(match.group(1).split()) if match else ""
 
 
@@ -73,7 +73,7 @@ def library_components() -> list[Component]:
             continue
         css = folder / "component.css"
         try:
-            when = str(tomllib.loads((folder / "component.toml").read_text()).get("when", ""))
+            when = str(tomllib.loads((folder / "component.toml").read_text(encoding="utf-8")).get("when", ""))
         except (OSError, tomllib.TOMLDecodeError):
             when = ""
         components.append(Component(folder.name, when, "library", html, css if css.is_file() else None))
@@ -123,7 +123,7 @@ def _commit_quietly(path: Path, message: str) -> None:
         return subprocess.run(
             ["git", "-C", str(cwd), *args],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
             stdin=subprocess.DEVNULL,
             timeout=_GIT_TIMEOUT_SECONDS,
         )
@@ -145,8 +145,8 @@ def add_component(profile: Profile, name: str, when: str, source: Path, update: 
     css_path = source / "component.css"
     if not html_path.is_file():
         raise ComponentError(f"{source} has no component.html")
-    html = html_path.read_text()
-    css = css_path.read_text() if css_path.is_file() else ""
+    html = html_path.read_text(encoding="utf-8")
+    css = css_path.read_text(encoding="utf-8") if css_path.is_file() else ""
     _validate(name, when, html, css)
     existing = next((c for c in list_components(profile) if c.name == name), None)
     if existing and existing.source != "library":
@@ -158,10 +158,10 @@ def add_component(profile: Profile, name: str, when: str, source: Path, update: 
     # Built beside the target and renamed in, so sessions never see half a component.
     staging = Path(tempfile.mkdtemp(prefix=f".{name}-", dir=target.parent))
     try:
-        (staging / "component.html").write_text(html)
+        (staging / "component.html").write_text(html, encoding="utf-8")
         if css:
-            (staging / "component.css").write_text(css)
-        (staging / "component.toml").write_text(f"when = {json.dumps(' '.join(when.split()))}\n")
+            (staging / "component.css").write_text(css, encoding="utf-8")
+        (staging / "component.toml").write_text(f"when = {json.dumps(' '.join(when.split()))}\n", encoding="utf-8")
         os.chmod(staging, 0o755)
         if update and target.exists():
             shutil.rmtree(target)
@@ -180,8 +180,8 @@ def library_css_for(document: str) -> str:
     used = html_classes(document)
     parts = []
     for component in library_components():
-        if component.css and css_classes(component.css.read_text()) & used:
-            parts.append(f"/* component: {component.name} */\n{component.css.read_text().strip()}")
+        if component.css and css_classes(component.css.read_text(encoding="utf-8")) & used:
+            parts.append(f"/* component: {component.name} */\n{component.css.read_text(encoding="utf-8").strip()}")
     return "\n".join(parts)
 
 
@@ -189,7 +189,7 @@ def library_classes() -> set[str]:
     found: set[str] = set()
     for component in library_components():
         if component.css:
-            found |= css_classes(component.css.read_text())
+            found |= css_classes(component.css.read_text(encoding="utf-8"))
     return found
 
 

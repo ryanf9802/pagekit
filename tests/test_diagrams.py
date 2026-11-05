@@ -93,6 +93,7 @@ def chrome(home: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return log
 
 
+@pytest.mark.posix
 def test_build_expands_the_tag_and_counts_the_source_as_used(chrome: Path) -> None:
     profile, page = page_with_diagram()
     build_page(profile, page)
@@ -104,6 +105,7 @@ def test_build_expands_the_tag_and_counts_the_source_as_used(chrome: Path) -> No
     assert result.ok and result.warnings == []
 
 
+@pytest.mark.posix
 def test_tag_class_goes_on_the_figure(chrome: Path) -> None:
     profile, page = page_with_diagram()
     page.content.write_text('<pk-diagram src="assets/flow.mmd" class="glance-left"></pk-diagram>')
@@ -111,6 +113,7 @@ def test_tag_class_goes_on_the_figure(chrome: Path) -> None:
     assert '<figure class="pk-diagram glance-left" id="diagram-flow">' in page.index.read_text()
 
 
+@pytest.mark.posix
 def test_diagrams_redraw_only_when_the_source_changes(chrome: Path) -> None:
     profile, page = page_with_diagram()
     build_page(profile, page)

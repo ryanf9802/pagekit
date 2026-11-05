@@ -40,6 +40,7 @@ def make_page(body: str = "<p>One</p>"):
     return page
 
 
+@pytest.mark.posix
 def test_passing_check_gets_the_built_page_and_can_read_its_folder(repo: Path, tmp_path: Path) -> None:
     set_check(repo, tmp_path, PASSING)
     page = make_page()
@@ -50,6 +51,7 @@ def test_passing_check_gets_the_built_page_and_can_read_its_folder(repo: Path, t
     assert logged == [str(page.index), str(page.dir), str(page.dir.resolve())]
 
 
+@pytest.mark.posix
 def test_failing_check_fails_the_build_and_shows_its_output(repo: Path, tmp_path: Path, capsys) -> None:
     set_check(repo, tmp_path, FAILING)
     make_page()
@@ -60,6 +62,7 @@ def test_failing_check_fails_the_build_and_shows_its_output(repo: Path, tmp_path
     assert "not updated" in output
 
 
+@pytest.mark.posix
 def test_a_refused_build_keeps_the_last_good_page(repo: Path, tmp_path: Path) -> None:
     set_check(repo, tmp_path, PASSING)
     page = make_page("<p>Good</p>")
@@ -71,6 +74,7 @@ def test_a_refused_build_keeps_the_last_good_page(repo: Path, tmp_path: Path) ->
     assert "<p>Good</p>" in document and "<p>Bad</p>" not in document
 
 
+@pytest.mark.posix
 def test_a_new_page_that_is_refused_has_no_index(repo: Path, tmp_path: Path) -> None:
     set_check(repo, tmp_path, FAILING)
     page = make_page()
@@ -78,6 +82,7 @@ def test_a_new_page_that_is_refused_has_no_index(repo: Path, tmp_path: Path) -> 
     assert not page.index.exists()
 
 
+@pytest.mark.posix
 def test_check_and_save_also_run_it(repo: Path, tmp_path: Path) -> None:
     set_check(repo, tmp_path, PASSING)
     make_page()

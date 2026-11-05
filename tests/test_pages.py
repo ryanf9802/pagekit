@@ -31,7 +31,7 @@ NAMED_FORM = '<input name="a.text"><textarea name="a.notes"></textarea>'
 def make(profile: Profile, slug: str = "demo", body: str = "<p>Hello</p>", mode: str = "slots") -> Page:
     page, _ = new_page(profile, slug, "Demo", "One line", mode)
     if mode == "slots":
-        page.content.write_text(body)
+        page.content.write_text(body, encoding="utf-8")
     build_page(profile, page)
     return page
 
@@ -150,7 +150,7 @@ def test_unused_icons_cost_nothing(home: Path) -> None:
 def test_unknown_icons_and_tones_fail_the_build(home: Path, body: str, message: str) -> None:
     profile = load_profile()
     page, _ = new_page(profile, "x", "X", None, "slots")
-    page.content.write_text(body)
+    page.content.write_text(body, encoding="utf-8")
     with pytest.raises(PageError, match=message):
         build_page(profile, page)
 
@@ -433,6 +433,7 @@ def test_prune_never_touches_folders_it_did_not_create(home: Path) -> None:
     assert stray.exists() and (saved / "keep.html").exists()
 
 
+@pytest.mark.posix
 def test_prune_follows_no_symlinks(home: Path) -> None:
     target = home / "precious"
     target.mkdir()
@@ -474,6 +475,7 @@ def test_save_defaults_to_the_saved_folder_with_no_next_step(home: Path) -> None
     assert result.path.exists()
 
 
+@pytest.mark.posix
 def test_save_follows_the_profile_and_prints_its_next_step(home: Path) -> None:
     repo = home / "repo"
     directory = repo / ".pagekit" / "profile"

@@ -85,7 +85,7 @@ def server_settings_file() -> Path:
 def public_url() -> str:
     """The address another device reaches this server at, such as a private tailnet name."""
     try:
-        return str(tomllib.loads(server_settings_file().read_text()).get("public_url", "")).rstrip("/")
+        return str(tomllib.loads(server_settings_file().read_text(encoding="utf-8")).get("public_url", "")).rstrip("/")
     except (OSError, tomllib.TOMLDecodeError):
         return ""
 
@@ -96,7 +96,7 @@ def set_public_url(url: str) -> None:
         raise PageError(f"public URL must look like https://host, not {url!r}")
     path = server_settings_file()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"public_url = {json.dumps(url.rstrip('/'))}\n")
+    path.write_text(f"public_url = {json.dumps(url.rstrip('/'))}\n", encoding="utf-8")
 
 
 def default_session() -> str:
@@ -158,7 +158,7 @@ class Page:
         for key, value in self.meta.items():
             rendered = str(value).lower() if isinstance(value, bool) else json.dumps(value)
             lines.append(f"{key} = {rendered}")
-        (self.dir / "page.toml").write_text("\n".join(lines) + "\n")
+        (self.dir / "page.toml").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     def expires_at(self) -> float | None:
         ttl = ttl_days()
@@ -194,7 +194,7 @@ def _page_dir(profile_name: str, slug: str) -> Path:
 
 def load_page_dir(directory: Path) -> Page:
     try:
-        return Page(directory, tomllib.loads((directory / "page.toml").read_text()))
+        return Page(directory, tomllib.loads((directory / "page.toml").read_text(encoding="utf-8")))
     except FileNotFoundError as exc:
         raise PageError(f"no page at {directory}") from exc
     except tomllib.TOMLDecodeError as exc:
@@ -260,12 +260,12 @@ def new_page(profile: Profile, slug: str, title: str | None, summary: str | None
         },
     )
     page.write_meta()
-    page.content.write_text(_FREE_SCAFFOLD if mode == "free" else _SLOTS_SCAFFOLD)
+    page.content.write_text(_FREE_SCAFFOLD if mode == "free" else _SLOTS_SCAFFOLD, encoding="utf-8")
     return page, True
 
 
 def _asset_text(name: str) -> str:
-    return resources.files("pagekit").joinpath("static", name).read_text()
+    return resources.files("pagekit").joinpath("static", name).read_text(encoding="utf-8")
 
 
 def _data_uri(path: Path) -> str:
@@ -318,7 +318,7 @@ def build_page(profile: Profile, page: Page) -> None:
         "rev": hashlib.sha256(page.content.read_bytes()).hexdigest()[:12],
     }
     meta_json = json.dumps(export_meta).replace("<", "\\u003c")
-    source = add_image_sizes(page.content.read_text(), page.dir)
+    source = add_image_sizes(page.content.read_text(encoding="utf-8"), page.dir)
     component_css = library_css_for(source)
     head = "\n".join(
         part
@@ -368,7 +368,7 @@ def build_page(profile: Profile, page: Page) -> None:
         document = expand_icons(document, profile)
     except (DiagramError, IconError) as exc:
         raise PageError(str(exc)) from exc
-    page.index.write_text(document)
+    page.index.write_text(document, encoding="utf-8")
 
 
 class _Scanner(HTMLParser):
@@ -456,7 +456,7 @@ def run_profile_check(profile: Profile, page: Page) -> list[str]:
             [*command, str(page.index), str(page.dir)],
             cwd=page.dir,
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
             stdin=subprocess.DEVNULL,
             timeout=CHECK_TIMEOUT_SECONDS,
         )
@@ -479,7 +479,7 @@ def check_page(profile: Profile, page: Page) -> CheckResult:
         return CheckResult([f"not built: run pagekit build {page.slug}"], [])
     if page.content.stat().st_mtime > page.index.stat().st_mtime:
         errors.append(f"stale: content.html changed after the last build, run pagekit build {page.slug}")
-    document = page.index.read_text()
+    document = page.index.read_text(encoding="utf-8")
     scan = _Scanner()
     scan.feed(document)
     style_text = "\n".join(scan.styles)
@@ -530,7 +530,7 @@ def check_page(profile: Profile, page: Page) -> CheckResult:
             warnings.append(f"fixed width of {width}px may scroll sideways on a phone")
             break
     if page.meta.get("mode") != "free":
-        warnings.extend(consistency_warnings(profile, page.content.read_text()))
+        warnings.extend(consistency_warnings(profile, page.content.read_text(encoding="utf-8")))
     hook_errors = run_profile_check(profile, page)
     return CheckResult(errors + hook_errors, warnings, hook_failed=bool(hook_errors))
 
@@ -557,9 +557,9 @@ def pack_page(page: Page) -> Path:
         data = uri(match.group(2))
         return f'url("{data}")' if data else match.group(0)
 
-    document = ASSET_URL_RE.sub(replace_url, ASSET_ATTR_RE.sub(replace_attr, page.index.read_text()))
+    document = ASSET_URL_RE.sub(replace_url, ASSET_ATTR_RE.sub(replace_attr, page.index.read_text(encoding="utf-8")))
     target = page.dir / f"{page.slug}.pack.html"
-    target.write_text(document)
+    target.write_text(document, encoding="utf-8")
     return target
 
 
@@ -582,7 +582,7 @@ def send_page(profile: Profile, page: Page) -> str:
         result = subprocess.run(
             [filled(str(argument)) for argument in command],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
             stdin=subprocess.DEVNULL,
         )
     except OSError as exc:
@@ -598,7 +598,7 @@ def _save_dir(profile: Profile) -> Path:
     save = profile.config.get("save", {})
     if save.get("root_command"):
         # Runs only on an explicit save, without a shell, from the profile you chose to use.
-        result = subprocess.run(shlex.split(str(save["root_command"])), capture_output=True, text=True)
+        result = subprocess.run(shlex.split(str(save["root_command"])), capture_output=True, text=True, encoding="utf-8", errors="replace")
         root = result.stdout.strip()
         if result.returncode != 0 or not root:
             raise PageError(f"save.root_command failed: {result.stderr.strip() or 'no output'}")
@@ -612,7 +612,7 @@ def _save_dir(profile: Profile) -> Path:
 
 def _embedded_identity(path: Path) -> tuple[str, str] | None:
     """The (profile, slug) a packed page was built from, read from its head."""
-    with path.open(errors="replace") as handle:
+    with path.open(encoding="utf-8", errors="replace") as handle:
         head = handle.read(8192)
     match = re.search(r'id="pagekit-meta">(.*?)</script>', head)
     if not match:
@@ -685,7 +685,7 @@ def list_saved() -> list[dict]:
         return []
     saved = []
     for path in sorted(folder.glob("*.html"), key=lambda p: p.stat().st_mtime, reverse=True):
-        with path.open(errors="replace") as handle:
+        with path.open(encoding="utf-8", errors="replace") as handle:
             match = re.search(r"<title>(.*?)</title>", handle.read(8192))
         saved.append(
             {

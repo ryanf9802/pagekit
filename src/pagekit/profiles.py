@@ -8,6 +8,7 @@ the personal profile is the fallback, then the built-in.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import tomllib
@@ -46,7 +47,7 @@ def _deep_merge(base: dict, over: dict) -> dict:
 def _read_toml(directory: Path) -> dict:
     path = directory / "profile.toml"
     try:
-        return tomllib.loads(path.read_text())
+        return tomllib.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
         return {}
     except tomllib.TOMLDecodeError as exc:
@@ -65,7 +66,7 @@ def _project_profiles() -> dict[Path, Path]:
     """Personal project-to-profile mappings: applied like a repo profile, never committed."""
     path = projects_file()
     try:
-        entries = tomllib.loads(path.read_text()).get("project", [])
+        entries = tomllib.loads(path.read_text(encoding="utf-8")).get("project", [])
     except FileNotFoundError:
         return {}
     except tomllib.TOMLDecodeError as exc:
@@ -83,9 +84,9 @@ def register_project(project: Path, profile_dir: Path) -> None:
         return
     path = projects_file()
     path.parent.mkdir(parents=True, exist_ok=True)
-    existing = path.read_text() if path.exists() else ""
-    entry = f'[[project]]\npath = "{project.resolve()}"\nprofile = "{profile_dir}"\n'
-    path.write_text(f"{existing.rstrip()}\n\n{entry}".lstrip())
+    existing = path.read_text(encoding="utf-8") if path.exists() else ""
+    entry = f"[[project]]\npath = {json.dumps(str(project.resolve()))}\nprofile = {json.dumps(str(profile_dir))}\n"
+    path.write_text(f"{existing.rstrip()}\n\n{entry}".lstrip(), encoding="utf-8")
 
 
 def find_profile_dir(cwd: Path | None = None) -> Path:
@@ -156,7 +157,7 @@ class Profile:
 
     def read(self, relative: str, default: str = "") -> str:
         path = self.file(relative)
-        return path.read_text() if path else default
+        return path.read_text(encoding="utf-8") if path else default
 
     def concat(self, relative: str) -> str:
         """Every layer's copy of a file, built-in first. Later layers override in CSS."""
@@ -164,7 +165,7 @@ class Profile:
         for directory in self.dirs:
             path = directory / relative
             if path.is_file():
-                parts.append(path.read_text().strip())
+                parts.append(path.read_text(encoding="utf-8").strip())
         return "\n\n".join(p for p in parts if p)
 
     def theme(self) -> str:
@@ -251,6 +252,6 @@ def init_profile(directory: Path, name: str, extends: str, brand: str) -> list[P
     for filename, content in starters.items():
         path = directory / filename
         if not path.exists():
-            path.write_text(content)
+            path.write_text(content, encoding="utf-8")
             written.append(path)
     return written

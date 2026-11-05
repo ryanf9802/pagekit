@@ -46,6 +46,7 @@ def built_page():
     return page
 
 
+@pytest.mark.posix
 def test_render_asks_for_bookmarks_and_leaves_no_temp_files(chrome: Path, tmp_path: Path) -> None:
     page = built_page()
     target = render_pdf(page, tmp_path / "out.pdf")
@@ -55,6 +56,7 @@ def test_render_asks_for_bookmarks_and_leaves_no_temp_files(chrome: Path, tmp_pa
     assert not list(tmp_path.glob(".out.pdf.*"))
 
 
+@pytest.mark.posix
 def test_generated_pdfs_use_their_own_margins_and_ctrl_p_keeps_its_own(chrome: Path, tmp_path: Path) -> None:
     page = built_page()
     render_pdf(page, tmp_path / "out.pdf")
@@ -65,6 +67,7 @@ def test_generated_pdfs_use_their_own_margins_and_ctrl_p_keeps_its_own(chrome: P
     assert "pdf_margin" not in page.meta
 
 
+@pytest.mark.posix
 def test_a_profile_can_set_its_own_pdf_margin(chrome: Path, tmp_path: Path, home: Path) -> None:
     repo = home / "repo"
     directory = repo / ".pagekit" / "profile"
@@ -77,6 +80,7 @@ def test_a_profile_can_set_its_own_pdf_margin(chrome: Path, tmp_path: Path, home
     assert "@page { margin: 1in; }" in Path(f"{chrome}.html").read_text()
 
 
+@pytest.mark.posix
 def test_answers_reach_the_render_safely(chrome: Path, tmp_path: Path) -> None:
     page = built_page()
     render_pdf(page, tmp_path / "out.pdf", {"a": "</script><script>alert(1)</script>"})
@@ -109,6 +113,7 @@ def port(chrome: Path):
     server.shutdown()
 
 
+@pytest.mark.posix
 def test_server_builds_the_pdf_with_answers(chrome: Path, port: int) -> None:
     built_page()
     assert json.loads(request(port, "GET", "/api/pdf")[1]) == {"available": True}

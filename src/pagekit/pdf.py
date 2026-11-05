@@ -28,12 +28,12 @@ def render_pdf(page: Page, target: Path, state: dict | None = None) -> Path:
     if state:
         payload = json.dumps(state).replace("<", "\\u003c")
         additions += f"<script>window.pagekitPrintState = {payload};</script>"
-    document = page.index.read_text().replace("</head>", f"{additions}\n</head>", 1)
+    document = page.index.read_text(encoding="utf-8").replace("</head>", f"{additions}\n</head>", 1)
     # Beside the original, so its relative asset links still resolve.
     working = page.dir / f".print-{uuid.uuid4().hex}.html"
     output = target.with_name(f".{target.name}.{uuid.uuid4().hex}")
     try:
-        working.write_text(document)
+        working.write_text(document, encoding="utf-8")
         with tempfile.TemporaryDirectory(prefix="pagekit-chrome-") as profile:
             command = [
                 chrome,
@@ -49,7 +49,7 @@ def render_pdf(page: Page, target: Path, state: dict | None = None) -> Path:
             ]
             try:
                 result = subprocess.run(
-                    command, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=_TIMEOUT_SECONDS
+                    command, capture_output=True, text=True, encoding="utf-8", errors="replace", stdin=subprocess.DEVNULL, timeout=_TIMEOUT_SECONDS
                 )
             except (OSError, subprocess.TimeoutExpired) as exc:
                 raise PageError(f"PDF generation failed: {exc}") from exc

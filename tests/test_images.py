@@ -98,6 +98,7 @@ def profile_that_sends(home: Path, command: str):
     return load_profile(home / "repo")
 
 
+@pytest.mark.posix
 def test_send_runs_the_profile_command_on_a_named_copy(home: Path) -> None:
     script = home / "share"
     script.write_text('#!/bin/sh\ntest -f "$1" && echo "sent $(basename "$1") as $2"\n')
@@ -119,7 +120,7 @@ def test_send_needs_a_command(home: Path) -> None:
 
 @pytest.mark.parametrize(
     ("command", "message"),
-    [('["/no/such/tool"]', "could not run"), ('["false"]', "failed")],
+    [('["/no/such/tool"]', "could not run"), ('["python3", "-c", "raise SystemExit(1)"]', "failed")],
 )
 def test_send_reports_a_command_that_fails(home: Path, command: str, message: str) -> None:
     profile = profile_that_sends(home, command)

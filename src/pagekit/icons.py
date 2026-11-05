@@ -33,7 +33,7 @@ class IconError(Exception):
 
 @lru_cache(maxsize=1)
 def _icons() -> dict:
-    return json.loads(resources.files("pagekit").joinpath("static/lucide-icons.json").read_text())["icons"]
+    return json.loads(resources.files("pagekit").joinpath("static/lucide-icons.json").read_text(encoding="utf-8"))["icons"]
 
 
 def _inline_style_rules(svg: str, path: Path) -> str:
@@ -65,7 +65,7 @@ def _inline_style_rules(svg: str, path: Path) -> str:
 
 
 def _custom_symbol(path: Path, symbol_id: str) -> str:
-    svg = path.read_text()
+    svg = path.read_text(encoding="utf-8")
     if re.search(r"<script\b", svg, re.IGNORECASE):
         raise IconError(f"{path}: an icon cannot contain a script")
     svg = re.sub(r"<\?xml.*?\?>|<!--.*?-->", "", svg, flags=re.DOTALL)

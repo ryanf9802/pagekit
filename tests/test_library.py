@@ -119,6 +119,7 @@ def test_free_mode_skips_consistency_warnings(home: Path) -> None:
     assert check_page(profile, page).warnings == []
 
 
+@pytest.mark.posix
 def test_add_commits_only_its_own_folder_when_in_git(home: Path, tmp_path: Path) -> None:
     def git(*args: str) -> str:
         return subprocess.run(

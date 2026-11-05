@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 from datetime import datetime
@@ -169,10 +170,10 @@ def cmd_component_list(args) -> int:
 
 def cmd_component_show(args) -> int:
     component = find_component(_profile(args), args.name)
-    print(component.html.read_text().rstrip())
+    print(component.html.read_text(encoding="utf-8").rstrip())
     if component.css:
         print(f"\n/* {component.css} (added to pages automatically) */")
-        print(component.css.read_text().rstrip())
+        print(component.css.read_text(encoding="utf-8").rstrip())
     return 0
 
 
@@ -263,11 +264,13 @@ WantedBy=default.target
 
 
 def cmd_install_service(args) -> int:
+    if not shutil.which("systemctl"):
+        raise PageError("install-service needs systemd: use pagekit serve, or start it at login (see docs/serving.md)")
     if args.public_url:
         set_public_url(args.public_url)
     unit = Path.home() / ".config" / "systemd" / "user" / "pagekit.service"
     unit.parent.mkdir(parents=True, exist_ok=True)
-    unit.write_text(_UNIT.format(python=sys.executable, port=args.port))
+    unit.write_text(_UNIT.format(python=sys.executable, port=args.port), encoding="utf-8")
     subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
     subprocess.run(["systemctl", "--user", "enable", "--now", "pagekit.service"], check=True)
     subprocess.run(["systemctl", "--user", "restart", "pagekit.service"], check=True)
@@ -356,6 +359,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # A Windows console defaults to a legacy code page, which cannot print every character in a page's rules.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     args = build_parser().parse_args(argv)
     try:
         return args.fn(args)

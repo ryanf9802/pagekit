@@ -20,6 +20,7 @@ packages = ["src/pagekit"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["posix: needs a POSIX shell script or symlink, so it is skipped on Windows"]
 
 [dependency-groups]
 dev = ["pytest>=8"]

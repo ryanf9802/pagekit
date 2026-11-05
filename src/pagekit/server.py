@@ -32,8 +32,8 @@ _MAX_STATE_BYTES = 2_000_000
 
 
 def _index_html() -> bytes:
-    template = resources.files("pagekit").joinpath("static/index.html").read_text()
-    theme = (builtin_dir() / "theme.css").read_text()
+    template = resources.files("pagekit").joinpath("static/index.html").read_text(encoding="utf-8")
+    theme = (builtin_dir() / "theme.css").read_text(encoding="utf-8")
     return template.replace("{{theme}}", theme).encode()
 
 
