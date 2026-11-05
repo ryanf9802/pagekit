@@ -478,7 +478,7 @@ def test_save_follows_the_profile_and_prints_its_next_step(home: Path) -> None:
     repo = home / "repo"
     directory = repo / ".pagekit" / "profile"
     init_profile(directory, "acme", "builtin", "Acme")
-    target = home / "vault"
+    target = home / "notes"
     script = home / "where"
     script.write_text(f"#!/bin/sh\necho {target}\n")
     script.chmod(script.stat().st_mode | stat.S_IEXEC)

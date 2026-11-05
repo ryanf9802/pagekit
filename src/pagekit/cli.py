@@ -131,7 +131,8 @@ def cmd_pack(args) -> int:
 
 
 def cmd_send(args) -> int:
-    print(send_page(load_page(_profile(args), args.slug)))
+    profile = _profile(args)
+    print(send_page(profile, load_page(profile, args.slug)))
     return 0
 
 
@@ -293,7 +294,7 @@ def build_parser() -> argparse.ArgumentParser:
     page_command("build", cmd_build, "compose index.html and run the checks")
     page_command("check", cmd_check, "run the checks only")
     page_command("pack", cmd_pack, "write one self-contained HTML file and print its path")
-    page_command("send", cmd_send, "pack the page and hand it to the user through dropbucket")
+    page_command("send", cmd_send, "pack the page and run the profile's send command on it")
     p = page_command("pdf", cmd_pdf, "write a bookmarked, tagged PDF with headless Chromium")
     p.add_argument("--out", help="where to write it (default: beside the page)")
     page_command("save", cmd_save, "keep the page: copy it to the profile's save location and pin the working copy")

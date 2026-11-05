@@ -24,6 +24,7 @@ from urllib.parse import unquote, urlsplit
 
 from .diagrams import DiagramError, expand_diagrams
 from .icons import IconError, expand_icons
+from .images import add_image_sizes
 from .library import consistency_warnings, library_css_for
 from .profiles import NAME_RE, RESERVED_NAMES, Profile
 
@@ -317,7 +318,7 @@ def build_page(profile: Profile, page: Page) -> None:
         "rev": hashlib.sha256(page.content.read_bytes()).hexdigest()[:12],
     }
     meta_json = json.dumps(export_meta).replace("<", "\\u003c")
-    source = page.content.read_text()
+    source = add_image_sizes(page.content.read_text(), page.dir)
     component_css = library_css_for(source)
     head = "\n".join(
         part
@@ -562,23 +563,34 @@ def pack_page(page: Page) -> Path:
     return target
 
 
-def send_page(page: Page) -> str:
-    """Hand the packed page to the user through dropbucket, when it is installed."""
-    if not shutil.which("dropbucket"):
-        raise PageError("dropbucket is not on PATH: share the file from pagekit pack instead")
+def send_page(profile: Profile, page: Page) -> str:
+    """Pack the page and hand it to the command the profile names, run without a shell."""
+    command = profile.config.get("send", {}).get("command")
+    if not command:
+        raise PageError("this profile has no [send] command: set one in profile.toml, or share the file from pagekit pack")
     packed = pack_page(page)
     named = packed.with_name(f"{page.slug}.html")
     shutil.copyfile(packed, named)
+    values = {"{file}": str(named), "{slug}": page.slug, "{title}": page.meta.get("title", page.slug)}
+
+    def filled(argument: str) -> str:
+        for placeholder, value in values.items():
+            argument = argument.replace(placeholder, value)
+        return argument
+
     try:
         result = subprocess.run(
-            ["dropbucket", "put", str(named), "--caption", page.meta.get("title", page.slug)],
+            [filled(str(argument)) for argument in command],
             capture_output=True,
             text=True,
+            stdin=subprocess.DEVNULL,
         )
+    except OSError as exc:
+        raise PageError(f"send command could not run: {exc}") from exc
     finally:
         named.unlink(missing_ok=True)
     if result.returncode != 0:
-        raise PageError(f"dropbucket put failed: {result.stderr.strip()}")
+        raise PageError(f"send command failed: {result.stderr.strip()}")
     return result.stdout.strip()
 
 
@@ -667,7 +679,7 @@ def iter_pages() -> list[Page]:
 
 
 def list_saved() -> list[dict]:
-    """Copies under the saved folder of the pages root. Vault saves stay listed through their pin."""
+    """Copies under the saved folder of the pages root. Saves elsewhere stay listed through their pin."""
     folder = pages_root() / SAVED_DIR
     if not folder.is_dir():
         return []

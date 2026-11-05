@@ -34,9 +34,9 @@ page belongs to. Do not hand-roll chrome: the profile owns the theme, header, an
    wide, where `document.documentElement.scrollWidth` must not exceed the window width,
    and in dark mode. `pagekit check` cannot see layout.
 
-5. When the server is up, report the printed `url:` and no other link. Otherwise run `pagekit send <slug>` so the file
-   lands in the user's dropbucket: a `file://` path does not reach a browser on another
-   machine.
+5. When the server is up, report the printed `url:` and no other link. Otherwise run
+   `pagekit send <slug>` to hand the user the file: a `file://` path does not reach a browser
+   on another machine. If the profile has no send command, give them the `pagekit pack` file.
 
 ## Components
 
@@ -90,8 +90,8 @@ so collect them first. A rebuild with unchanged content keeps them.
 ## Sharing and keeping
 
 - `pagekit pdf <slug>` writes a bookmarked PDF, and served pages have a **Download PDF** button.
-- `pagekit pack <slug>` writes one self-contained file. `pagekit send <slug>` puts that file
-  in the dropbucket.
+- `pagekit pack <slug>` writes one self-contained file. `pagekit send <slug>` hands that file
+  to the command the profile sets for sharing.
 - Pages are deleted 30 days after their last update. When the user says to save or keep a
   page, run `pagekit save <slug>` and follow any `required next step` it prints, in the same
   turn.
