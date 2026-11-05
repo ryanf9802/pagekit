@@ -39,6 +39,7 @@ _UNIT_MAX = 8
 # Drawing sizes are in SVG units. The chart scales to its container, so text is about 10px on a phone.
 _W = 420
 _H = 260
+_HEADROOM = 16
 _BAR_MAX = 24
 _BAR_H = 20
 _GAP = 2
@@ -260,6 +261,14 @@ def row_path(base: float, end: float, y: float, height: float) -> str:
     )
 
 
+def _top(spec: dict) -> float:
+    """Where the plot starts. The same for every type, so charts of different types line up in a row.
+
+    The headroom is where a bar chart prints its value labels; the other types leave it empty.
+    """
+    return 10 + (16 if spec["y_label"] else 0) + _HEADROOM
+
+
 def _key(index: int) -> str:
     return f"pk-chart-s{index + 1}"
 
@@ -279,7 +288,7 @@ def _draw_columns(spec: dict) -> tuple[str, int]:
     texts = tick_text(ticks, unit)
     labelled = kind == "bar" and len(series) == 1 and len(labels) <= 12
     left = 10 + max(_width(t) for t in texts)
-    top = 10 + (16 if spec["y_label"] else 0) + (16 if labelled else 0)
+    top = _top(spec)
     bottom = 26 + (18 if spec["x_label"] else 0)
     x0, x1, y0, y1 = left, _W - 12, top, _H - bottom
     low, high = ticks[0], ticks[-1]
@@ -337,7 +346,7 @@ def _draw_rows(spec: dict) -> tuple[str, int]:
     left = 10 + min(max(_width(label) for label in shown), 160)
     tips = [short(v, unit) for item in series for v in item["values"]]
     right = 12 + (max(_width(t) for t in tips) + 6 if labelled else 0)
-    top = 8 + (16 if spec["y_label"] else 0)
+    top = _top(spec)
     bottom = 26 + (18 if spec["x_label"] else 0)
     slot = len(series) * _BAR_H + _GAP * (len(series) - 1) + 14
     height = top + slot * len(labels) + bottom
@@ -378,7 +387,7 @@ def _draw_scatter(spec: dict) -> tuple[str, int]:
     xticks, yticks = nice_ticks(min(xs), max(xs)), nice_ticks(min(ys), max(ys))
     ytexts, xtexts = tick_text(yticks, unit), tick_text(xticks, "")
     left = 10 + max(_width(t) for t in ytexts)
-    top = 10 + (16 if spec["y_label"] else 0)
+    top = _top(spec)
     bottom = 26 + (18 if spec["x_label"] else 0)
     x0, x1, y0, y1 = left, _W - 16, top, _H - bottom
 

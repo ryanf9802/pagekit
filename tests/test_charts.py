@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from pagekit.charts import ChartError, column_path, nice_ticks, parse_spec, plain, row_path, short, tick_text
+from pagekit.charts import ChartError, column_path, draw_chart, nice_ticks, parse_spec, plain, row_path, short, tick_text
 from pagekit.pages import PageError, build_page, check_page, new_page
 from pagekit.profiles import load_profile
 
@@ -158,6 +158,17 @@ def test_a_single_series_bar_chart_labels_each_bar_and_grouped_bars_do_not(home:
     assert figure(build(BAR)).count('class="pk-chart-value"') == 3
     grouped = {**BAR, "series": [BAR["series"][0], {"name": "Last year", "values": [100, 110, 190]}]}
     assert 'class="pk-chart-value"' not in figure(build(grouped))
+
+
+@pytest.mark.parametrize("y_label", ["", "Pages"])
+def test_every_chart_type_starts_its_plot_at_the_same_height_so_a_row_of_them_lines_up(y_label: str) -> None:
+    def top(spec: dict) -> float:
+        svg = draw_chart("x.json", parse_spec("x.json", json.dumps({**spec, "y_label": y_label})))
+        return min(float(y) for y in re.findall(r'class="pk-chart-grid" x1="[^"]*" y1="([^"]*)"', svg))
+
+    # A single series bar chart prints its values above the bars, so it must not be the one that needs headroom.
+    tops = {name: top(KINDS[name]) for name in ("bar", "horizontal", "line", "area", "scatter")}
+    assert len(set(tops.values())) == 1, tops
 
 
 def test_a_unit_keeps_its_leading_space_on_the_axis_and_in_the_table(home: Path) -> None:
