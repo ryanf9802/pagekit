@@ -309,7 +309,7 @@ def build_page(profile: Profile, page: Page) -> None:
         f"<span>Updated {_display_date(built)}</span></div>\n"
         '<span id="pk-export-status" class="pk-visually-hidden" role="status"></span>\n'
         f'<button type="button" id="pk-export" class="pk-button">{COPY_ICON}'
-        '<span id="pk-export-label">Copy page state for Claude</span></button></div>\n'
+        '<span id="pk-export-label">Copy state</span></button></div>\n'
         '</footer>\n<div class="pk-print-spacer" aria-hidden="true"><div></div></div>'
         f"\n<script>\n{_asset_text('export.js')}\n</script>"
     )
