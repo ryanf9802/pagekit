@@ -40,7 +40,8 @@ pagekit init --also --name acme-public --when "Customer or public facing documen
 ```
 
 Give every profile a `when` in its `profile.toml`. `pagekit new` and `pagekit profile` print the other choices with their
-`when`, and agents use that to pick one without asking. Select one by name from anywhere in the repo:
+`when`, and agents use that to pick one without asking. A profile that others extend and that has no `when` is treated
+as a shared base, so it is not offered. Select one by name from anywhere in the repo:
 
 ```bash
 pagekit new report --profile acme-public

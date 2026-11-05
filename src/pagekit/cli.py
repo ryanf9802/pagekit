@@ -76,13 +76,19 @@ def _print_profile(profile: Profile) -> None:
 
 
 def _print_other_profiles(profile: Profile) -> None:
-    others = {name: path for name, path in repo_profiles().items() if name != profile.name}
+    offered = {name: load_profile(override=str(path), overrides=False) for name, path in repo_profiles().items()}
+    # A profile others build on, with no guidance of its own, is a shared base rather than a choice.
+    bases = {layer for other in offered.values() for layer in other.dirs[:-1]}
+    others = {
+        name: other
+        for name, other in offered.items()
+        if name != profile.name and (other.config.get("when") or other.dirs[-1] not in bases)
+    }
     if not others:
         return
     print("other profiles here (choose by when to use each, then add --profile NAME to every command for the page):")
-    for name, path in others.items():
-        when = load_profile(override=str(path), overrides=False).config.get("when")
-        print(f"  {name}: {when or 'no guidance yet: add when to its profile.toml'}")
+    for name, other in others.items():
+        print(f"  {name}: {other.config.get('when') or 'no guidance yet: add when to its profile.toml'}")
 
 
 def _print_location(page: Page) -> None:

@@ -305,3 +305,16 @@ def test_machine_paths_in_a_repo_profile_warn_but_private_ones_do_not(home: Path
     (directory / "profile.toml").write_text('name = "repo"\nextends = "builtin"\n')
     assert load_profile(repo).machine_path_warnings() == []
 
+
+
+def test_a_shared_base_is_not_offered_as_a_choice(home: Path, monkeypatch, capsys) -> None:
+    repo = home / "work" / "repo"
+    extras = repo / ".pagekit" / "profiles"
+    init_profile(extras / "repo-base", "repo-base", "builtin", "Acme")
+    init_profile(repo / ".pagekit" / "profile", "repo", "../profiles/repo-base", when="Internal pages")
+    init_profile(extras / "repo-public", "repo-public", "../repo-base", when="Customer documents")
+    monkeypatch.chdir(repo)
+    assert load_profile(repo).config["brand"] == "Acme"
+    assert main(["profile"]) == 0
+    out = capsys.readouterr().out
+    assert "repo-public: Customer documents" in out and "repo-base:" not in out
