@@ -9,8 +9,23 @@
 
 **Self-contained HTML pages for coding agents.**
 
+[![CI](https://github.com/ryanf9802/pagekit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ryanf9802/pagekit/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/ryanf9802/pagekit?sort=semver)](https://github.com/ryanf9802/pagekit/releases/latest)
+[![Released](https://img.shields.io/github/release-date/ryanf9802/pagekit)](https://github.com/ryanf9802/pagekit/releases)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](CONTRIBUTING.md#project-rules)
+[![License: MIT](https://img.shields.io/github/license/ryanf9802/pagekit)](LICENSE)
+
 Ask your agent for a page instead of a wall of terminal text. You get one plain file that works offline, prints well,
 and reads well on a phone, and you can answer on the page and send your answers straight back to the agent.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/page-dark.png">
+    <img src="docs/screenshots/page-light.png" alt="A pagekit page titled Release readiness, with headline numbers, a line chart, two findings with checkboxes, and a decision with answer controls" width="760">
+  </picture>
+</p>
+
+<p align="center"><sub>One page, built by an agent: numbers, a chart, findings to pick from, and a decision to answer.</sub></p>
 
 ## Set up with your agent
 
@@ -45,6 +60,16 @@ you [set up a profile](#set-up-a-profile).
 - **Checked.** Every build catches missing images, lost answers, and words you have banned before you see the page.
 - **Nothing to run.** A built page is one plain file. The Python standard library is the only dependency, the page
   index server is optional, and pages expire after 30 days unless you save them.
+
+## On a phone, in light or dark
+
+The same file adapts to the screen and to your system theme, and it prints cleanly.
+
+<p align="center">
+  <img src="docs/screenshots/page-phone.png" alt="The same page at phone width in light mode" width="260">
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/page-phone-dark.png" alt="The same page at phone width in dark mode" width="260">
+</p>
 
 ## Why pagekit
 
