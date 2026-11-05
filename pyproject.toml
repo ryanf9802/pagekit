@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pagekit"
+version = "0.1.0"
+description = "Profile-driven, self-contained HTML pages for coding agents: consistent branding, copy-back forms, automatic expiry."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+pagekit = "pagekit.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pagekit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = ["pytest>=8"]

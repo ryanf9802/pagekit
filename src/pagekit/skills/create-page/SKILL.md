@@ -1,0 +1,78 @@
+---
+name: create-page
+description: Create or update a local, consistently branded HTML page with pagekit, including forms whose answers the user copies back into the session. Use when the user asks for a "page", or a skill says to build one; when the user says to save or keep a page; and when pasted text contains a `pagekit-response` block. Not for a request that says "artifact", which goes to the Artifact tool.
+---
+
+# Create a page
+
+The word decides the medium: "page" means pagekit, "artifact" means the Artifact tool.
+The profile comes from the working directory, so run every command from the project the
+page belongs to. Do not hand-roll chrome: the profile owns the theme, header, and footer.
+
+## Steps
+
+1. Scaffold, or reopen to update in place (same slug, same path and URL):
+
+   ```bash
+   pagekit new <slug> --title "<Title>" --summary "<one line>"
+   ```
+
+   Read everything it prints. It names the file to write, the theme tokens, the
+   components to copy, and the profile's rules, which you must follow.
+
+2. Write the page body to the printed `content.html`, and put images in `assets/`.
+   Use `--mode free` on a new page only for something bespoke that the shell gets in the
+   way of: there `content.html` is the whole document and must keep `{{head}}` and
+   `{{footer}}`.
+
+3. Build. This also runs the checks; fix every error and warning, then build again:
+
+   ```bash
+   pagekit build <slug>
+   ```
+
+4. Look at it before reporting. Open the printed URL in a browser, including at 390 px
+   wide, where `document.documentElement.scrollWidth` must not exceed the window width,
+   and in dark mode. `pagekit check` cannot see layout.
+
+5. Report the URL when the server is up. Otherwise run `pagekit send <slug>` so the file
+   lands in the user's dropbucket: a `file://` path does not reach a browser on another
+   machine.
+
+## Collecting input
+
+Every page has a footer button that copies the state of every control. To get answers from
+the user, add controls with stable names keyed to item IDs (the `decision-card` component),
+then tell them to press the button and paste the result.
+
+Answers come back like this; read it as the user's reply:
+
+````text
+```pagekit-response
+page: pr-1462-review
+title: PR 1462 Review
+profile: acme
+source: /home/you/pages/acme/pr-1462-review/index.html
+built: 2026-11-04T18:02:11Z
+fields:
+  F-01.fix: true
+  D-01.choice: option-b
+  D-01.notes: |
+    Multi-line notes are indented
+    under the name.
+```
+````
+
+Empty values mean unanswered, not "no". `source` is the page: read `content.html` beside it
+for what each name refers to. Act only on what the answers say, and rebuild the same slug to
+show the result. A rebuild clears answers the user has not exported, so collect them first.
+
+## Sharing and keeping
+
+- `pagekit pack <slug>` writes one self-contained file. `pagekit send <slug>` puts that file
+  in the dropbucket.
+- Pages are deleted 30 days after their last update. When the user says to save or keep a
+  page, run `pagekit save <slug>` and follow any `required next step` it prints, in the same
+  turn.
+- `pagekit ls` lists pages. A page's folder is `~/pages/<profile>/<slug>/`; do not edit
+  `index.html` directly, since the next build replaces it.
