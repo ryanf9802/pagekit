@@ -5,8 +5,9 @@ description: Update pagekit to the latest version and explain what changed, incl
 
 # Update pagekit
 
-1. If the person only asked whether there are updates, run `pagekit update --check`, summarize what it lists, and
-   stop. Otherwise continue.
+1. If the person only asked whether there are updates, run `pagekit update --check`, summarize what it lists and the
+   versions it names, and stop. Otherwise continue. If they ask which version they have, run `pagekit --version`: a
+   `+` after the release means the clone is that many commits past it, as a machine that follows main usually is.
 
 2. Run:
 
@@ -28,8 +29,8 @@ description: Update pagekit to the latest version and explain what changed, incl
 4. Run `pagekit profile` from the current folder to confirm it still loads. If it reports a problem with a profile or
    an override, say what it is and offer to fix it.
 
-5. Summarize what changed in a few plain lines, from the commit subjects it printed: what they can now do, not the
-   commit list. Name any new components or features, and any change to how pages look.
+5. Say which version it moved from and to, as it printed them. Then summarize what changed in a few plain lines, from
+   the commit subjects it printed: what they can now do, not the commit list. Name any new components or features, and any change to how pages look.
 
 6. Pages already built keep their old look until rebuilt. If the update changed how pages look, offer to rebuild the
    ones they still use with `pagekit build SLUG`, run from the folder each page's profile applies to. A rebuild with

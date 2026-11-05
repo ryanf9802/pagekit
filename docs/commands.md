@@ -23,6 +23,7 @@ pagekit prune [--older-than-days N] [--dry-run]
 
 ```text
 pagekit profile           print the resolved profile and its instructions
+pagekit --version         show the version and exit (see getting-started.md)
 pagekit update [--check] [--main | --releases]
                           update pagekit to the newest release, or list what an update would bring in;
                           --main follows the main branch instead, and --releases overrides the machine's setting
