@@ -23,6 +23,7 @@ pagekit prune [--older-than-days N] [--dry-run]
 
 ```text
 pagekit profile           print the resolved profile and its instructions
+pagekit update [--check]  update pagekit from its clone, or list what an update would bring in
 pagekit init [--name NAME] [--brand BRAND] [--when TEXT] [--extends PROFILE] [--personal | --local | --also]
 pagekit font add FILE --family NAME [--weight N] [--italic]
                           create a profile

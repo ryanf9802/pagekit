@@ -36,6 +36,7 @@ from .pages import (
     set_public_url,
 )
 from .pdf import render_pdf
+from .update import UpdateError, pending_commits, update
 from .profiles import (
     EXTRA_PROFILES_SUBDIR,
     PROFILE_SUBDIR,
@@ -317,6 +318,36 @@ WantedBy=default.target
 """
 
 
+def cmd_update(args) -> int:
+    try:
+        if args.check:
+            commits = pending_commits()
+            for commit in commits:
+                print(f"  {commit}")
+            print(f"{len(commits)} update(s) available: run pagekit update" if commits else "pagekit is up to date")
+            return 0
+        result = update()
+    except UpdateError as exc:
+        print(f"pagekit: {exc}", file=sys.stderr)
+        return 1
+    if not result.commits:
+        print("pagekit is up to date")
+        return 0
+    print(f"updated pagekit with {len(result.commits)} change(s):")
+    for commit in result.commits:
+        print(f"  {commit}")
+    if result.reinstalled:
+        print("reinstalled, because its dependencies changed")
+    for skill in result.new_skills:
+        print(f"new skill, link it for your agent: {skill}")
+    if result.server == "restarted":
+        print("restarted the server")
+    elif result.server:
+        print("the server is still running the old version: restart it")
+    print("pages already built keep their old look until you run pagekit build SLUG")
+    return 0
+
+
 def cmd_install_service(args) -> int:
     if not shutil.which("systemctl"):
         raise PageError("install-service needs systemd: use pagekit serve, or start it at login (see docs/serving.md)")
@@ -411,6 +442,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("query", nargs="+")
     p.add_argument("--profile", help=profile_help)
     p.set_defaults(fn=cmd_icons)
+
+    p = sub.add_parser("update", help="update pagekit from its clone, and restart the server if needed")
+    p.add_argument("--check", action="store_true", help="list what an update would bring in, and change nothing")
+    p.set_defaults(fn=cmd_update)
 
     p = sub.add_parser("serve", help="run the optional page index")
     p.add_argument("--host", default="127.0.0.1")

@@ -44,14 +44,14 @@ then have the person open a new terminal.
 
 ## 3. Connect the agent
 
-Make two skills available to the agent you are running as, and to any others they name. They live in the clone at
-`src/pagekit/skills/create-page` and `src/pagekit/skills/setup-profile`.
+Make the three skills in the clone's `src/pagekit/skills` available to the agent you are running as, and to any others
+they name: `create-page`, `setup-profile`, and `update-pagekit`.
 
-- If the agent has a skills folder, link both there so they stay current. On Linux, macOS, and WSL use `ln -s`.
+- If the agent has a skills folder, link all three there so they stay current. On Linux, macOS, and WSL use `ln -s`.
   On Windows use `mklink /J` from Command Prompt, which needs no special rights.
 - If the agent has no skills, add a short note to its instructions file saying that when asked for a "page", it
-  should read `create-page/SKILL.md` and follow it, and when asked to set up a pagekit profile, it should do the same
-  with `setup-profile/SKILL.md`. Ask before editing that file.
+  should read `create-page/SKILL.md` and follow it, and to do the same with `setup-profile/SKILL.md` when asked to set
+  up a pagekit profile, and with `update-pagekit/SKILL.md` when asked to update pagekit. Ask before editing that file.
 
 Tell the person that from now on they can ask any connected agent for a page.
 
@@ -105,7 +105,7 @@ Do not ask about a personal profile.
 ## 7. Finish
 
 Summarize in a few lines what you set up and whether the server is running. Mention that the check page deletes itself
-after 30 days, and that `git pull` in the clone updates pagekit.
+after 30 days, and that they can ask you to "update pagekit" at any time, or run `pagekit update` themselves.
 
 Tell them pages use the pagekit brand until a profile replaces it, and that they can ask you at any time to "set up a
 pagekit profile for this repo" or to "set up my personal pagekit profile". Then suggest a first real page, based on what

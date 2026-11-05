@@ -65,12 +65,17 @@ Set up my personal pagekit profile.
 A repo profile applies in that repo, and a personal profile applies wherever no other profile does. To do it by
 hand, see [Profiles](docs/profiles.md).
 
+## Stay up to date
+
+Ask your agent to "update pagekit", or run `pagekit update`. Either way pulls in new components and features, and you
+see what changed.
+
 ## Documentation
 
 | Guide | Covers |
 | --- | --- |
 | [Agent setup guide](docs/agent-setup.md) | The steps your agent follows in the prompt above |
-| [Getting started](docs/getting-started.md) | Install, connecting an agent, and your first page |
+| [Getting started](docs/getting-started.md) | Install, connecting an agent, your first page, and updating |
 | [Writing pages](docs/pages.md) | The page workflow, checks, sharing, saving, and expiry |
 | [Generated tags](docs/tags.md) | Content the build works out from the page, such as a table of contents |
 | [Profiles](docs/profiles.md) | Making pagekit yours: brand, theme, rules, and hooks |
