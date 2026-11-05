@@ -133,7 +133,7 @@ input, progress { accent-color: var(--pk-accent); }
 .pk-card > :last-child { margin-bottom: 0; }
 .pk-card-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; margin-bottom: 8px; }
 .pk-card-head > h3, .pk-card-head > h4 { margin: 0; }
-.pk-id { font-family: var(--pk-mono); font-size: 0.8125rem; font-weight: 600; color: var(--pk-muted); }
+.pk-id { font-family: var(--pk-mono); font-size: 0.8125rem; font-weight: 600; color: var(--pk-muted); white-space: nowrap; }
 .pk-badge {
   display: inline-block;
   padding: 1px 8px;
