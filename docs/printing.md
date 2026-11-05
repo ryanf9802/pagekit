@@ -29,8 +29,9 @@ Printed text is 10pt, and every other printed size scales from it. A profile can
 
 ## Margins
 
-Generated PDFs default to `0.15in 0.25in` (top and bottom, then sides). A profile can set its own with `pdf_margin`
-in `profile.toml`, using one to four values in CSS order. Ctrl+P keeps the margins set in the theme.
+Generated PDFs use `0.15in 0.25in` (top and bottom, then sides) as the standard. A profile can set its own with
+`pdf_margin` in `profile.toml`, using one to four values in CSS order. Ctrl+P keeps the wider margins set in the theme,
+since physical printers often cannot print that close to the edge.
 
 ## Keeping PDFs small
 

@@ -625,8 +625,8 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
     content: "Page " counter(page) " of " counter(pages);
     margin: -3.5mm 0 0 0;
     vertical-align: top;
-    color: #5b6270;
-    font: 400 8pt "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--pk-muted);
+    font: 400 8pt var(--pk-font);
   }
 }
 @media print {
@@ -694,6 +694,8 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
   .pk-card, .pk-callout, .pk-kpi, .pk-figure, tr, li, pre, blockquote { break-inside: avoid; }
   .pk-divider { break-inside: avoid; break-after: avoid; }
   .pk-table-wrap { overflow: visible; }
+  /* Open in print even if the script that opens them has not run. */
+  details::details-content { display: block !important; height: auto !important; content-visibility: visible !important; }
   details > summary { margin-left: 0; padding: 0; }
   details > summary::before { display: none; }
   details > :not(summary) { margin-left: 0; }
