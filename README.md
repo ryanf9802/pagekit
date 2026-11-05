@@ -101,14 +101,23 @@ locally and never pushes.
 
 ## Icons
 
-All Lucide icons (ISC license, `src/pagekit/static/lucide-LICENSE`) ship in one file, and a page
-embeds only those it uses, so pages stay small and work offline. Refresh them with
+All Lucide icons (ISC license, `src/pagekit/static/lucide-LICENSE`) ship in one file. A page stores each
+icon it uses once and points to it, so hundreds of marks stay small in a PDF. Refresh them with
 `scripts/update_lucide.py`.
 
 ```text
-pagekit icons WORD          search by name or tag
-<i data-icon="NAME"></i>    use one in a page; an unknown name fails the build
+pagekit icons WORD                                        search by name or tag
+<i data-icon="NAME" tone="blue" aria-label="..."></i>     tone and label are optional
 ```
+
+An unknown name or tone fails the build. Tones are blue, purple, green, teal, orange, success, warning,
+danger, accent, and muted, and follow light and dark.
+
+A profile adds its own icons as `icons/NAME.svg`, used the same way and taking priority over Lucide. They
+can be multicolor, with gradients and simple `.class` styles, which are namespaced so they cannot collide.
+An optional `icons/NAME-dark.svg` shows in dark mode, and print always uses a light version. A complex
+icon used many times should also have `icons/NAME-print.png`, about 128 px, which print uses in its place:
+Chromium redraws vectors on every use, about 1 KB each for a gradient logo, but stores an image once.
 
 ## Diagrams
 

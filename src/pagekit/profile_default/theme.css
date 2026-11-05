@@ -9,6 +9,11 @@
   --pk-accent: #2457c5;
   --pk-accent-contrast: #ffffff;
   --pk-code: #2f5fb3;
+  --pk-icon-blue: #2f6fd0;
+  --pk-icon-purple: #7a4fc4;
+  --pk-icon-green: #2e8b3d;
+  --pk-icon-teal: #0d8a8f;
+  --pk-icon-orange: #a8552a;
   --pk-success: #0f7a3d;
   --pk-warning: #a85b00;
   --pk-danger: #c22a1f;
@@ -32,6 +37,11 @@
     --pk-accent: #8fb0f0;
     --pk-accent-contrast: #12151a;
     --pk-code: #8fb0f0;
+    --pk-icon-blue: #7aa7ec;
+    --pk-icon-purple: #b69bec;
+    --pk-icon-green: #6fcf80;
+    --pk-icon-teal: #4fd0d5;
+    --pk-icon-orange: #e39a70;
     --pk-success: #6cc79a;
     --pk-warning: #e0a458;
     --pk-danger: #f0807a;
@@ -348,6 +358,23 @@ td > .pk-choices, th > .pk-choices { margin: -3px 0; }
 .pk-badge-danger { color: var(--pk-danger); }
 .pk-badge-info { color: var(--pk-accent); }
 .pk-icon { display: inline-block; flex: none; width: 1em; height: 1em; vertical-align: -0.125em; }
+.pk-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+/* Icon tones differ in shape as well as color, so meaning survives grayscale printing. */
+.pk-icon-blue { color: var(--pk-icon-blue); }
+.pk-icon-purple { color: var(--pk-icon-purple); }
+.pk-icon-green { color: var(--pk-icon-green); }
+.pk-icon-teal { color: var(--pk-icon-teal); }
+.pk-icon-orange { color: var(--pk-icon-orange); }
+.pk-icon-success { color: var(--pk-success); }
+.pk-icon-warning { color: var(--pk-warning); }
+.pk-icon-danger { color: var(--pk-danger); }
+.pk-icon-accent { color: var(--pk-accent); }
+.pk-icon-muted { color: var(--pk-muted); }
+.pk-icon-dark, .pk-icon-print { display: none; }
+@media screen and (prefers-color-scheme: dark) {
+  .pk-icon-paired .pk-icon-light { display: none; }
+  .pk-icon-paired .pk-icon-dark { display: inline; }
+}
 
 .pk-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
 .pk-kpis { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 0 0 8px; }
@@ -637,6 +664,8 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
   .pk-has-comment { color: var(--pk-muted); }
   .pk-has-comment::after { display: none; }
   .pk-main { display: table-row-group; }
+  .pk-icon-paired:has(.pk-icon-print) .pk-icon-light { display: none; }
+  .pk-icon-print { display: inline; }
   .pk-diagram { padding: 6px 8px 8px; break-inside: avoid; }
   .pk-diagram figcaption { margin-bottom: 3px; }
   .pk-diagram-scroll { overflow: visible; }

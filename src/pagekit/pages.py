@@ -364,7 +364,7 @@ def build_page(profile: Profile, page: Page) -> None:
         document = _render(profile.read("template.html"), {**values, "content": marker}).replace(marker, source)
     try:
         document = expand_diagrams(document, page.dir, profile.concat("fonts.css"), profile.theme())
-        document = expand_icons(document)
+        document = expand_icons(document, profile)
     except (DiagramError, IconError) as exc:
         raise PageError(str(exc)) from exc
     page.index.write_text(document)

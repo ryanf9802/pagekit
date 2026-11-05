@@ -126,16 +126,100 @@ def test_no_copyright_setting_means_no_notice(home: Path) -> None:
     assert "&copy;" not in make(load_profile()).index.read_text()
 
 
-def test_icons_are_embedded_only_when_used_and_unknown_names_fail(home: Path) -> None:
+def test_icons_are_stored_once_however_many_times_they_are_used(home: Path) -> None:
     profile = load_profile()
-    page = make(profile, body='<p><i data-icon="circle-check"></i> Ready <i data-icon="x" aria-label="Close"></i></p>')
-    document = page.index.read_text()
-    body = document.split('<footer class="pk-footer"')[0]
-    assert body.count('class="pk-icon"') == 2
-    assert 'role="img" aria-label="Close"' in document and 'data-icon=' not in document
-    assert 'class="pk-icon"' not in make(profile, slug="plain").index.read_text().split('<footer class="pk-footer"')[0]
-    page.content.write_text('<i data-icon="not-a-real-icon"></i>')
-    with pytest.raises(PageError, match="no icon named"):
+    body = '<p>' + '<i data-icon="database" tone="blue"></i>' * 50 + '<i data-icon="x" aria-label="Close"></i></p>'
+    document = make(profile, body=body).index.read_text()
+    assert document.count('<symbol id="pk-i-database"') == 1
+    assert document.count('<use href="#pk-i-database"/>') == 50
+    assert 'class="pk-icon pk-icon-blue" aria-hidden="true"' in document
+    assert 'role="img" aria-label="Close"' in document and "<i data-icon" not in document
+    assert check_page(profile, make(profile, slug="again", body=body)).ok
+
+
+def test_unused_icons_cost_nothing(home: Path) -> None:
+    document = make(load_profile()).index.read_text()
+    assert 'id="pk-i-database"' not in document
+    assert 'id="pk-i-download"' in document  # the page's own header button
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [('<i data-icon="not-a-real-icon"></i>', "no icon named"), ('<i data-icon="x" tone="pink"></i>', "unknown icon tone")],
+)
+def test_unknown_icons_and_tones_fail_the_build(home: Path, body: str, message: str) -> None:
+    profile = load_profile()
+    page, _ = new_page(profile, "x", "X", None, "slots")
+    page.content.write_text(body)
+    with pytest.raises(PageError, match=message):
+        build_page(profile, page)
+
+
+def icon_profile(home: Path) -> Profile:
+    repo = home / "repo"
+    directory = repo / ".pagekit" / "profile"
+    init_profile(directory, "acme", "builtin", "Acme")
+    icons = directory / "icons"
+    icons.mkdir()
+    (icons / "mark.svg").write_text(
+        '<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="27 39 131 128"><defs>'
+        '<style>.a, .b { fill: url(#grad); } .b { opacity: 0.5; }</style><linearGradient id="grad"/></defs>'
+        '<path class="a" d="M0 0"/><path class="b" d="M1 1"/></svg>'
+    )
+    (icons / "mark-dark.svg").write_text('<svg width="512" height="512"><path id="p" d="M2 2"/><use href="#p"/></svg>')
+    (icons / "plain.svg").write_text('<svg viewBox="0 0 8 8"><rect width="8" height="8"/></svg>')
+    return load_profile(repo)
+
+
+def test_profile_icons_are_namespaced_and_pair_with_a_dark_version(home: Path) -> None:
+    document = make(icon_profile(home), body='<i data-icon="mark"></i><i data-icon="mark"></i>').index.read_text()
+    assert document.count('<symbol id="pk-i-mark" viewBox="27 39 131 128"') == 1
+    assert document.count('<symbol id="pk-i-mark-dark" viewBox="0 0 512 512"') == 1
+    assert 'id="pk-i-mark-grad"' in document and "url(#pk-i-mark-grad)" in document
+    assert 'style="fill: url(#pk-i-mark-grad)"' in document
+    assert 'style="fill: url(#pk-i-mark-grad); opacity: 0.5"' in document
+    assert 'href="#pk-i-mark-dark-p"' in document
+    assert '<svg class="pk-icon pk-icon-paired" aria-hidden="true"><use class="pk-icon-light" href="#pk-i-mark"/>' in document
+
+
+def test_a_profile_icon_with_no_dark_version_uses_one_drawing(home: Path) -> None:
+    document = make(icon_profile(home), body='<i data-icon="plain"></i>').index.read_text()
+    assert '<svg class="pk-icon" aria-hidden="true"><use href="#pk-i-plain"/></svg>' in document
+    assert 'id="pk-i-mark"' not in document
+
+
+def test_a_print_image_is_stored_once_and_used_only_for_print(home: Path) -> None:
+    profile = icon_profile(home)
+    png = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR" + (64).to_bytes(4, "big") + (32).to_bytes(4, "big") + b"rest"
+    (profile.nearest / "icons" / "plain-print.png").write_bytes(png)
+    document = make(profile, body='<i data-icon="plain"></i>' * 5).index.read_text()
+    assert document.count('<symbol id="pk-i-plain-print" viewBox="0 0 64 32"><image href="data:image/png;base64,') == 1
+    assert document.count('<use class="pk-icon-print" href="#pk-i-plain-print"/>') == 5
+    assert document.count('<use class="pk-icon-light" href="#pk-i-plain"/>') == 5
+    assert "plain-print" not in search_icons_names(profile)
+
+
+def test_a_print_image_must_be_a_png(home: Path) -> None:
+    profile = icon_profile(home)
+    (profile.nearest / "icons" / "plain-print.png").write_bytes(b"not a png")
+    page, _ = new_page(profile, "x", "X", None, "slots")
+    page.content.write_text('<i data-icon="plain"></i>')
+    with pytest.raises(PageError, match="must be a PNG"):
+        build_page(profile, page)
+
+
+def search_icons_names(profile: Profile) -> list[str]:
+    from pagekit.icons import custom_icons
+
+    return list(custom_icons(profile))
+
+
+def test_a_profile_icon_with_a_script_is_refused(home: Path) -> None:
+    profile = icon_profile(home)
+    (profile.nearest / "icons" / "bad.svg").write_text('<svg viewBox="0 0 1 1"><script>x()</script></svg>')
+    page, _ = new_page(profile, "x", "X", None, "slots")
+    page.content.write_text('<i data-icon="bad"></i>')
+    with pytest.raises(PageError, match="script"):
         build_page(profile, page)
 
 

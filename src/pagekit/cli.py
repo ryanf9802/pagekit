@@ -182,7 +182,7 @@ def cmd_component_add(args) -> int:
 
 
 def cmd_icons(args) -> int:
-    matches = search_icons(" ".join(args.query))
+    matches = search_icons(" ".join(args.query), _profile(args))
     if not matches:
         print("no matching icons: try a broader word")
         return 1
@@ -339,6 +339,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("icons", help="search the Lucide icons by name or tag")
     p.add_argument("query", nargs="+")
+    p.add_argument("--profile", help=profile_help)
     p.set_defaults(fn=cmd_icons)
 
     p = sub.add_parser("serve", help="run the optional page index")
