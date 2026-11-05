@@ -109,6 +109,23 @@ def test_built_page_carries_item_comments_that_do_not_print(home: Path) -> None:
     assert re.search(r"@media print \{.*\.pk-comment,", document, re.DOTALL)
 
 
+def test_copyright_setting_adds_an_ascii_safe_footer_notice(home: Path) -> None:
+    repo = home / "repo"
+    directory = repo / ".pagekit" / "profile"
+    init_profile(directory, "acme", "builtin", "Acme")
+    (directory / "profile.toml").write_text(
+        'name = "acme"\nextends = "builtin"\nfooter = "Acme internal"\ncopyright = "Acme & Co"\n'
+    )
+    profile = load_profile(repo)
+    page = make(profile)
+    assert "<span>Acme internal</span><span>&copy; Acme &amp; Co</span><span>Updated" in page.index.read_text()
+    assert check_page(profile, page).ok
+
+
+def test_no_copyright_setting_means_no_notice(home: Path) -> None:
+    assert "&copy;" not in make(load_profile()).index.read_text()
+
+
 def test_title_is_escaped(home: Path) -> None:
     profile = load_profile()
     page, _ = new_page(profile, "x", "<script>alert(1)</script>", None, "slots")

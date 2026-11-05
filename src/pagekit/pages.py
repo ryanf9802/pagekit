@@ -299,10 +299,13 @@ def build_page(profile: Profile, page: Page) -> None:
         )
         if part
     )
+    copyright_holder = str(profile.config.get("copyright", ""))
+    copyright_html = f"<span>&copy; {html.escape(copyright_holder)}</span>" if copyright_holder else ""
     footer = (
         '<footer class="pk-footer" data-pk-ignore>\n'
         '<div class="pk-bar"><div class="pk-footer-meta">'
         f"<span>{html.escape(footer_text)}</span>"
+        f"{copyright_html}"
         f"<span>Updated {_display_date(built)}</span></div>\n"
         '<span id="pk-export-status" class="pk-visually-hidden" role="status"></span>\n'
         f'<button type="button" id="pk-export" class="pk-button">{COPY_ICON}'

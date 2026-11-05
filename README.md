@@ -45,7 +45,7 @@ pagekit init --name acme --brand "Acme" --local   # or personal: ~/.pagekit/prof
 
 | File | Purpose | Merge |
 | --- | --- | --- |
-| `profile.toml` | name, `extends`, brand, footer, `ascii_only`, `allowed_hosts`, `[save]` | deep merge |
+| `profile.toml` | name, `extends`, brand, footer, `copyright` (adds a copyright notice for that holder to the footer), `ascii_only`, `allowed_hosts`, `[save]` | deep merge |
 | `theme.css` | `--pk-*` tokens and styles; redefine tokens for light and dark | concatenated |
 | `head.html` | extra head tags, such as a web font | concatenated |
 | `INSTRUCTIONS.md` | content and voice rules, printed by `pagekit new` | concatenated |
