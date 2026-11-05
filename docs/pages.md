@@ -38,6 +38,7 @@ Every build runs these checks, and `pagekit check` runs them alone.
 - Non-ASCII characters, when the profile sets `ascii_only`
 - Form controls with no name, or two controls sharing a name
 - Missing or unused assets
+- Text such as `<uuid>` or `<template ...>` in `content.html`, which browsers read as a tag and which hides the rest of the page; write `&lt;` and `&gt;` to show it
 - A failing [profile check](profiles.md#checks)
 
 **Warnings** do not:
