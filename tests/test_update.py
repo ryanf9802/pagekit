@@ -33,7 +33,7 @@ def release(repo: Path, tag: str) -> None:
 
 
 @pytest.fixture
-def repos(tmp_path: Path, monkeypatch) -> tuple[Path, Path]:
+def repos(tmp_path: Path, monkeypatch, home: Path) -> tuple[Path, Path]:
     origin = tmp_path / "origin.git"
     author = tmp_path / "author"
     clone = tmp_path / "clone"
@@ -178,7 +178,7 @@ def test_main_flag_follows_main(repos, capsys) -> None:
     git(author, "push", "-q", "origin", "main")
     assert main(["update", "--check", "--main"]) == 0
     assert "not released yet" in capsys.readouterr().out
-    assert update(follow_main=True).commits == ["not released yet"]
+    assert update(follow="main").commits == ["not released yet"]
     assert (clone / "a.txt").is_file()
 
 
@@ -197,11 +197,70 @@ def test_a_clone_ahead_of_the_release_is_not_moved_back(repos, capsys) -> None:
     author, clone = repos
     commit(author, "a.txt", "x", "not released yet")
     git(author, "push", "-q", "origin", "main")
-    update(follow_main=True)
+    update(follow="main")
     before = git(clone, "rev-parse", "HEAD")
     assert main(["update"]) == 0
     assert "up to date" in capsys.readouterr().out
     assert git(clone, "rev-parse", "HEAD") == before
+
+
+def unreleased_commit(author: Path) -> None:
+    commit(author, "a.txt", "x", "not released yet")
+    git(author, "push", "-q", "origin", "main")
+
+
+def set_follow(home: Path, text: str) -> Path:
+    path = home / ".pagekit" / "update.toml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def test_the_settings_file_makes_a_machine_follow_main(repos, home, capsys) -> None:
+    author, clone = repos
+    unreleased_commit(author)
+    path = set_follow(home, 'follow = "main"\n')
+    assert main(["update"]) == 0
+    out = capsys.readouterr().out
+    assert f"following main, as set in {path}" in out and "not released yet" in out
+    assert (clone / "a.txt").is_file()
+
+
+def test_flags_beat_the_settings_file(repos, home, capsys) -> None:
+    author, clone = repos
+    unreleased_commit(author)
+    set_follow(home, 'follow = "main"\n')
+    assert main(["update", "--releases", "--check"]) == 0
+    out = capsys.readouterr().out
+    assert "following main" not in out and "up to date" in out
+    set_follow(home, 'follow = "releases"\n')
+    assert main(["update", "--main", "--check"]) == 0
+    out = capsys.readouterr().out
+    assert out.startswith("following main\n") and "not released yet" in out
+    assert not (clone / "a.txt").exists()
+
+
+def test_a_file_without_follow_means_releases(repos, home, capsys) -> None:
+    author, _ = repos
+    unreleased_commit(author)
+    set_follow(home, "")
+    assert main(["update", "--check"]) == 0
+    assert "up to date" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("text", ['follow = "latest"\n', "follow = 3\n", "follow = \n"])
+def test_a_bad_settings_file_is_an_error_that_names_it(repos, home, text, capsys) -> None:
+    path = set_follow(home, text)
+    before = git(repos[1], "rev-parse", "HEAD")
+    assert main(["update"]) == 1
+    assert str(path) in capsys.readouterr().err
+    assert git(repos[1], "rev-parse", "HEAD") == before
+
+
+def test_both_flags_together_are_refused(repos, capsys) -> None:
+    with pytest.raises(SystemExit):
+        main(["update", "--main", "--releases"])
+    assert "not allowed with" in capsys.readouterr().err
 
 
 def test_no_release_yet_points_to_the_main_flag(repos, tmp_path, monkeypatch, capsys) -> None:

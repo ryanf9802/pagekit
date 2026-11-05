@@ -71,8 +71,19 @@ pagekit update --main     # follow the main branch instead, to try changes befor
 ```
 
 `pagekit update` runs from the clone, and stops without changing anything if the clone has uncommitted changes or is on
-another branch. It never moves a clone backwards, so a clone ahead of the newest release (after `--main`) stays put. It names any new skill to link. Pages already built keep their old look until you run
-`pagekit build SLUG`.
+another branch. It never moves a clone backwards, so a clone ahead of the newest release (after `--main`) stays put. It
+names any new skill to link. Pages already built keep their old look until you run `pagekit build SLUG`.
+
+To make one machine follow `main` every time, such as the machine you develop pagekit on, put this in
+`~/.pagekit/update.toml`:
+
+```toml
+follow = "main"
+```
+
+Then plain `pagekit update` follows `main` there, and says so. `--releases` follows the newest release for one run, and
+`--main` follows `main` for one run on a machine that follows releases. A flag always beats the file. A value other than
+`"releases"` or `"main"` is an error that names the file.
 
 ## Where things live
 

@@ -44,7 +44,8 @@ passes. For a new minor version, such as `v0.2.0`, create the release by hand on
 automatic releases carry on from it.
 
 `pagekit update` follows the newest release. `pagekit update --main` follows `main` instead, which is what to use to try a
-merge before it is released.
+merge before it is released. A machine you develop on can follow `main` every time with `follow = "main"` in
+`~/.pagekit/update.toml`; see [Getting started](docs/getting-started.md#keep-it-up-to-date).
 
 ## Issue labels
 
