@@ -24,6 +24,7 @@
   --pk-radius-small: 6px;
   --pk-max-width: 960px;
   --pk-bar-height: 52px;
+  --pk-print-font-size: 10pt;
   --pk-gutter: max(16px, calc((100% - var(--pk-max-width)) / 2 + 16px));
 }
 @media screen and (prefers-color-scheme: dark) {
@@ -629,9 +630,9 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
 }
 @media print {
   :root { color-scheme: light; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  /* Sizes are in rem, so this one root scales all printed text from 14px. */
+  /* Sizes are in rem, so this one root scales all printed text. */
   /* No canvas color: paper is white, and a painted canvas would cover the page number. */
-  html { background: none; font-size: 14px; scroll-padding-block: 0; }
+  html { background: none; font-size: var(--pk-print-font-size); scroll-padding-block: 0; }
   body {
     display: table;
     width: 100%;
@@ -640,6 +641,7 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
     background: none !important;
     font-size: 1rem;
     line-height: 1.45;
+    overflow-wrap: break-word;
   }
   .pk-header {
     position: static;
@@ -687,7 +689,8 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
   h1 { font-size: 1.625rem; }
   h2 { font-size: 1.125rem; }
   h1, h2, h3, h4, .pk-card-head, p:has(+ pre), p:has(+ .pk-table-wrap), p:has(+ .pk-figure), p:has(+ .pk-grid) { break-after: avoid; }
-  .pk-card, .pk-callout, .pk-kpi, .pk-figure, tr, pre, blockquote { break-inside: avoid; }
+  :is(h2, h3, h4) + :is(p, ul, ol, .pk-table-wrap, .pk-callout) { break-before: avoid; }
+  .pk-card, .pk-callout, .pk-kpi, .pk-figure, tr, li, pre, blockquote { break-inside: avoid; }
   .pk-divider { break-inside: avoid; break-after: avoid; }
   .pk-table-wrap { overflow: visible; }
   details > summary { margin-left: 0; padding: 0; }
@@ -695,6 +698,7 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
   details > :not(summary) { margin-left: 0; }
   thead { display: table-header-group; }
   th { white-space: normal; }
+  th, td { overflow-wrap: break-word; }
   pre { overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; }
   /* Paper cannot scroll, so printed answers show in full. */
   textarea { max-height: none; overflow: visible; }

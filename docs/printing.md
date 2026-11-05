@@ -22,6 +22,11 @@ page's headings:
 Both use local Chrome or Chromium. Set `$PAGEKIT_CHROME` to override the search. With none found, the button does
 not appear. Tagging makes these PDFs larger than Ctrl+P output.
 
+## Text size
+
+Printed text is 10pt, and every other printed size scales from it. A profile can change that by setting
+`--pk-print-font-size` in `theme.css`.
+
 ## Margins
 
 Generated PDFs default to `0.15in 0.25in` (top and bottom, then sides). A profile can set its own with `pdf_margin`
