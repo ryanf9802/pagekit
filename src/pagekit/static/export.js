@@ -6,7 +6,8 @@
   var custom = {};
   var SELECTOR = "input, select, textarea, [contenteditable], details[id], details[data-pk-name]";
   var SKIP = { button: 1, submit: 1, reset: 1, image: 1, hidden: 1, password: 1 };
-  var STORE_KEY = "pagekit:" + meta.profile + "/" + meta.slug + ":" + meta.built;
+  var STORE_KEY = "pagekit:" + meta.profile + "/" + meta.slug + ":" + meta.rev;
+  var labelTimer;
 
   function nameOf(el) {
     return el.getAttribute("data-pk-name") || el.getAttribute("name") || el.id || "";
@@ -91,9 +92,22 @@
     return fence + "pagekit-response\n" + body + "\n" + fence;
   }
 
-  function status(message) {
+  /* The button itself shows the result, so the footer never shifts. */
+  function status(message, label, done) {
     var el = document.getElementById("pk-export-status");
+    var labelEl = document.getElementById("pk-export-label");
+    var button = document.getElementById("pk-export");
     if (el) el.textContent = message;
+    if (!labelEl || !button) return;
+    var original = labelEl.getAttribute("data-label") || labelEl.textContent;
+    labelEl.setAttribute("data-label", original);
+    labelEl.textContent = label;
+    button.classList.toggle("pk-button-done", !!done);
+    clearTimeout(labelTimer);
+    labelTimer = setTimeout(function () {
+      labelEl.textContent = original;
+      button.classList.remove("pk-button-done");
+    }, 2500);
   }
 
   function legacyCopy(value) {
@@ -114,14 +128,15 @@
     } else {
       /* Leave it on screen, selected, so nothing is lost. */
       area.classList.add("pk-export-fallback-visible");
-      status("Clipboard blocked: copy the selected text.");
+      status("Clipboard blocked: copy the selected text.", "Clipboard blocked: copy the text");
     }
     return copied;
   }
 
   function copied() {
     var count = collect().length;
-    status("Copied " + count + (count === 1 ? " field" : " fields") + ". Paste it into Claude Code.");
+    var fields = count + (count === 1 ? " field" : " fields");
+    status("Copied " + fields + ". Paste it into Claude Code.", "Copied " + fields + ", paste into Claude", true);
   }
 
   function copy() {
@@ -135,7 +150,7 @@
     return Promise.resolve();
   }
 
-  /* Answers survive a reload. A rebuild is a new round, so it starts clean. */
+  /* Answers survive a reload and a restyle. Changed content is a new round, so it starts clean. */
   function persist() {
     var state = {};
     elements().forEach(function (el) {
@@ -202,5 +217,12 @@
   document.addEventListener("submit", function (event) { event.preventDefault(); });
   var button = document.getElementById("pk-export");
   if (button) button.addEventListener("click", copy);
-  if (elements().length) document.body.classList.add("pk-has-fields");
+
+  /* The header shows the page title once the main heading has scrolled away. */
+  var heading = document.querySelector("h1");
+  if (heading && window.IntersectionObserver) {
+    new IntersectionObserver(function (entries) {
+      document.body.classList.toggle("pk-scrolled", !entries[0].isIntersecting);
+    }, { rootMargin: "-60px 0px 0px 0px" }).observe(heading);
+  }
 })();

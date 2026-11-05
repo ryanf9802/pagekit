@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import html
 import json
 import mimetypes
@@ -36,6 +37,11 @@ CSS_EXTERNAL_RE = re.compile(r"""(?:url\(\s*["']?|@import\s+["'])((?:https?:)?//
 WIDE_FIXED_RE = re.compile(r"(?<![-\w])(?:min-)?width\s*:\s*(\d{3,})px")
 PLACEHOLDER_RE = re.compile(r"\{\{(\w+)\}\}")
 PHONE_WIDTH_PX = 390
+COPY_ICON = (
+    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">'
+    '<rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/>'
+    '<path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2"/></svg>'
+)
 
 
 class PageError(Exception):
@@ -272,6 +278,8 @@ def build_page(profile: Profile, page: Page) -> None:
         "profile": profile.name,
         "source": str(page.index),
         "built": built,
+        # Keys saved answers: a style-only rebuild keeps them, a content change resets them.
+        "rev": hashlib.sha256(page.content.read_bytes()).hexdigest()[:12],
     }
     meta_json = json.dumps(export_meta).replace("</", "<\\/")
     head = "\n".join(
@@ -291,8 +299,9 @@ def build_page(profile: Profile, page: Page) -> None:
         '<div class="pk-footer-meta">'
         f"<span>{html.escape(footer_text)}</span>"
         f"<span>Updated {_display_date(built)}</span></div>\n"
-        '<div class="pk-footer-actions"><span id="pk-export-status" role="status"></span>'
-        '<button type="button" id="pk-export" class="pk-button">Copy page state for Claude</button></div>\n'
+        '<span id="pk-export-status" class="pk-visually-hidden" role="status"></span>\n'
+        f'<button type="button" id="pk-export" class="pk-button">{COPY_ICON}'
+        '<span id="pk-export-label">Copy page state for Claude</span></button>\n'
         f"</footer>\n<script>\n{_asset_text('export.js')}\n</script>"
     )
     values = {

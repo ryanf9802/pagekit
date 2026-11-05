@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import os
+import re
 import stat
 import time
 from datetime import datetime, timedelta, timezone
@@ -77,6 +78,21 @@ def test_content_placeholders_are_left_as_written(home: Path) -> None:
     profile = load_profile()
     page = make(profile, body="<code>{{footer}}</code>")
     assert "<code>{{footer}}</code>" in page.index.read_text()
+
+
+def test_answers_key_survives_a_restyle_but_not_a_content_change(home: Path) -> None:
+    profile = load_profile()
+
+    def rev(page: Page) -> str:
+        return re.search(r'"rev": "(\w+)"', page.index.read_text()).group(1)
+
+    page = make(profile, body="<p>One</p>")
+    first = rev(page)
+    build_page(profile, page)
+    assert rev(page) == first
+    page.content.write_text("<p>Two</p>")
+    build_page(profile, page)
+    assert rev(page) != first
 
 
 def test_title_is_escaped(home: Path) -> None:

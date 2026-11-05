@@ -65,7 +65,8 @@ fields:
 
 Empty values mean unanswered, not "no". `source` is the page: read `content.html` beside it
 for what each name refers to. Act only on what the answers say, and rebuild the same slug to
-show the result. A rebuild clears answers the user has not exported, so collect them first.
+show the result. Changing `content.html` clears answers the user has not exported, so collect
+them first. A rebuild with unchanged content keeps them.
 
 ## Sharing and keeping
 

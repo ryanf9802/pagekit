@@ -108,8 +108,8 @@ fields:
 ```
 ````
 
-Password and hidden inputs are never exported. Answers survive a reload in `localStorage`
-and reset when the page is rebuilt.
+Password and hidden inputs are never exported. Answers survive a reload and a style-only
+rebuild in `localStorage`, and reset when `content.html` changes.
 
 ## Expiry
 
