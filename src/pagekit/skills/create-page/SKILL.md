@@ -54,7 +54,7 @@ only to improve a component in a way that suits every page using it.
 
 ## Collecting input
 
-Every page has a footer button that copies the state of every control. To get answers from
+A page with controls or comments has a footer button that copies their state. To get answers from
 the user, add controls with stable names keyed to item IDs (the `decision-card` component),
 then tell them to press the button and paste the result.
 

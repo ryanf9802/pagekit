@@ -251,7 +251,20 @@
     return ordered;
   }
 
+  /* The copy button shows only when there is something to copy. Opening a section is not an
+     answer, so details do not count. */
+  function hasState() {
+    return Object.keys(custom).length > 0 || commentedIds().length > 0 ||
+      elements().some(function (el) { return el.tagName !== "DETAILS"; });
+  }
+
+  function refreshExportButton() {
+    var exportButton = document.getElementById("pk-export");
+    if (exportButton) exportButton.hidden = !hasState();
+  }
+
   function refreshComments() {
+    refreshExportButton();
     idMarks().forEach(function (el) {
       var has = !!comments[idOf(el)];
       el.classList.toggle("pk-has-comment", has);
@@ -406,7 +419,10 @@
 
   window.pagekit = {
     /* For bespoke widgets: pagekit.register("order", function () { return ids; }). */
-    register: function (name, getter) { custom[name] = getter; },
+    register: function (name, getter) {
+      custom[name] = getter;
+      refreshExportButton();
+    },
     collect: collect,
     text: text,
     copy: copy,
@@ -438,6 +454,8 @@
   copiedState = currentState();
   restore();
   initComments();
+  /* A script can add controls after load. */
+  new MutationObserver(refreshExportButton).observe(document.body, { childList: true, subtree: true });
   try {
     copiedState = localStorage.getItem(COPIED_KEY) || copiedState;
   } catch (err) {

@@ -300,6 +300,71 @@ def _render(template: str, values: dict[str, str]) -> str:
     return PLACEHOLDER_RE.sub(lambda m: values.get(m.group(1), m.group(0)), template)
 
 
+def _head_html(profile: Profile, title: str, meta: dict[str, str], component_css: str = "", extra: str = "") -> str:
+    meta_json = json.dumps(meta).replace("<", "\\u003c")
+    return "\n".join(
+        part
+        for part in (
+            '<meta charset="utf-8">',
+            '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">',
+            f"<title>{title}</title>",
+            _favicon_html(profile),
+            f'<script type="application/json" id="pagekit-meta">{meta_json}</script>',
+            profile.concat("head.html"),
+            f"<style>\n{profile.concat('fonts.css')}\n{profile.theme()}\n{component_css}\n</style>",
+            extra,
+        )
+        if part
+    )
+
+
+def _footer_html(profile: Profile, updated: str = "") -> str:
+    footer_text = str(profile.config.get("footer", ""))
+    copyright_holder = str(profile.config.get("copyright", ""))
+    copyright_html = f"<span>&copy; {html.escape(copyright_holder)}</span>" if copyright_holder else ""
+    updated_html = f"<span>Updated {_display_date(updated)}</span>" if updated else ""
+    # The button stays hidden until export.js finds something to copy.
+    return (
+        '<footer class="pk-footer" data-pk-ignore>\n'
+        '<div class="pk-bar"><div class="pk-footer-meta">'
+        f"<span>{html.escape(footer_text)}</span>"
+        f"{copyright_html}"
+        f"{updated_html}</div>\n"
+        '<span id="pk-export-status" class="pk-visually-hidden" role="status"></span>\n'
+        f'<button type="button" id="pk-export" class="pk-button" hidden>{COPY_ICON}'
+        '<span id="pk-export-label">Copy state</span></button></div>\n'
+        '</footer>\n<div class="pk-print-spacer" aria-hidden="true"><div></div></div>'
+        f"\n<script>\n{_asset_text('export.js')}\n</script>"
+    )
+
+
+def _shell_values(profile: Profile, head: str, title: str, summary: str, updated: str = "") -> dict[str, str]:
+    brand = str(profile.config.get("brand", ""))
+    return {
+        "head": head,
+        "footer": _footer_html(profile, updated),
+        "title": title,
+        "summary": summary,
+        "brand": html.escape(brand),
+        "logo": logo_html(profile, brand),
+    }
+
+
+def _fill_template(profile: Profile, values: dict[str, str], content: str) -> str:
+    # Content goes in last so its own "{{...}}" text is left as written.
+    marker = "\x00pagekit-content\x00"
+    return _render(profile.read("template.html"), {**values, "content": marker}).replace(marker, content)
+
+
+def render_index(profile: Profile) -> str:
+    """The index, in the same shell as any page built with this profile."""
+    title = "Your pages"
+    meta = {"slug": "index", "title": title, "profile": profile.name, "rev": ""}
+    head = _head_html(profile, "pagekit", meta, extra=_asset_text("index-head.html"))
+    values = _shell_values(profile, head, title, '<p class="pk-summary" id="count"></p>')
+    return expand_icons(_fill_template(profile, values, _asset_text("index.html")), profile)
+
+
 def build_page(profile: Profile, page: Page) -> None:
     built = _now_iso()
     page.meta["updated"] = built
@@ -311,8 +376,6 @@ def build_page(profile: Profile, page: Page) -> None:
     page.write_meta()
     title = html.escape(page.meta.get("title", page.slug))
     summary = page.meta.get("summary", "")
-    brand = str(profile.config.get("brand", ""))
-    footer_text = str(profile.config.get("footer", ""))
     export_meta = {
         "slug": page.slug,
         "title": page.meta.get("title", page.slug),
@@ -322,53 +385,17 @@ def build_page(profile: Profile, page: Page) -> None:
         # Keys saved answers: a style-only rebuild keeps them, a content change resets them.
         "rev": hashlib.sha256(page.content.read_bytes()).hexdigest()[:12],
     }
-    meta_json = json.dumps(export_meta).replace("<", "\\u003c")
     source = add_image_sizes(page.content.read_text(encoding="utf-8"), page.dir)
-    component_css = library_css_for(source)
-    head = "\n".join(
-        part
-        for part in (
-            '<meta charset="utf-8">',
-            '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">',
-            f"<title>{title}</title>",
-            _favicon_html(profile),
-            f'<script type="application/json" id="pagekit-meta">{meta_json}</script>',
-            profile.concat("head.html"),
-            f"<style>\n{profile.concat('fonts.css')}\n{profile.theme()}\n{component_css}\n</style>",
-        )
-        if part
-    )
-    copyright_holder = str(profile.config.get("copyright", ""))
-    copyright_html = f"<span>&copy; {html.escape(copyright_holder)}</span>" if copyright_holder else ""
-    footer = (
-        '<footer class="pk-footer" data-pk-ignore>\n'
-        '<div class="pk-bar"><div class="pk-footer-meta">'
-        f"<span>{html.escape(footer_text)}</span>"
-        f"{copyright_html}"
-        f"<span>Updated {_display_date(built)}</span></div>\n"
-        '<span id="pk-export-status" class="pk-visually-hidden" role="status"></span>\n'
-        f'<button type="button" id="pk-export" class="pk-button">{COPY_ICON}'
-        '<span id="pk-export-label">Copy state</span></button></div>\n'
-        '</footer>\n<div class="pk-print-spacer" aria-hidden="true"><div></div></div>'
-        f"\n<script>\n{_asset_text('export.js')}\n</script>"
-    )
-    values = {
-        "head": head,
-        "footer": footer,
-        "title": title,
-        "summary": f'<p class="pk-summary">{html.escape(summary)}</p>' if summary else "",
-        "brand": html.escape(brand),
-        "logo": logo_html(profile, brand),
-    }
+    head = _head_html(profile, title, export_meta, library_css_for(source))
+    summary_html = f'<p class="pk-summary">{html.escape(summary)}</p>' if summary else ""
+    values = _shell_values(profile, head, title, summary_html, built)
     if page.meta.get("mode") == "free":
         for required in ("{{head}}", "{{footer}}"):
             if required not in source:
                 raise PageError(f"{page.content}: a free-mode page must contain {required}")
         document = _render(source, values)
     else:
-        # Content goes in last so its own "{{...}}" text is left as written.
-        marker = "\x00pagekit-content\x00"
-        document = _render(profile.read("template.html"), {**values, "content": marker}).replace(marker, source)
+        document = _fill_template(profile, values, source)
     try:
         document = expand_diagrams(document, page.dir, profile.concat("fonts.css"), profile.theme())
         document = expand_icons(document, profile)

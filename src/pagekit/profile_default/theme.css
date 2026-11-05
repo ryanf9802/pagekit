@@ -144,6 +144,8 @@ p { margin: 0 0 12px; }
   justify-content: center;
   width: 36px;
   height: 36px;
+  /* The bar is the same height with or without these controls. */
+  margin-block: -1px;
   padding: 0;
   background: none;
   border: 0;
@@ -226,6 +228,7 @@ p { margin: 0 0 12px; }
 .pk-button svg { flex: none; width: 14px; height: 14px; }
 .pk-button:hover { filter: brightness(1.12); }
 .pk-button-done { background: var(--pk-success); }
+#pk-export[hidden] { display: none; }
 
 input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]), select, textarea {
   width: 100%;

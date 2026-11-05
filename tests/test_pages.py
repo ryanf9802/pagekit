@@ -52,7 +52,7 @@ def test_build_composes_a_self_contained_page(home: Path) -> None:
     document = page.index.read_text()
     assert page.dir == home / "pages" / "default" / "demo"
     assert "<title>Demo</title>" in document and "<p>Hello</p>" in document and "--pk-accent" in document
-    assert 'id="pk-export"' in document and "window.pagekit" in document
+    assert 'id="pk-export" class="pk-button" hidden' in document and "window.pagekit" in document
     assert 'class="pk-summary">One line' in document
     assert check_page(profile, page).ok
 

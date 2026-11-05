@@ -52,6 +52,10 @@ With no profile, pages carry the pagekit logo, name, and ember colors. Every par
   logo, wordmark, print logo, or tab icon, so "Acme" never appears beside the pagekit mark. Set `brand = ""` to show
   no name or logo at all.
 - **The footer** reads "Made with pagekit" until a profile sets `footer`. `pagekit init` sets it to the brand.
+- **The header and footer** are the same on every page, and a profile changes them in one place. Restyle them in
+  `theme.css`, such as `.pk-logo { width: 30px; height: 30px; }`, or replace the layout in `template.html`.
+- **The page index** at the server root uses the same header and footer with the built-in profile, because it lists
+  pages from every profile.
 
 | Color | Light | Dark |
 | --- | --- | --- |
