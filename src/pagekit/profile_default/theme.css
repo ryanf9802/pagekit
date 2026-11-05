@@ -75,6 +75,7 @@ p { margin: 0 0 12px; }
 :focus-visible { outline: 2px solid var(--pk-accent); outline-offset: 2px; }
 
 /* Header and footer: one matching pair of bars. */
+.pk-bar { display: contents; }
 .pk-header, .pk-footer {
   position: sticky;
   z-index: 5;
@@ -290,14 +291,64 @@ details > summary { cursor: pointer; font-weight: 500; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
-/* Print: light colors always. The running header and footer are @page margin boxes,
-   written at build time (see print_css), because they repeat on every sheet. */
+.pk-print-spacer { display: none; }
+
+/* Print: light colors always, and a layout the print dialog's margin setting cannot break.
+   The body prints as a table, because its header and footer groups repeat on every sheet
+   and reserve space inside it. They repeat only with break-inside: avoid. The footer is
+   fixed so it stays at the bottom of the last sheet too. The page number's negative margin
+   lifts it onto the footer line, and keeps it rendering when the margin is zero. */
+@page {
+  margin: 0 0 8mm;
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    margin: -5.5mm 15mm 0 0;
+    vertical-align: top;
+    color: #5b6270;
+    font: 400 8pt system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+}
 @media print {
   :root { color-scheme: light; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   html { scroll-padding-block: 0; }
-  body { display: block; min-height: 0; background: #fff !important; font-size: 10.5pt; line-height: 1.45; }
-  .pk-header, .pk-footer { display: none; }
-  .pk-main { max-width: none; padding: 0; }
+  body {
+    display: table;
+    width: 100%;
+    min-height: 0;
+    padding: 0 15mm;
+    background: #fff !important;
+    font-size: 10.5pt;
+    line-height: 1.45;
+  }
+  .pk-header {
+    position: static;
+    display: table-header-group;
+    min-height: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    break-inside: avoid;
+  }
+  .pk-header .pk-bar { display: flex; align-items: center; gap: 10px; height: 20mm; padding-top: 4mm; }
+  .pk-header-title { margin-left: auto; padding-left: 0 !important; border-left: 0 !important; font-size: 8.5pt; opacity: 1; }
+  .pk-print-spacer { display: table-footer-group; break-inside: avoid; }
+  .pk-print-spacer > div { height: 12mm; }
+  .pk-footer {
+    position: fixed;
+    right: 15mm;
+    bottom: 0;
+    left: 15mm;
+    display: block;
+    min-height: 0;
+    padding: 0 0 2mm;
+    background: none;
+    border: 0;
+    font-size: 8.5pt;
+    line-height: 1.2;
+  }
+  .pk-footer .pk-bar { display: block; }
+  .pk-footer .pk-button, #pk-export-status, .pk-export-fallback { display: none; }
+  .pk-main { display: table-row-group; }
   .pk-section { margin-top: 20px; }
   h1 { font-size: 20pt; }
   h2 { font-size: 13pt; }

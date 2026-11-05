@@ -116,6 +116,8 @@ rebuild in `localStorage`, and reset when `content.html` changes.
 
 Pages print in light colors, with the header and footer repeated on every sheet, page
 numbers, collapsed sections opened, and wide tables and code wrapped rather than clipped.
+The layout does not depend on the print dialog's margin setting: the body prints as a table
+whose header and footer groups repeat.
 A profile's dark tokens must stay under `@media screen and (prefers-color-scheme: dark)`
 for this to hold. Use `<thead>` so a table's header row repeats across sheets.
 

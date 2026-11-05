@@ -263,57 +263,6 @@ def _logo_html(profile: Profile, brand: str) -> str:
     return "".join(parts)
 
 
-def _css_string(value: str) -> str:
-    escaped = value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ")
-    # Inside a <style> element, so "</style>" must never appear literally.
-    return '"' + escaped.replace("<", "\\3c ") + '"'
-
-
-def _print_logo(profile: Profile) -> str | None:
-    """Icon and wordmark as one small image, since a margin box cannot size its own images."""
-    icon = profile.file("logo.svg")
-    wordmark = profile.file("wordmark.svg")
-    if not icon and not wordmark:
-        return None
-    height = 22
-    parts, x = [], 0
-    if icon:
-        parts.append(f'<image href="{_data_uri(icon)}" width="{height}" height="{height}"/>')
-        x = height + 7
-    if wordmark:
-        box = re.search(r'viewBox="[\d.-]+[ ,]+[\d.-]+[ ,]+([\d.]+)[ ,]+([\d.]+)"', wordmark.read_text())
-        ratio = float(box.group(1)) / float(box.group(2)) if box else 8.0
-        word_height = 14
-        word_width = round(word_height * ratio, 1)
-        parts.append(
-            f'<image href="{_data_uri(wordmark)}" x="{x}" y="{(height - word_height) / 2}" '
-            f'width="{word_width}" height="{word_height}"/>'
-        )
-        x += word_width
-    svg = (
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{x}" height="{height}" viewBox="0 0 {x} {height}">'
-        + "".join(parts)
-        + "</svg>"
-    )
-    return "data:image/svg+xml;base64," + base64.b64encode(svg.encode()).decode()
-
-
-def print_css(profile: Profile, title: str, footer_text: str, date: str) -> str:
-    """The running header and footer, repeated on every printed sheet."""
-    logo = _print_logo(profile)
-    brand = str(profile.config.get("brand", ""))
-    left = f'url("{logo}")' if logo else _css_string(brand)
-    footer = " / ".join(part for part in (footer_text, f"Updated {date}") if part)
-    text = 'font: 400 8.5pt system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #5b6270;'
-    return f"""@page {{
-  margin: 24mm 15mm 20mm;
-  @top-left {{ content: {left}; vertical-align: bottom; padding-bottom: 3mm; white-space: nowrap; {text} }}
-  @top-right {{ content: {_css_string(title)}; vertical-align: bottom; padding-bottom: 4mm; {text} }}
-  @bottom-left {{ content: {_css_string(footer)}; vertical-align: top; padding-top: 4mm; {text} }}
-  @bottom-right {{ content: "Page " counter(page) " of " counter(pages); vertical-align: top; padding-top: 4mm; {text} }}
-}}"""
-
-
 def _render(template: str, values: dict[str, str]) -> str:
     # One pass, so "{{...}}" inside page content is left as written.
     return PLACEHOLDER_RE.sub(lambda m: values.get(m.group(1), m.group(0)), template)
@@ -338,7 +287,6 @@ def build_page(profile: Profile, page: Page) -> None:
         "rev": hashlib.sha256(page.content.read_bytes()).hexdigest()[:12],
     }
     meta_json = json.dumps(export_meta).replace("<", "\\u003c")
-    running_css = print_css(profile, page.meta.get("title", page.slug), footer_text, _display_date(built))
     head = "\n".join(
         part
         for part in (
@@ -347,19 +295,20 @@ def build_page(profile: Profile, page: Page) -> None:
             f"<title>{title}</title>",
             f'<script type="application/json" id="pagekit-meta">{meta_json}</script>',
             profile.concat("head.html"),
-            f"<style>\n{profile.theme()}\n{running_css}\n</style>",
+            f"<style>\n{profile.theme()}\n</style>",
         )
         if part
     )
     footer = (
         '<footer class="pk-footer" data-pk-ignore>\n'
-        '<div class="pk-footer-meta">'
+        '<div class="pk-bar"><div class="pk-footer-meta">'
         f"<span>{html.escape(footer_text)}</span>"
         f"<span>Updated {_display_date(built)}</span></div>\n"
         '<span id="pk-export-status" class="pk-visually-hidden" role="status"></span>\n'
         f'<button type="button" id="pk-export" class="pk-button">{COPY_ICON}'
-        '<span id="pk-export-label">Copy page state for Claude</span></button>\n'
-        f"</footer>\n<script>\n{_asset_text('export.js')}\n</script>"
+        '<span id="pk-export-label">Copy page state for Claude</span></button></div>\n'
+        '</footer>\n<div class="pk-print-spacer" aria-hidden="true"><div></div></div>'
+        f"\n<script>\n{_asset_text('export.js')}\n</script>"
     )
     values = {
         "head": head,

@@ -95,20 +95,12 @@ def test_answers_key_survives_a_restyle_but_not_a_content_change(home: Path) -> 
     assert rev(page) != first
 
 
-def test_print_header_and_footer_are_margin_boxes_with_a_safe_title(home: Path) -> None:
-    repo = home / "repo"
-    directory = repo / ".pagekit" / "profile"
-    init_profile(directory, "acme", "builtin", "Acme")
-    (directory / "profile.toml").write_text('name = "acme"\nextends = "builtin"\nbrand = "Acme"\nfooter = "Acme internal"\n')
-    profile = load_profile(repo)
-    page, _ = new_page(profile, "x", 'Say "hi" </style><script>alert(1)</script>', None, "slots")
-    build_page(profile, page)
-    document = page.index.read_text()
-    assert "@top-left" in document and 'counter(pages)' in document
-    assert 'content: "Acme";' in document
-    assert re.search(r'@bottom-left \{ content: "Acme internal / Updated \d\d/\d\d/\d{4}"', document)
-    assert '@top-right { content: "Say \\"hi\\" \\3c /style>\\3c script>alert(1)\\3c /script>"' in document
-    assert "<script>alert(1)" not in document
+def test_print_layout_repeats_without_relying_on_page_margins(home: Path) -> None:
+    profile = load_profile()
+    document = make(profile).index.read_text()
+    assert "display: table-header-group" in document and "break-inside: avoid" in document
+    assert '<div class="pk-print-spacer" aria-hidden="true"><div></div></div>' in document
+    assert "counter(pages)" in document
 
 
 def test_title_is_escaped(home: Path) -> None:
