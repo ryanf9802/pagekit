@@ -320,6 +320,16 @@ def _head_html(profile: Profile, title: str, meta: dict[str, str], component_css
     )
 
 
+REPO_URL = "https://github.com/ryanf9802/pagekit"
+
+
+def _footer_text_html(text: str) -> str:
+    """Escape the footer text, linking the word pagekit to the repo."""
+    escaped = html.escape(text)
+    link = f'<a href="{REPO_URL}" target="_blank" rel="noopener">pagekit</a>'
+    return re.sub(r"\bpagekit\b", link, escaped, count=1)
+
+
 def _footer_html(profile: Profile, updated: str = "") -> str:
     footer_text = str(profile.config.get("footer", ""))
     copyright_holder = str(profile.config.get("copyright", ""))
@@ -329,7 +339,7 @@ def _footer_html(profile: Profile, updated: str = "") -> str:
     return (
         '<footer class="pk-footer" data-pk-ignore>\n'
         '<div class="pk-bar"><div class="pk-footer-meta">'
-        f"<span>{html.escape(footer_text)}</span>"
+        f"<span>{_footer_text_html(footer_text)}</span>"
         f"{copyright_html}"
         f"{updated_html}</div>\n"
         '<span id="pk-export-status" class="pk-visually-hidden" role="status"></span>\n'
@@ -565,7 +575,7 @@ def check_page(profile: Profile, page: Page) -> CheckResult:
         errors.append("no dark-mode styles: the profile theme is not in the page")
     if not (scan.export_button and "pagekit-meta" in document and "window.pagekit" in document):
         errors.append("export button or script missing")
-    footer_text = html.escape(str(profile.config.get("footer", "")))
+    footer_text = _footer_text_html(str(profile.config.get("footer", "")))
     if footer_text and footer_text not in document:
         errors.append(f"required footer text missing: {footer_text}")
 

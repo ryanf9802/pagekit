@@ -378,7 +378,7 @@ def test_builtin_pages_carry_the_pagekit_brand(home: Path) -> None:
     assert re.search(r'class="pk-wordmark" src="[^"]+" alt="pagekit"', document)
     assert 'class="pk-logo-print"' in document
     assert '<link rel="icon" href="data:image/svg+xml' in document
-    assert "Made with pagekit" in document
+    assert "Made with <a href=\"https://github.com/ryanf9802/pagekit\"" in document
 
 
 def test_a_read_only_profile_hides_the_copy_button_and_comments(home: Path) -> None:
