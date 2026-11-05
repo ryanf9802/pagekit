@@ -743,11 +743,11 @@ def test_check_command_can_point_into_its_profile(home: Path) -> None:
     init_profile(directory, "repo", "builtin", "Acme")
     (directory / "checks").mkdir()
     script = directory / "checks" / "lint.py"
-    script.write_text('import sys\nprint("checked " + sys.argv[0])\nsys.exit(1)\n')
+    script.write_text('import sys\nprint("the script in the profile ran")\nsys.exit(1)\n')
     (directory / "profile.toml").write_text(
         'name = "repo"\nextends = "builtin"\n[checks]\ncommand = ["python3", "{profile}/checks/lint.py"]\n'
     )
     profile = load_profile(directory.parent.parent)
     page = make(profile)
-    assert f"checked {script.resolve()}" in errors(profile, page)
+    assert "the script in the profile ran" in errors(profile, page)
 
