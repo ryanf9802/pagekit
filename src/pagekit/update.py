@@ -81,7 +81,8 @@ def _restart_server() -> str:
 
 def update(root: Path | None = None) -> UpdateResult:
     clone = _require_clone(root or clone_dir())
-    if _git(clone, "status", "--porcelain"):
+    # Untracked files are left alone by a pull, and agent worktrees often sit inside a clone.
+    if _git(clone, "status", "--porcelain", "--untracked-files=no"):
         raise UpdateError(f"{clone} has uncommitted changes: commit or discard them, then update again")
     branch = _git(clone, "rev-parse", "--abbrev-ref", "HEAD")
     if branch != BRANCH:

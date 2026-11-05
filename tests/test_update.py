@@ -92,11 +92,21 @@ def test_uncommitted_changes_stop_the_update_and_stay(repos) -> None:
     author, clone = repos
     commit(author, "a.txt", "x", "add a feature")
     git(author, "push", "-q", "origin", "main")
-    (clone / "mine.txt").write_text("keep")
+    (clone / "pyproject.toml").write_text("mine")
     before = git(clone, "rev-parse", "HEAD")
     with pytest.raises(UpdateError, match="uncommitted"):
         update()
-    assert (clone / "mine.txt").read_text() == "keep" and git(clone, "rev-parse", "HEAD") == before
+    assert (clone / "pyproject.toml").read_text() == "mine" and git(clone, "rev-parse", "HEAD") == before
+
+
+def test_untracked_files_such_as_agent_worktrees_do_not_stop_the_update(repos) -> None:
+    author, clone = repos
+    commit(author, "a.txt", "x", "add a feature")
+    git(author, "push", "-q", "origin", "main")
+    (clone / ".claude" / "worktrees").mkdir(parents=True)
+    (clone / ".claude" / "worktrees" / "note.txt").write_text("keep")
+    assert update().commits == ["add a feature"]
+    assert (clone / ".claude" / "worktrees" / "note.txt").read_text() == "keep"
 
 
 def test_another_branch_stops_the_update(repos, capsys) -> None:
