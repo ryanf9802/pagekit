@@ -85,8 +85,14 @@ hand, see [Profiles](docs/profiles.md).
 
 ## Stay up to date
 
-Ask your agent to "update pagekit", or run `pagekit update`. Either way pulls in new components and features, and you
-see what changed.
+Ask your agent to "update pagekit", or run `pagekit update`, and you see what changed. An update might bring:
+
+- New core components and generated tags
+- Agent instructions that use fewer tokens
+- Smaller, cleaner PDFs
+- Design and print improvements, and bug fixes
+
+Pages you have already built keep their look until you rebuild them.
 
 ## Documentation
 
