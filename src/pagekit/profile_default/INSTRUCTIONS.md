@@ -14,6 +14,7 @@
 - Use icons, never hand-drawn SVG, emoji, or CSS background images: `<i data-icon="NAME"></i>`. Find
   one with `pagekit icons WORD`. Add `tone="blue"` for color (blue, purple, green, teal, orange,
   success, warning, danger, accent, muted), and `aria-label="..."` when it stands alone with no text.
+  The build turns it into `<svg class="pk-icon">`, so component CSS targets `.pk-icon`, not the `<i>`.
 - Reference images as `assets/<file>`. Delete assets you stop using.
 - Every form control needs a stable, unique `name` that says what it answers, keyed
   to the item it belongs to (`F-01.decision`, `F-01.notes`). Answers come back to

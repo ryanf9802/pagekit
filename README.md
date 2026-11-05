@@ -111,7 +111,8 @@ pagekit icons WORD                                        search by name or tag
 ```
 
 An unknown name or tone fails the build. Tones are blue, purple, green, teal, orange, success, warning,
-danger, accent, and muted, and follow light and dark.
+danger, accent, and muted, and follow light and dark. The build turns the tag into
+`<svg class="pk-icon">`, so component CSS targets `.pk-icon`, not `i[data-icon]`.
 
 A profile adds its own icons as `icons/NAME.svg`, used the same way and taking priority over Lucide. They
 can be multicolor, with gradients and simple `.class` styles, which are namespaced so they cannot collide.
