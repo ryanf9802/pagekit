@@ -90,6 +90,7 @@ so collect them first. A rebuild with unchanged content keeps them.
 
 ## Sharing and keeping
 
+- `pagekit pdf <slug>` writes a bookmarked PDF, and served pages have a **Download PDF** button.
 - `pagekit pack <slug>` writes one self-contained file. `pagekit send <slug>` puts that file
   in the dropbucket.
 - Pages are deleted 30 days after their last update. When the user says to save or keep a

@@ -163,7 +163,7 @@
   }
 
   /* Answers survive a reload and a restyle. Changed content is a new round, so it starts clean. */
-  function persist() {
+  function snapshot() {
     var state = {};
     elements().forEach(function (el) {
       var name = nameOf(el);
@@ -174,17 +174,22 @@
         state[name] = Array.prototype.map.call(el.selectedOptions, function (o) { return o.value; });
       } else if (el.type !== "file") state[name] = el.value;
     });
+    return state;
+  }
+
+  function persist() {
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      localStorage.setItem(STORE_KEY, JSON.stringify(snapshot()));
     } catch (err) {
       /* Storage can be blocked; the page still works. */
     }
   }
 
   function restore() {
-    var state;
+    /* A generated PDF has no browser storage, so the server hands it the answers directly. */
+    var state = window.pagekitPrintState || null;
     try {
-      state = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+      state = state || JSON.parse(localStorage.getItem(STORE_KEY) || "null");
     } catch (err) {
       return;
     }
@@ -489,6 +494,47 @@
     closedForPrint = [];
   });
 
+  /* The server can build a bookmarked PDF, including answers typed on this page. */
+  function addPdfButton(bar, before) {
+    var parts = location.pathname.split("/");
+    if (parts[1] !== "p") return;
+    fetch("/api/pdf").then(function (r) { return r.json(); }).then(function (info) {
+      if (!info.available) return;
+      var pdf = document.createElement("button");
+      pdf.type = "button";
+      pdf.className = "pk-pdf";
+      pdf.textContent = "Download PDF";
+      bar.insertBefore(pdf, before);
+      pdf.addEventListener("click", function () {
+        pdf.disabled = true;
+        pdf.textContent = "Generating...";
+        fetch("/api/pdf/" + parts[2] + "/" + parts[3], {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(snapshot()),
+        }).then(function (response) {
+          if (!response.ok) throw new Error("PDF failed");
+          return response.blob();
+        }).then(function (blob) {
+          var link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = parts[3] + ".pdf";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(function () { URL.revokeObjectURL(link.href); }, 10000);
+          pdf.textContent = "Download PDF";
+        }).catch(function () {
+          pdf.textContent = "PDF failed, try again";
+        }).finally(function () {
+          pdf.disabled = false;
+        });
+      });
+    }).catch(function () {
+      /* No button without a server that can make PDFs. */
+    });
+  }
+
   /* A way back to the index, only when served by pagekit: a downloaded copy has no index. */
   var headerBar = document.querySelector(".pk-header .pk-bar");
   if (headerBar && /^https?:$/.test(location.protocol) && /^\/(p|saved)\//.test(location.pathname)) {
@@ -499,6 +545,7 @@
     /* Answers are saved in the browser and this stays in the same tab, so no prompt. */
     home.addEventListener("click", function () { leavingForIndex = true; });
     headerBar.appendChild(home);
+    addPdfButton(headerBar, home);
   }
 
   /* The header shows the page title once the main heading has scrolled away. */

@@ -165,6 +165,14 @@ not count as a change.
 Served pages show an **All pages** link on the right of the header, back to the index. A
 downloaded, packed, or saved copy has no index, so it has no link. The link does not print.
 
+## Bookmarked PDFs
+
+The browser's print dialog does not add bookmarks. On a served page, **Download PDF** in the header
+builds a tagged PDF with bookmarks from the page's headings, including answers typed on the page, and
+`pagekit pdf SLUG [--out FILE]` does the same from the command line. Both use a local Chrome or
+Chromium (`$PAGEKIT_CHROME` overrides the search); with none found, the button does not appear.
+Tagging makes these PDFs larger than Ctrl+P output.
+
 ## Printing
 
 Pages print in light colors, with the header and footer repeated on every sheet, page

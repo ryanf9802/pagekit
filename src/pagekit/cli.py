@@ -30,6 +30,7 @@ from .pages import (
     send_page,
     server_running,
 )
+from .pdf import render_pdf
 from .profiles import (
     PROFILE_SUBDIR,
     Profile,
@@ -115,6 +116,13 @@ def cmd_pack(args) -> int:
 
 def cmd_send(args) -> int:
     print(send_page(load_page(_profile(args), args.slug)))
+    return 0
+
+
+def cmd_pdf(args) -> int:
+    page = load_page(_profile(args), args.slug)
+    target = Path(args.out).expanduser() if args.out else page.dir / f"{page.slug}.pdf"
+    print(render_pdf(page, target))
     return 0
 
 
@@ -268,6 +276,8 @@ def build_parser() -> argparse.ArgumentParser:
     page_command("check", cmd_check, "run the checks only")
     page_command("pack", cmd_pack, "write one self-contained HTML file and print its path")
     page_command("send", cmd_send, "pack the page and hand it to the user through dropbucket")
+    p = page_command("pdf", cmd_pdf, "write a bookmarked, tagged PDF with headless Chromium")
+    p.add_argument("--out", help="where to write it (default: beside the page)")
     page_command("save", cmd_save, "keep the page: copy it to the profile's save location and pin the working copy")
 
     p = sub.add_parser("ls", help="list pages, newest first")
