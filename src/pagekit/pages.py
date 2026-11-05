@@ -273,7 +273,7 @@ def _data_uri(path: Path) -> str:
     return f"data:{mime};base64,{base64.b64encode(path.read_bytes()).decode()}"
 
 
-def _logo_html(profile: Profile, brand: str) -> str:
+def logo_html(profile: Profile, brand: str) -> str:
     logo = profile.brand_file("logo.svg")
     dark = profile.brand_file("logo-dark.svg")
     wordmark = profile.brand_file("wordmark.svg")
@@ -358,7 +358,7 @@ def build_page(profile: Profile, page: Page) -> None:
         "title": title,
         "summary": f'<p class="pk-summary">{html.escape(summary)}</p>' if summary else "",
         "brand": html.escape(brand),
-        "logo": _logo_html(profile, brand),
+        "logo": logo_html(profile, brand),
     }
     if page.meta.get("mode") == "free":
         for required in ("{{head}}", "{{footer}}"):

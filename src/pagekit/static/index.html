@@ -10,22 +10,25 @@
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#16181c">
 <style>
 {{theme}}
-.ix-brand { display: flex; align-items: center; gap: 10px; }
-.ix-brand img { width: 1em; height: 1em; }
+.pk-header .pk-logo { width: 30px; height: 30px; }
+.pk-header .pk-wordmark { height: 20px; }
 .ix-controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
 .ix-controls input { flex: 1 1 220px; }
 .ix-controls select { flex: 0 1 180px; }
 .ix-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .ix-item a { display: block; padding: 12px 16px; color: inherit; text-decoration: none; background: var(--pk-surface); border: 1px solid var(--pk-border); border-radius: var(--pk-radius); }
 .ix-item a:hover { border-color: var(--pk-accent); }
+.ix-item a:hover .ix-title { color: var(--pk-accent); }
 .ix-title { font-weight: 600; overflow-wrap: anywhere; }
 .ix-summary { color: var(--pk-muted); margin-top: 2px; overflow-wrap: anywhere; }
 .ix-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; color: var(--pk-muted); font-size: 0.8125rem; }
 </style>
 </head>
 <body>
+<header class="pk-header"><div class="pk-bar">{{logo}}</div></header>
 <main class="pk-main">
-<h1 class="ix-brand"><img src="{{mark}}" alt="">pagekit</h1>
+<h1>Your pages</h1>
+<p class="pk-summary" id="count"></p>
 <div class="ix-controls">
   <input id="q" type="search" placeholder="Search pages" aria-label="Search pages">
   <select id="profile" aria-label="Filter by profile"><option value="">All profiles</option></select>
@@ -40,6 +43,7 @@
   var q = document.getElementById("q");
   var profile = document.getElementById("profile");
   var empty = document.getElementById("empty");
+  var count = document.getElementById("count");
 
   function date(value) {
     var d = typeof value === "number" ? new Date(value * 1000) : new Date(value);
@@ -85,6 +89,8 @@
       return li;
     }));
     empty.hidden = shown.length > 0;
+    var noun = pages.length === 1 ? " page" : " pages";
+    count.textContent = (shown.length === pages.length ? "" : shown.length + " of ") + pages.length + noun;
   }
 
   function load() {
