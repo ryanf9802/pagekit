@@ -216,6 +216,14 @@
     });
   }
 
+  /* Browsers without CSS field-sizing still get text boxes that grow as you type. */
+  function fitTextarea(area) {
+    if (area.tagName !== "TEXTAREA" || (window.CSS && CSS.supports("field-sizing", "content"))) return;
+    area.style.height = "auto";
+    var border = area.offsetHeight - area.clientHeight;
+    area.style.height = area.scrollHeight + border + "px";
+  }
+
   /* Comments on item IDs: any .pk-id opens a floating box. Stored like answers, so changed
      content resets them too. The same ID appearing twice shares one comment. */
   var COMMENT_KEY = STORE_KEY + ":comments";
@@ -314,7 +322,9 @@
     commentTitle.textContent = "Comment on " + id;
     commentBox.setAttribute("aria-label", "Comment on " + id);
     commentArea.value = comments[id] || "";
+    commentArea.rows = 1;
     commentBox.hidden = false;
+    fitTextarea(commentArea);
     var rect = el.getBoundingClientRect();
     var width = commentBox.offsetWidth;
     var height = commentBox.offsetHeight;
@@ -470,6 +480,11 @@
     }
   });
 
+  Array.prototype.forEach.call(document.querySelectorAll("textarea"), function (area) {
+    area.rows = 1;
+    fitTextarea(area);
+  });
+  document.addEventListener("input", function (event) { fitTextarea(event.target); });
   document.addEventListener("input", persist);
   document.addEventListener("change", persist);
   document.addEventListener("toggle", persist, true);

@@ -215,7 +215,14 @@ input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]), se
 input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]):focus,
 select:focus,
 textarea:focus { border-color: var(--pk-accent); outline: 1px solid var(--pk-accent); outline-offset: 0; }
-textarea { display: block; min-height: 44px; resize: vertical; }
+/* Starts one line tall, grows with what is typed, then scrolls. No drag handle. */
+textarea {
+  display: block;
+  field-sizing: content;
+  max-height: 14rem;
+  overflow-y: auto;
+  resize: none;
+}
 label { font-weight: 500; }
 input, progress { accent-color: var(--pk-accent); }
 .pk-field { display: grid; gap: 2px; margin: 8px 0 0; }
@@ -431,7 +438,7 @@ details > :last-child { margin-bottom: 0; }
     padding-bottom: max(12px, env(safe-area-inset-bottom));
     transition: bottom 100ms ease-out;
   }
-  .pk-comment textarea { min-height: 88px; font-size: 16px; }
+  .pk-comment textarea { font-size: 16px; }
   .pk-comment-done { min-width: 44px; min-height: 44px; margin: -8px -6px -8px 0; font-size: 1rem; }
   .pk-choices label, label.pk-choices { width: 100%; }
 }
@@ -539,7 +546,8 @@ details > :last-child { margin-bottom: 0; }
   thead { display: table-header-group; }
   th { white-space: normal; }
   pre { overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; }
-  textarea { field-sizing: content; resize: none; }
+  /* Paper cannot scroll, so printed answers show in full. */
+  textarea { max-height: none; overflow: visible; }
   .pk-figure img { max-height: 180mm; width: auto; }
   .pk-main a[href^="http"]::after { content: " (" attr(href) ")"; color: var(--pk-muted); font-size: 0.85em; overflow-wrap: anywhere; }
 }
