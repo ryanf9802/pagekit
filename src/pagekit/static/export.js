@@ -617,6 +617,150 @@
   matchBarColor();
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", matchBarColor);
 
+  /* Tap any image or diagram for a full-screen preview. Built on the native dialog, which
+     handles focus, Esc, and stacking above the sticky bars. */
+  var PREVIEWABLE = "main img, .pk-diagram svg";
+  var preview = null;
+  var previewItems = [];
+  var previewIndex = 0;
+  var previewPushedHistory = false;
+  var previewClosingFromHistory = false;
+
+  function previewCaption(item) {
+    var figure = item.closest("figure");
+    var caption = figure && figure.querySelector("figcaption");
+    return (caption && caption.textContent.trim()) || item.getAttribute("alt") || "";
+  }
+
+  function showPreviewItem(index) {
+    previewIndex = (index + previewItems.length) % previewItems.length;
+    var item = previewItems[previewIndex];
+    var stage = preview.querySelector(".pk-preview-stage");
+    var copy = item.cloneNode(true);
+    /* A copy must not repeat the original's ids, or labels would point at the wrong element. */
+    copy.removeAttribute("id");
+    copy.removeAttribute("tabindex");
+    copy.removeAttribute("loading");
+    copy.removeAttribute("aria-labelledby");
+    copy.classList.remove("pk-previewable");
+    copy.classList.add("pk-preview-item");
+    Array.prototype.forEach.call(copy.querySelectorAll("title[id], desc[id]"), function (el) { el.removeAttribute("id"); });
+    if (item.tagName !== "IMG") copy.setAttribute("aria-label", previewCaption(item));
+    stage.classList.remove("pk-preview-zoomed");
+    stage.classList.toggle("pk-preview-drawing", item.tagName !== "IMG");
+    stage.replaceChildren(copy);
+    stage.scrollTo(0, 0);
+    preview.querySelector(".pk-preview-caption").textContent = previewCaption(item);
+    preview.querySelector(".pk-preview-count").textContent = previewItems.length > 1 ? previewIndex + 1 + " of " + previewItems.length : "";
+    preview.classList.toggle("pk-preview-single", previewItems.length < 2);
+  }
+
+  function togglePreviewZoom(event) {
+    var stage = preview.querySelector(".pk-preview-stage");
+    var item = stage.firstElementChild;
+    var rect = item.getBoundingClientRect();
+    var x = (event.clientX - rect.left) / rect.width;
+    var y = (event.clientY - rect.top) / rect.height;
+    stage.classList.toggle("pk-preview-zoomed");
+    if (stage.classList.contains("pk-preview-zoomed")) {
+      /* Keep the tapped spot under the finger. */
+      var zoomed = item.getBoundingClientRect();
+      stage.scrollLeft = x * zoomed.width - stage.clientWidth / 2;
+      stage.scrollTop = y * zoomed.height - stage.clientHeight / 2;
+    }
+  }
+
+  function buildPreview() {
+    preview = document.createElement("dialog");
+    preview.className = "pk-preview";
+    preview.setAttribute("aria-label", "Image preview");
+    preview.setAttribute("data-pk-ignore", "");
+    preview.innerHTML =
+      '<div class="pk-preview-bar"><span class="pk-preview-count"></span>' +
+      '<button type="button" class="pk-preview-close" aria-label="Close preview"><i data-icon="x"></i></button></div>' +
+      '<div class="pk-preview-stage"></div>' +
+      '<button type="button" class="pk-preview-nav pk-preview-prev" aria-label="Previous image"><i data-icon="chevron-left"></i></button>' +
+      '<button type="button" class="pk-preview-nav pk-preview-next" aria-label="Next image"><i data-icon="chevron-right"></i></button>' +
+      '<p class="pk-preview-caption"></p>';
+    document.body.appendChild(preview);
+    preview.querySelector(".pk-preview-close").addEventListener("click", function () { preview.close(); });
+    preview.querySelector(".pk-preview-prev").addEventListener("click", function () { showPreviewItem(previewIndex - 1); });
+    preview.querySelector(".pk-preview-next").addEventListener("click", function () { showPreviewItem(previewIndex + 1); });
+    var stage = preview.querySelector(".pk-preview-stage");
+    /* The image zooms, the buttons do their jobs, and a tap anywhere else closes. */
+    preview.addEventListener("click", function (event) {
+      if (event.target.closest(".pk-preview-item")) togglePreviewZoom(event);
+      else if (!event.target.closest("button")) preview.close();
+    });
+    preview.addEventListener("keydown", function (event) {
+      if (event.key === "ArrowLeft") showPreviewItem(previewIndex - 1);
+      if (event.key === "ArrowRight") showPreviewItem(previewIndex + 1);
+    });
+    var swipeStart = null;
+    stage.addEventListener("touchstart", function (event) {
+      swipeStart = event.touches.length === 1 ? event.touches[0].clientX : null;
+    }, { passive: true });
+    stage.addEventListener("touchend", function (event) {
+      var pinched = window.visualViewport && window.visualViewport.scale > 1.01;
+      if (swipeStart === null || pinched || stage.classList.contains("pk-preview-zoomed") || previewItems.length < 2) return;
+      var moved = event.changedTouches[0].clientX - swipeStart;
+      if (Math.abs(moved) > 50) showPreviewItem(previewIndex + (moved < 0 ? 1 : -1));
+    }, { passive: true });
+    /* Android's back button closes the preview rather than leaving the page. */
+    preview.addEventListener("close", function () {
+      preview.querySelector(".pk-preview-stage").replaceChildren();
+      if (previewPushedHistory && !previewClosingFromHistory) history.back();
+      previewPushedHistory = false;
+      previewClosingFromHistory = false;
+    });
+    window.addEventListener("popstate", function () {
+      if (preview.open) {
+        previewClosingFromHistory = true;
+        preview.close();
+      }
+    });
+  }
+
+  function openPreview(item) {
+    if (!preview) buildPreview();
+    previewItems = Array.prototype.slice.call(document.querySelectorAll(PREVIEWABLE)).filter(function (el) {
+      return !el.closest("a");
+    });
+    showPreviewItem(Math.max(previewItems.indexOf(item), 0));
+    preview.showModal();
+    try {
+      history.pushState({ pkPreview: true }, "");
+      previewPushedHistory = true;
+    } catch (err) {
+      previewPushedHistory = false;
+    }
+  }
+
+  function previewableFrom(target) {
+    var item = target.closest && target.closest(PREVIEWABLE);
+    return item && !item.closest("a") && !item.closest(".pk-preview") ? item : null;
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll(PREVIEWABLE), function (item) {
+    if (item.closest("a")) return;
+    item.setAttribute("tabindex", "0");
+    item.classList.add("pk-previewable");
+  });
+  document.addEventListener("click", function (event) {
+    var item = previewableFrom(event.target);
+    if (item) openPreview(item);
+  });
+  document.addEventListener("keydown", function (event) {
+    var item = (event.key === "Enter" || event.key === " ") && previewableFrom(event.target);
+    if (item) {
+      event.preventDefault();
+      openPreview(item);
+    }
+  });
+  window.addEventListener("beforeprint", function () {
+    if (preview && preview.open) preview.close();
+  });
+
   /* The header shows the page title once the main heading has scrolled away. */
   var heading = document.querySelector("h1");
   if (heading && window.IntersectionObserver) {

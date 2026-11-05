@@ -160,8 +160,8 @@ def test_profile_fonts_are_embedded_before_the_theme(home: Path) -> None:
 def test_header_action_icons_are_embedded_in_the_page_script(home: Path) -> None:
     document = make(load_profile()).index.read_text()
     assert 'data-icon="download"' not in document and 'data-icon="layout-grid"' not in document
-    assert document.count('class="pk-icon"') == 2
     assert "viewport-fit=cover" in document
+    assert '<i data-icon' not in document
 
 
 def test_title_is_escaped(home: Path) -> None:

@@ -398,7 +398,7 @@ td > .pk-choices, th > .pk-choices { margin: -3px 0; }
 .pk-diagram-tone-accent :is(rect, circle, ellipse, polygon, path) { fill: var(--pk-surface-2); stroke: var(--pk-accent); }
 .pk-diagram-tone-danger :is(rect, circle, ellipse, polygon, path) { stroke: var(--pk-danger); }
 .pk-diagram-tone-muted :is(rect, circle, ellipse, polygon, path) { stroke-dasharray: 4 3; }
-.pk-diagram text, .pk-diagram tspan { fill: var(--pk-text); stroke: none; }
+:is(.pk-diagram, .pk-preview-drawing) :is(text, tspan) { fill: var(--pk-text); stroke: none; }
 .pk-diagram-flowchart-link { fill: none; stroke: var(--pk-muted); stroke-width: 1; }
 .pk-diagram-edge-thickness-thick { stroke-width: 2; }
 .pk-diagram-edge-pattern-dashed { stroke-dasharray: 5 3; }
@@ -407,8 +407,8 @@ td > .pk-choices, th > .pk-choices { margin: -3px 0; }
 .pk-diagram-marker.pk-diagram-cross { stroke-width: 1; }
 .pk-diagram-edgeLabel rect { fill: var(--pk-surface); stroke: none; opacity: 1; }
 /* Mermaid draws label text as HTML inside the SVG. */
-.pk-diagram foreignObject div { display: table-cell; max-width: 420px; color: var(--pk-text); line-height: 1.5; text-align: center; white-space: nowrap; }
-.pk-diagram foreignObject p { margin: 0; }
+:is(.pk-diagram, .pk-preview-drawing) foreignObject div { display: table-cell; max-width: 420px; color: var(--pk-text); line-height: 1.5; text-align: center; white-space: nowrap; }
+:is(.pk-diagram, .pk-preview-drawing) foreignObject p { margin: 0; }
 .pk-diagram-edgeLabel p { background: var(--pk-surface); }
 .pk-diagram-note { margin: 8px 0 0; color: var(--pk-muted); font-size: 0.8125rem; line-height: 1.4; }
 
@@ -489,6 +489,58 @@ details > :last-child { margin-bottom: 0; }
   .pk-comment-done { min-width: 44px; min-height: 44px; margin: -8px -6px -8px 0; font-size: 1rem; }
   .pk-choices label, label.pk-choices { width: 100%; }
 }
+/* Full-screen preview. Always dark, whatever the page's theme, so images stand out. */
+.pk-previewable { cursor: zoom-in; }
+html:has(.pk-preview[open]) { overflow: hidden; }
+.pk-preview {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  background: #0b0c0f;
+  border: 0;
+  color: #f2f3f5;
+}
+.pk-preview[open] { display: flex; flex-direction: column; }
+.pk-preview::backdrop { background: #0b0c0f; }
+.pk-preview-bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: max(4px, env(safe-area-inset-top)) 8px 4px 16px;
+  font-size: 0.875rem;
+}
+.pk-preview button { display: inline-flex; align-items: center; justify-content: center; padding: 0; background: none; border: 0; border-radius: 50%; color: inherit; cursor: pointer; }
+.pk-preview button:hover { background: rgb(255 255 255 / 12%); }
+.pk-preview .pk-icon { width: 24px; height: 24px; }
+.pk-preview-close { width: 44px; height: 44px; }
+.pk-preview-stage {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 8px;
+  touch-action: pan-x pan-y pinch-zoom;
+}
+.pk-preview-item { flex: none; max-width: 100%; max-height: 100%; margin: auto; cursor: zoom-in; }
+img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
+.pk-preview-stage svg.pk-preview-item { width: 100%; height: auto; max-width: 100%; min-width: 0; padding: 16px; background: var(--pk-surface); border-radius: var(--pk-radius-small); fill: var(--pk-text); font-family: var(--pk-font); font-size: 15px; }
+.pk-preview-zoomed { align-items: flex-start; justify-content: flex-start; }
+.pk-preview-zoomed .pk-preview-item { max-width: none; max-height: none; margin: 0; cursor: zoom-out; }
+.pk-preview-zoomed svg.pk-preview-item { width: 220%; height: auto; max-width: none; }
+.pk-preview-nav { position: absolute; top: 50%; width: 44px; height: 44px; margin-top: -22px; background: rgb(0 0 0 / 45%) !important; }
+.pk-preview-prev { left: 8px; }
+.pk-preview-next { right: 8px; }
+.pk-preview-single .pk-preview-nav { display: none; }
+.pk-preview-caption { flex: none; margin: 0; padding: 10px 16px max(12px, env(safe-area-inset-bottom)); color: #c7cad1; font-size: 0.875rem; text-align: center; }
+.pk-preview-caption:empty { display: none; }
+
 /* Phones. Screen only, so it never reaches print. */
 @media screen and (max-width: 640px) {
   /* Keeps diagram text readable: a wide diagram scrolls inside its card instead of shrinking. */
@@ -506,6 +558,8 @@ details > :last-child { margin-bottom: 0; }
   .pk-bars-hidden .pk-footer { transform: translateY(100%); }
   #pk-export { min-height: 40px; }
   .pk-comment-count { min-height: 40px; }
+  /* Swiping moves between images here, and arrows would cover them. */
+  .pk-preview-nav { display: none; }
   /* A small ID keeps its look, with a thumb-sized area around it. */
   .pk-id[role="button"] { position: relative; }
   .pk-id[role="button"]::before { content: ""; position: absolute; inset: -13px -8px; }
@@ -578,7 +632,7 @@ details > :last-child { margin-bottom: 0; }
     line-height: 1.2;
   }
   .pk-footer .pk-bar { display: block; }
-  .pk-footer .pk-button, #pk-export-status, .pk-export-fallback, .pk-comment, .pk-comment-count, .pk-home, .pk-pdf { display: none; }
+  .pk-footer .pk-button, #pk-export-status, .pk-export-fallback, .pk-comment, .pk-comment-count, .pk-home, .pk-pdf, .pk-preview { display: none; }
   .pk-has-comment { color: var(--pk-muted); }
   .pk-has-comment::after { display: none; }
   .pk-main { display: table-row-group; }

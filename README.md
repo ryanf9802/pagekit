@@ -181,6 +181,12 @@ a page asks first when it has answers or comments that have not been copied. Bro
 let a page cancel Ctrl+W itself, so this prompt is the guard. Opening a collapsed section does
 not count as a change.
 
+## Previewing images
+
+Any image or diagram in a page opens full screen when clicked or tapped, with no setup. Tap again to
+zoom, use the arrows or swipe to move between them, and press Esc, the close button, or the phone's back
+button to leave. Images inside a link keep following the link.
+
 ## Getting around
 
 Served pages show an **All pages** link on the right of the header, back to the index. A
