@@ -1,6 +1,6 @@
 {
-  "name": "Pages",
-  "short_name": "Pages",
+  "name": "pagekit",
+  "short_name": "pagekit",
   "description": "Your pagekit pages",
   "start_url": "/",
   "scope": "/",
