@@ -207,7 +207,8 @@ def load_page(profile: Profile, slug: str) -> Page:
     return load_page_dir(_page_dir(profile.name, slug))
 
 
-_SLOTS_SCAFFOLD = """<!-- Page body only. The profile adds the header, title, theme, and footer. -->
+_SLOTS_SCAFFOLD = """<!-- Page body only. The profile adds the header, title, theme, and footer.
+     The title is already the page's <h1>, so start at <h2>. -->
 <section class="pk-section">
   <h2>Section</h2>
   <p>Content goes here.</p>

@@ -26,6 +26,8 @@ _CSS_URL_RE = re.compile(r"url\([^)]*\)")
 _HARD_COLOR_RE = re.compile(r"#[0-9a-fA-F]{3,8}\b|\b(?:rgb|rgba|hsl|hsla|oklch|lab|lch)\(")
 _INLINE_STYLE_RE = re.compile(r"<[^>]*\sstyle\s*=", re.IGNORECASE)
 _STYLE_TAG_RE = re.compile(r"<style\b", re.IGNORECASE)
+_HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
+_H1_RE = re.compile(r"<h1[\s>]", re.IGNORECASE)
 _FIRST_COMMENT_RE = re.compile(r"\s*<!--\s*(.*?)\s*-->", re.DOTALL)
 _GIT_TIMEOUT_SECONDS = 20
 
@@ -208,8 +210,10 @@ def library_classes(profile: Profile) -> set[str]:
 
 
 def consistency_warnings(profile: Profile, document: str) -> list[str]:
-    """Styling that bypasses the shared components. Warnings, so one-off fixes are not blocked."""
+    """Content that bypasses the shared shell and components. Warnings, so one-off fixes are not blocked."""
     warnings = []
+    if _H1_RE.search(_HTML_COMMENT_RE.sub("", document)):
+        warnings.append("content.html has an <h1>: the header already shows the page title. Remove it and start at <h2>.")
     inline = len(_INLINE_STYLE_RE.findall(document))
     if inline:
         warnings.append(f"{inline} inline style(s): use a component, or save a new one with pagekit component add")
