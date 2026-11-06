@@ -74,7 +74,6 @@ def _print_profile_header(profile: Profile) -> None:
 
 def _print_rules(profile: Profile) -> None:
     _print_other_profiles(profile)
-    print("theme tokens: " + ", ".join(profile.tokens()))
     print("components (pagekit component show NAME):")
     for component in list_components(profile):
         print(f"  {component.name}: {component.when}")
@@ -83,6 +82,10 @@ def _print_rules(profile: Profile) -> None:
         print("\n--- profile instructions ---")
         print(instructions)
         print("--- end instructions ---")
+
+
+def _tokens_line(profile: Profile) -> str:
+    return "theme tokens: " + ", ".join(profile.tokens())
 
 
 def _print_other_profiles(profile: Profile) -> None:
@@ -143,7 +146,11 @@ def cmd_new(args) -> int:
 
 
 def cmd_rules(args) -> int:
-    _print_rules(_profile(args))
+    profile = _profile(args)
+    if args.tokens:
+        print(_tokens_line(profile))
+    else:
+        _print_rules(profile)
     return 0
 
 
@@ -446,7 +453,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true")
     p.set_defaults(fn=cmd_prune)
 
-    p = sub.add_parser("rules", help="print the theme tokens, components, and profile instructions that new prints")
+    p = sub.add_parser("rules", help="print the components and profile instructions that new prints")
+    p.add_argument("--tokens", action="store_true", help="print only the theme tokens, for writing a component")
     p.add_argument("--profile", help=profile_help)
     p.set_defaults(fn=cmd_rules)
 
@@ -474,7 +482,11 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("name")
     q.add_argument("--profile", help=profile_help)
     q.set_defaults(fn=cmd_component_show)
-    q = component.add_parser("add", help="save a new component to the library")
+    q = component.add_parser(
+        "add",
+        help="save a new component to the library",
+        description="Save a new component to the library. Run `pagekit rules --tokens` for the theme tokens its styles may use.",
+    )
     q.add_argument("name")
     q.add_argument("--when", required=True, help="one line on when to use it")
     q.add_argument("--from", dest="source", required=True, help="folder with component.html and optional component.css")
