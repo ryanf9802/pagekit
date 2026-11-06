@@ -21,6 +21,7 @@ from .pages import (
     Page,
     PageError,
     build_page,
+    build_version,
     check_page,
     iter_pages,
     list_saved,
@@ -34,6 +35,7 @@ from .pages import (
     send_page,
     server_running,
     set_public_url,
+    stale_pages,
 )
 from .tags import outline
 from .pdf import render_pdf
@@ -47,6 +49,7 @@ from .profiles import (
     load_profile,
     local_profile_dir,
     personal_dir,
+    profile_named,
     projects_file,
     register_project,
     repo_profiles,
@@ -147,24 +150,67 @@ def cmd_rules(args) -> int:
     return 0
 
 
-def cmd_build(args) -> int:
-    prune_if_due()
-    profile = _profile(args)
-    page = load_page(profile, args.slug)
+def _build_and_check(profile: Profile, page: Page) -> CheckResult:
+    """Build and check, keeping the last good page when the profile's own check refuses the new one."""
     previous = page.index.read_bytes() if page.index.is_file() else None
     build_page(profile, page)
     result = check_page(profile, page)
     if result.hook_failed:
-        # A page the profile refuses never becomes the live version.
         if previous is None:
             page.index.unlink()
         else:
             page.index.write_bytes(previous)
+    return result
+
+
+def cmd_build(args) -> int:
+    prune_if_due()
+    profile = _profile(args)
+    page = load_page(profile, args.slug)
+    result = _build_and_check(profile, page)
+    if result.hook_failed:
         _print_check(result)
         print("not updated: the profile's check refused this build")
         return 1
     _print_location(page)
     return _print_check(result)
+
+
+def cmd_rebuild(args) -> int:
+    prune_if_due()
+    current = build_version()
+    stale = stale_pages(current)
+    if not stale:
+        print(f"every built page is at version {current}" if current != "unknown" else "this install has no version to compare")
+        return 0
+    verb = "would rebuild" if args.dry_run else "rebuilding"
+    print(f"{len(stale)} page(s) built with another version than {current}: {verb}")
+    failed = skipped = 0
+    for page in stale:
+        label = f"{page.profile}/{page.slug}"
+        if args.dry_run:
+            print(f"  {label}")
+            continue
+        profile = profile_named(page.profile)
+        if profile is None:
+            skipped += 1
+            print(f"  {label}: skipped, profile {page.profile} does not apply here (run from the folder that has it)")
+            continue
+        try:
+            result = _build_and_check(profile, page)
+        except PageError as exc:
+            failed += 1
+            print(f"  {label}: failed, {exc}")
+            continue
+        if result.ok:
+            print(f"  {label}: rebuilt")
+        else:
+            failed += 1
+            kept = "kept the old page" if result.hook_failed else "built, with errors"
+            print(f"  {label}: {kept}, {len(result.errors)} error(s): pagekit check {page.slug} --profile {page.profile}")
+    if not args.dry_run:
+        print(f"rebuilt {len(stale) - failed - skipped}, skipped {skipped}, failed {failed}")
+    return 1 if failed else 0
 
 
 def cmd_check(args) -> int:
@@ -381,7 +427,9 @@ def cmd_update(args) -> int:
         print("restarted the server")
     elif result.server:
         print("the server is still running the old version: restart it")
-    print("pages already built keep their old look until you run pagekit build SLUG")
+    behind = len(stale_pages(build_version()))
+    if behind:
+        print(f"{behind} page(s) were built with an older version and keep their old look: run pagekit rebuild --all")
     return 0
 
 
@@ -429,6 +477,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--summary")
     p.add_argument("--mode", choices=("slots", "free"), default="slots")
     page_command("build", cmd_build, "compose index.html and run the checks")
+    p = sub.add_parser("rebuild", help="rebuild every page built with another version of pagekit")
+    p.add_argument("--all", action="store_true", required=True, help="every stale page, in every profile that applies here")
+    p.add_argument("--dry-run", action="store_true", help="list the pages without rebuilding them")
+    p.set_defaults(fn=cmd_rebuild)
     page_command("check", cmd_check, "run the checks only")
     page_command("outline", cmd_outline, "list a page's headings and item IDs with their line numbers in content.html")
     page_command("pack", cmd_pack, "write one self-contained HTML file and print its path")

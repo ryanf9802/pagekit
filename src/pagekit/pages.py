@@ -331,18 +331,21 @@ def _footer_text_html(text: str) -> str:
     return re.sub(r"\bpagekit\b", link, escaped, count=1)
 
 
-def _footer_html(profile: Profile, updated: str = "") -> str:
+def _footer_html(profile: Profile, updated: str = "", version: str = "") -> str:
     footer_text = str(profile.config.get("footer", ""))
     copyright_holder = str(profile.config.get("copyright", ""))
     copyright_html = f"<span>&copy; {html.escape(copyright_holder)}</span>" if copyright_holder else ""
     updated_html = f"<span>Updated {_display_date(updated)}</span>" if updated else ""
+    # The number alone, so it reads the same under any brand. A profile can leave it out.
+    show_version = version and version != UNKNOWN_VERSION and profile.config.get("version_stamp", True) is not False
+    version_html = f"<span>v{html.escape(version)}</span>" if show_version else ""
     # The button stays hidden until export.js finds something to copy.
     return (
         '<footer class="pk-footer" data-pk-ignore>\n'
         '<div class="pk-bar"><div class="pk-footer-meta">'
         f"<span>{_footer_text_html(footer_text)}</span>"
         f"{copyright_html}"
-        f"{updated_html}</div>\n"
+        f"{updated_html}{version_html}</div>\n"
         '<span id="pk-export-status" class="pk-visually-hidden" role="status"></span>\n'
         f'<button type="button" id="pk-export" class="pk-button" hidden>{COPY_ICON}'
         '<span id="pk-export-label">Copy state</span></button></div>\n'
@@ -351,11 +354,13 @@ def _footer_html(profile: Profile, updated: str = "") -> str:
     )
 
 
-def _shell_values(profile: Profile, head: str, title: str, summary: str, updated: str = "") -> dict[str, str]:
+def _shell_values(
+    profile: Profile, head: str, title: str, summary: str, updated: str = "", version: str = ""
+) -> dict[str, str]:
     brand = str(profile.config.get("brand", ""))
     return {
         "head": head,
-        "footer": _footer_html(profile, updated),
+        "footer": _footer_html(profile, updated, version),
         "title": title,
         "summary": summary,
         "brand": html.escape(brand),
@@ -378,8 +383,19 @@ def render_index(profile: Profile) -> str:
     return expand_icons(_fill_template(profile, values, _asset_text("index.html")), profile)
 
 
+UNKNOWN_VERSION = "unknown"
+
+
+def build_version() -> str:
+    """The pagekit version a build is made with, as `pagekit --version` prints it."""
+    from .update import installed_version  # update.py imports this module, so it cannot be loaded at the top
+
+    return str(installed_version())
+
+
 def build_page(profile: Profile, page: Page) -> None:
     built = _now_iso()
+    version = build_version()
     page.meta["updated"] = built
     page.meta["profile"] = profile.name
     # Read back when generating a PDF, which has only the page to go on.
@@ -395,6 +411,8 @@ def build_page(profile: Profile, page: Page) -> None:
         "profile": profile.name,
         "source": str(page.index),
         "built": built,
+        # Which pagekit made this page, so a later update can tell it is stale.
+        "version": version,
         # Keys saved answers: a style-only rebuild keeps them, a content change resets them.
         "rev": hashlib.sha256(page.content.read_bytes()).hexdigest()[:12],
     }
@@ -409,7 +427,7 @@ def build_page(profile: Profile, page: Page) -> None:
         raise PageError(str(exc)) from exc
     head = _head_html(profile, title, export_meta, library_css_for(source, profile))
     summary_html = f'<p class="pk-summary">{html.escape(summary)}</p>' if summary else ""
-    values = _shell_values(profile, head, title, summary_html, built)
+    values = _shell_values(profile, head, title, summary_html, built, version)
     if page.meta.get("mode") == "free":
         for required in ("{{head}}", "{{footer}}"):
             if required not in source:
@@ -750,8 +768,8 @@ def _save_dir(profile: Profile) -> Path:
     return base / str(save.get("subdir", ""))
 
 
-def _embedded_identity(path: Path) -> tuple[str, str] | None:
-    """The (profile, slug) a packed page was built from, read from its head."""
+def _embedded_meta(path: Path) -> dict | None:
+    """The metadata a built page carries in its head, or None when there is none."""
     with path.open(encoding="utf-8", errors="replace") as handle:
         head = handle.read(8192)
     match = re.search(r'id="pagekit-meta">(.*?)</script>', head)
@@ -761,7 +779,33 @@ def _embedded_identity(path: Path) -> tuple[str, str] | None:
         meta = json.loads(match.group(1))
     except ValueError:
         return None
-    return meta.get("profile", ""), meta.get("slug", "")
+    return meta if isinstance(meta, dict) else None
+
+
+def _embedded_identity(path: Path) -> tuple[str, str] | None:
+    """The (profile, slug) a packed page was built from, read from its head."""
+    meta = _embedded_meta(path)
+    return None if meta is None else (meta.get("profile", ""), meta.get("slug", ""))
+
+
+def stale_pages(current: str) -> list[Page]:
+    """Built pages made with another pagekit version than `current`, including pages built before versions were stamped."""
+    if current == UNKNOWN_VERSION:
+        return []
+    stale = []
+    for page in iter_pages():
+        meta = _embedded_meta(page.index) if page.index.is_file() else None
+        if meta is not None and meta.get("version") != current:
+            stale.append(page)
+    return stale
+
+
+def built_stamp(index: Path) -> dict[str, str] | None:
+    """When a built page was built and a fingerprint of its content, which an open copy compares against."""
+    meta = _embedded_meta(index) if index.is_file() else None
+    if meta is None:
+        return None
+    return {"built": str(meta.get("built", "")), "rev": str(meta.get("rev", ""))}
 
 
 @dataclass

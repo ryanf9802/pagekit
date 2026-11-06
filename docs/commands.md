@@ -10,6 +10,8 @@ pagekit new SLUG --title T [--summary S] [--mode slots|free]
                           the paths and one line, not the rules
 pagekit rules             print the theme tokens, components, and profile instructions again
 pagekit build SLUG        compose index.html, then run the checks
+pagekit rebuild --all [--dry-run]
+                          rebuild every page built with another version of pagekit
 pagekit check SLUG        run the checks only
 pagekit outline SLUG      list the page's headings and item IDs with line numbers in content.html,
                           so an update can be a targeted edit
