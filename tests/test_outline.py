@@ -57,3 +57,43 @@ def test_outline_works_in_free_mode(home, capsys) -> None:
 def test_outline_of_an_unknown_slug_fails(home, capsys) -> None:
     assert main(["outline", "nope", "--profile", "builtin"]) == 1
     assert "nope" in capsys.readouterr().err
+
+
+CARDS = """<h2>Findings</h2>
+<article class="pk-card" id="F-01">
+  <header><span class="pk-id">F-01</span> Title</header>
+</article>
+<article class="pk-card pk-decision" id="D-01">
+  <p><span class="pk-id">D-01</span></p>
+</article>
+<figure id="fig-1">
+  <img src="x.png" alt="">
+  <figcaption><span class="pk-id">fig-1</span> caption</figcaption>
+</figure>
+<table><tr><td><span class="pk-id">T-01</span></td></tr></table>
+<figure id="fig-2"><figcaption><span class="pk-id">fig-9</span></figcaption></figure>
+<p>See <span class="pk-id">F-01</span> above.</p>
+"""
+
+
+def test_outline_lists_a_card_or_figure_id_once_on_the_element(home, capsys) -> None:
+    _write(home, capsys, CARDS, "--profile", "builtin")
+    out = _run(capsys, "outline", "demo", "--profile", "builtin")
+    assert out.splitlines() == [
+        "content.html: 14 lines",
+        "   1  h2  Findings",
+        "   2  F-01",
+        "   5  D-01",
+        "   8  fig-1",
+        "  12  T-01",
+        "  13  fig-2",
+        "  13  fig-9",
+        "  14  F-01",
+    ]
+
+
+def test_outline_keeps_a_span_after_its_element_closed(home, capsys) -> None:
+    body = '<article id="F-01"><div><p>x</p></div></article>\n<p><span class="pk-id">F-01</span></p>\n'
+    _write(home, capsys, body, "--profile", "builtin")
+    out = _run(capsys, "outline", "demo", "--profile", "builtin")
+    assert out.splitlines()[1:] == ["   1  F-01", "   2  F-01"]

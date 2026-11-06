@@ -57,6 +57,7 @@ class _Headings(HTMLParser):
         self.items: list[tuple[int, str]] = []
         self._item_line = 0
         self._item_text: list[str] = []
+        self._open_items: list[tuple[str, str]] = []
         self._current: _Found | None = None
         self._text: list[str] = []
         self._line_starts = [0]
@@ -70,6 +71,7 @@ class _Headings(HTMLParser):
         line, column = self.getpos()
         if tag in ("figure", "article") and values.get("id"):
             self.items.append((line, str(values["id"])))
+            self._open_items.append((tag, str(values["id"])))
         if tag == "span" and "pk-id" in str(values.get("class") or "").split():
             self._item_line, self._item_text = line, []
         match = _HEADING_RE.match(tag)
@@ -93,9 +95,15 @@ class _Headings(HTMLParser):
 
     def handle_endtag(self, tag: str) -> None:
         if self._item_line and tag == "span":
-            if text := " ".join("".join(self._item_text).split()):
+            text = " ".join("".join(self._item_text).split())
+            # A pk-id span repeating the id of the card or figure around it is listed once, on the element.
+            if text and text not in (item_id for _, item_id in self._open_items):
                 self.items.append((self._item_line, text))
             self._item_line = 0
+        for at in range(len(self._open_items) - 1, -1, -1):
+            if self._open_items[at][0] == tag:
+                del self._open_items[at]
+                break
         if self._current and _HEADING_RE.match(tag):
             self._current.text = " ".join("".join(self._text).split())
             self.found.append(self._current)
