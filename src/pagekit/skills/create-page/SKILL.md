@@ -47,8 +47,8 @@ To change how pages look in a project or for the user, use the `setup-profile` s
 
 ## Components
 
-Build from the listed components; `pagekit component show NAME` prints one. When none fits,
-build what the page needs and save it so the next page can reuse it:
+Build from the listed components; `pagekit component show NAME...` prints one or several
+(list every name you need in one call). When none fits, build what the page needs and save it so the next page can reuse it:
 
 ```bash
 pagekit component add NAME --when "one line on when to use it" --from FOLDER

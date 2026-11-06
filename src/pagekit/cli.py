@@ -77,7 +77,7 @@ def _print_profile_header(profile: Profile) -> None:
 def _print_rules(profile: Profile) -> None:
     _print_other_profiles(profile)
     print("theme tokens: " + ", ".join(profile.tokens()))
-    print("components (pagekit component show NAME):")
+    print("components (pagekit component show NAME...):")
     for component in list_components(profile):
         print(f"  {component.name}: {component.when}")
     instructions = profile.instructions()
@@ -259,11 +259,23 @@ def cmd_component_list(args) -> int:
 
 
 def cmd_component_show(args) -> int:
-    component = find_component(_profile(args), args.name)
-    print(component.html.read_text(encoding="utf-8").rstrip())
-    if component.css:
-        print(f"\n/* {component.css} (added to pages automatically) */")
-        print(component.css.read_text(encoding="utf-8").rstrip())
+    profile = _profile(args)
+    names = list(dict.fromkeys(args.names))
+    known = {c.name for c in list_components(profile)}
+    missing = [name for name in names if name not in known]
+    if len(missing) == 1:
+        find_component(profile, missing[0])
+    if missing:
+        listed = ", ".join(repr(name) for name in missing)
+        raise ComponentError(f"no components named {listed}: see pagekit component list")
+    for index, name in enumerate(names):
+        component = find_component(profile, name)
+        if index:
+            print()
+        print(component.html.read_text(encoding="utf-8").rstrip())
+        if component.css:
+            print(f"\n/* {component.css} (added to pages automatically) */")
+            print(component.css.read_text(encoding="utf-8").rstrip())
     return 0
 
 
@@ -507,8 +519,8 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--json", action="store_true")
     q.add_argument("--profile", help=profile_help)
     q.set_defaults(fn=cmd_component_list)
-    q = component.add_parser("show", help="print a component's markup and styles")
-    q.add_argument("name")
+    q = component.add_parser("show", help="print the markup and styles of one or more components")
+    q.add_argument("names", nargs="+", metavar="NAME")
     q.add_argument("--profile", help=profile_help)
     q.set_defaults(fn=cmd_component_show)
     q = component.add_parser("add", help="save a new component to the library")

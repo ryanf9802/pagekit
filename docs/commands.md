@@ -41,7 +41,7 @@ pagekit font add FILE --family NAME [--weight N] [--italic]
 
 ```text
 pagekit component list [--json]
-pagekit component show NAME
+pagekit component show NAME [NAME...]
 pagekit component add NAME --when TEXT --from FOLDER [--update]
 pagekit icons WORD        search icons by name or tag
 ```
