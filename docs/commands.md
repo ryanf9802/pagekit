@@ -8,7 +8,8 @@ Run `pagekit COMMAND --help` for every option. Page commands accept `--profile`.
 pagekit new SLUG --title T [--summary S] [--mode slots|free]
                           create the page, or reopen it to update in place; a reopen prints
                           the paths and one line, not the rules
-pagekit rules             print the theme tokens, components, and profile instructions again
+pagekit rules [--tokens]  print the components and profile instructions again; --tokens prints only the
+                          theme tokens, for writing a component
 pagekit build SLUG        compose index.html, then run the checks
 pagekit rebuild --all [--dry-run]
                           rebuild every page built with another version of pagekit
