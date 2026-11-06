@@ -5,22 +5,33 @@
 .ix-controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
 .ix-controls input { flex: 1 1 220px; }
 .ix-controls select { flex: 0 1 180px; }
-.ix-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
-.ix-group { grid-column: 1 / -1; margin-top: 4px; color: var(--pk-muted); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-.ix-item a { display: block; height: 100%; overflow: hidden; color: inherit; text-decoration: none; background: var(--pk-surface); border: 1px solid var(--pk-border); border-radius: var(--pk-radius); }
-.ix-item a:hover { border-color: var(--pk-accent); }
-.ix-thumb { aspect-ratio: 2 / 1; background: var(--pk-surface-2); border-bottom: 1px solid var(--pk-border); }
-.ix-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
-.ix-body { padding: 8px 10px 10px; min-width: 0; }
-.ix-item a:hover .ix-title { color: var(--pk-accent); }
-.ix-title { font-size: 0.9375rem; font-weight: 600; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ix-summary { margin-top: 1px; color: var(--pk-muted); font-size: 0.8125rem; line-height: 1.35; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.ix-meta { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: center; margin-top: 5px; color: var(--pk-muted); font-size: 0.75rem; }
-/* On a phone a card is a row, with a small picture beside the text. */
-@media (max-width: 520px) {
-  .ix-list { grid-template-columns: 1fr; gap: 8px; }
-  .ix-item a { display: flex; }
-  .ix-thumb { flex: none; width: 112px; aspect-ratio: auto; border-bottom: 0; border-right: 1px solid var(--pk-border); }
-  .ix-body { flex: 1; align-self: center; }
+/* One row to a page: title, summary, when it was updated, and when it expires. */
+.ix-list { list-style: none; margin: 0; padding: 0; background: var(--pk-surface); border: 1px solid var(--pk-border); border-radius: var(--pk-radius); overflow: hidden; }
+.ix-list[hidden] { display: none; }
+.ix-head, .ix-row { display: grid; grid-template-columns: minmax(120px, 1.2fr) minmax(0, 2.4fr) 88px 92px; gap: 12px; align-items: baseline; padding: 6px 12px; }
+.ix-has-profile .ix-head, .ix-has-profile .ix-row { grid-template-columns: minmax(120px, 1.2fr) 96px minmax(0, 2.4fr) 88px 92px; }
+.ix-head { background: var(--pk-surface-2); border-bottom: 1px solid var(--pk-border); color: var(--pk-muted); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.ix-row { color: inherit; font-size: 0.875rem; line-height: 1.45; text-decoration: none; }
+.ix-item + .ix-item .ix-row { border-top: 1px solid var(--pk-border); }
+.ix-row:hover { background: var(--pk-surface-2); }
+.ix-row:focus-visible { outline: 2px solid var(--pk-accent); outline-offset: -2px; }
+.ix-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ix-row:hover .ix-title { color: var(--pk-accent); }
+.ix-summary, .ix-profile { color: var(--pk-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ix-status, .ix-updated { color: var(--pk-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ix-updated, .ix-status { text-align: right; }
+.ix-saved { color: var(--pk-accent); font-weight: 600; }
+.ix-soon { color: var(--pk-warning); font-weight: 600; }
+/* On a phone a row is two short lines: title and expiry, then summary and date. */
+@media (max-width: 600px) {
+  .ix-head { display: none; }
+  .ix-row, .ix-has-profile .ix-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "title status" "summary updated"; gap: 0 12px; padding: 7px 12px; }
+  .ix-has-profile .ix-row { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "title title status" "profile summary updated"; }
+  .ix-title { grid-area: title; }
+  .ix-status { grid-area: status; }
+  .ix-profile { grid-area: profile; font-size: 0.75rem; }
+  .ix-summary { grid-area: summary; font-size: 0.8125rem; }
+  .ix-updated { grid-area: updated; font-size: 0.75rem; }
+  .ix-status { font-size: 0.8125rem; }
 }
 </style>
