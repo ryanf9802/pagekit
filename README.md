@@ -52,18 +52,37 @@ you [set up a profile](#set-up-a-profile).
 - **Nothing to run.** A built page is one plain file. The Python standard library is the only dependency, the page
   index server is optional, and pages expire after 30 days unless you save them.
 
-## What it looks like
+## Make it yours
 
-One page, built by an agent: headline numbers, two charts, a status table, findings to pick from, and a decision to
-answer. The same file follows your system theme and the width of your screen, and it prints cleanly.
+Out of the box, pages carry the pagekit look. A [profile](docs/profiles.md) changes all of it: logo, colors, fonts,
+header and footer, even the shape of the page. Same components, same checks, a different brand. Below, the default
+page, then three made-up companies with profiles of their own.
 
-| Light | Dark |
-| --- | --- |
-| <img src="docs/screenshots/page-light.png" alt="A pagekit page in light mode, with headline numbers, two charts side by side, a status table, and findings" width="440"> | <img src="docs/screenshots/page-dark.png" alt="The same page in dark mode" width="440"> |
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/profile-default.png" alt="A pagekit page in the default pagekit look: ember orange accents, white cards, and a plain header" width="440">
+      <br><sub><b>pagekit</b>, the default look</sub>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/profile-northwind.png" alt="A page for a private bank in navy and gold, with a serif headline, a navy header, and gold rules" width="440">
+      <br><sub><b>Northwind Capital</b>, a private bank</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/profile-basalt.png" alt="A dark terminal-style page for a developer tools company, in monospace type with green accents and a status strip under the header" width="440">
+      <br><sub><b>Basalt Labs</b>, developer tools</sub>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/profile-marigold.png" alt="A loud, playful page for a design studio, with a yellow header, black outlines, hard shadows, and pastel tiles" width="440">
+      <br><sub><b>Marigold Studio</b>, a design studio</sub>
+    </td>
+  </tr>
+</table>
 
-| Phone, light | Phone, dark |
-| --- | --- |
-| <img src="docs/screenshots/page-phone.png" alt="The same page at phone width in light mode" width="220"> | <img src="docs/screenshots/page-phone-dark.png" alt="The same page at phone width in dark mode" width="220"> |
+Every profile still works in light and dark, on a phone, and in print. To make one, see
+[Set up a profile](#set-up-a-profile).
 
 ## Why pagekit
 
