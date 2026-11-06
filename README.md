@@ -18,15 +18,6 @@
 Ask your agent for a page instead of a wall of terminal text. You get one plain file that works offline, prints well,
 and reads well on a phone, and you can answer on the page and send your answers straight back to the agent.
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/page-dark.png">
-    <img src="docs/screenshots/page-light.png" alt="A pagekit page titled Release readiness, with headline numbers, a line chart, two findings with checkboxes, and a decision with answer controls" width="760">
-  </picture>
-</p>
-
-<p align="center"><sub>One page, built by an agent: numbers, a chart, findings to pick from, and a decision to answer.</sub></p>
-
 ## Set up with your agent
 
 The quickest way in. Paste this into your coding agent, and it will install pagekit, connect itself, make a test page,
@@ -61,15 +52,18 @@ you [set up a profile](#set-up-a-profile).
 - **Nothing to run.** A built page is one plain file. The Python standard library is the only dependency, the page
   index server is optional, and pages expire after 30 days unless you save them.
 
-## On a phone, in light or dark
+## What it looks like
 
-The same file adapts to the screen and to your system theme, and it prints cleanly.
+One page, built by an agent: headline numbers, two charts, a status table, findings to pick from, and a decision to
+answer. The same file follows your system theme and the width of your screen, and it prints cleanly.
 
-<p align="center">
-  <img src="docs/screenshots/page-phone.png" alt="The same page at phone width in light mode" width="260">
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/page-phone-dark.png" alt="The same page at phone width in dark mode" width="260">
-</p>
+| Light | Dark |
+| --- | --- |
+| <img src="docs/screenshots/page-light.png" alt="A pagekit page in light mode, with headline numbers, two charts side by side, a status table, and findings" width="440"> | <img src="docs/screenshots/page-dark.png" alt="The same page in dark mode" width="440"> |
+
+| Phone, light | Phone, dark |
+| --- | --- |
+| <img src="docs/screenshots/page-phone.png" alt="The same page at phone width in light mode" width="220"> | <img src="docs/screenshots/page-phone-dark.png" alt="The same page at phone width in dark mode" width="220"> |
 
 ## Why pagekit
 
