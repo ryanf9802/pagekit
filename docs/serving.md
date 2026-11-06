@@ -14,6 +14,18 @@ Set `PAGEKIT_PORT` or pass `--port` to use another port. The server listens on l
 an **All pages** icon in the header, back to the index. Packed and saved copies have no index, so they have no
 link, and it does not print.
 
+### What the index shows
+
+Each page is a card with a picture of its first screen, its title and summary, its profile, the days left before it
+is deleted, and when it was updated. A page you have saved or pinned shows **Kept** and is listed first, under its
+own heading, since it never expires out of the list. The days left turn amber at three or fewer. The search box
+looks at titles, summaries, and names, and the profile menu narrows it further.
+
+The pictures are drawn by the server with Chrome or Chromium, the first time the index asks for one, and are kept as
+`thumb.png` beside the page. A rebuilt page gets a new one. With no browser installed, the cards simply have no
+picture. Drawing one takes a few seconds, one page at a time, so an index of many pages fills in over its first
+visit and is quick after that. The pictures are always drawn in light colors, and saved copies have none.
+
 ## When a page is rebuilt
 
 A page open from the server checks every few seconds whether it has been rebuilt, while its tab is in view. When it
