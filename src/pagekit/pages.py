@@ -24,7 +24,7 @@ from urllib.parse import unquote, urlsplit
 
 from .charts import ChartError, expand_charts
 from .diagrams import DiagramError, expand_diagrams
-from .icons import IconError, expand_icons
+from .icons import IconError, expand_icons, tab_icon_svg
 from .images import add_image_sizes
 from .library import consistency_warnings, library_css_for
 from .tags import TagError, expand_tags
@@ -231,9 +231,19 @@ _FREE_SCAFFOLD = """<!doctype html>
 """
 
 
-def new_page(profile: Profile, slug: str, title: str | None, summary: str | None, mode: str) -> tuple[Page, bool]:
-    """Create a page, or return the existing one so an update stays at the same path."""
+def new_page(
+    profile: Profile, slug: str, title: str | None, summary: str | None, mode: str, icon: str | None = None
+) -> tuple[Page, bool]:
+    """Create a page, or return the existing one so an update stays at the same path.
+
+    `icon` names the page's own tab icon. None leaves it as it is, and an empty string goes back to the profile's.
+    """
     _validate_slug(slug)
+    if icon:
+        try:
+            tab_icon_svg(icon, _INK_LIGHT, _INK_DARK)
+        except IconError as exc:
+            raise PageError(f"--icon: {exc}") from exc
     directory = _page_dir(profile.name, slug)
     if (directory / "page.toml").is_file():
         page = load_page_dir(directory)
@@ -241,6 +251,11 @@ def new_page(profile: Profile, slug: str, title: str | None, summary: str | None
             page.meta["title"] = title
         if summary is not None:
             page.meta["summary"] = summary
+        if icon is not None:
+            if icon:
+                page.meta["icon"] = icon
+            else:
+                page.meta.pop("icon", None)
         page.meta["updated"] = _now_iso()
         page.write_meta()
         return page, False
@@ -260,6 +275,7 @@ def new_page(profile: Profile, slug: str, title: str | None, summary: str | None
             "updated": now,
             "session": default_session(),
             "pinned": False,
+            **({"icon": icon} if icon else {}),
         },
     )
     page.write_meta()
@@ -293,9 +309,49 @@ def logo_html(profile: Profile, brand: str) -> str:
     return "".join(parts)
 
 
-def _favicon_html(profile: Profile) -> str:
-    icon = profile.brand_file("favicon.svg") or profile.brand_file("logo.svg")
-    return f'<link rel="icon" href="{_data_uri(icon)}">' if icon else ""
+_INK_LIGHT, _INK_DARK = "#1b1b1f", "#e5e5ea"
+_COLOR_RE = re.compile(r"^(#[0-9a-fA-F]{3,8}|[a-z]+\([0-9a-zA-Z.,%\s/-]+\))$")
+
+
+def _accent_colors(theme: str) -> tuple[str, str]:
+    """The theme's accent in light and in dark, where the last declaration wins in each, for a tab icon's ink."""
+    css = re.sub(r"/\*.*?\*/", "", theme, flags=re.DOTALL)
+    outside: list[str] = []
+    dark: list[str] = []
+    depth, last, opened = 0, 0, 0
+    for index, char in enumerate(css):
+        if char == "{":
+            if depth == 0:
+                opened = index
+            depth += 1
+        elif char == "}" and depth:
+            depth -= 1
+            if depth == 0:
+                prelude = css[last:opened].strip()
+                body = css[opened + 1 : index]
+                if prelude.startswith("@media") and "prefers-color-scheme: dark" in prelude:
+                    dark.append(body)
+                else:
+                    outside.append(f"{prelude} {{{body}}}")
+                last = index + 1
+
+    def accent(parts: list[str]) -> str | None:
+        found = re.findall(r"--pk-accent\s*:\s*([^;}]+)", "\n".join(parts))
+        value = found[-1].strip() if found else ""
+        return value if _COLOR_RE.match(value) else None
+
+    light = accent(outside)
+    return light or _INK_LIGHT, accent(dark) or (light or _INK_DARK)
+
+
+def _favicon_html(profile: Profile, icon: str = "") -> str:
+    """The tab icon: the page's own Lucide icon in the profile's accent, else the profile's logo."""
+    if icon:
+        light, dark = _accent_colors(profile.theme())
+        svg = tab_icon_svg(icon, light, dark)
+        return f'<link rel="icon" href="data:image/svg+xml;base64,{base64.b64encode(svg.encode()).decode()}">'
+    logo = profile.brand_file("favicon.svg") or profile.brand_file("logo.svg")
+    return f'<link rel="icon" href="{_data_uri(logo)}">' if logo else ""
 
 
 def _render(template: str, values: dict[str, str]) -> str:
@@ -303,7 +359,9 @@ def _render(template: str, values: dict[str, str]) -> str:
     return PLACEHOLDER_RE.sub(lambda m: values.get(m.group(1), m.group(0)), template)
 
 
-def _head_html(profile: Profile, title: str, meta: dict[str, str], component_css: str = "", extra: str = "") -> str:
+def _head_html(
+    profile: Profile, title: str, meta: dict[str, str], component_css: str = "", extra: str = "", icon: str = ""
+) -> str:
     meta_json = json.dumps(meta).replace("<", "\\u003c")
     # After the styles, so a saved choice of light or dark applies before the page is first drawn.
     theme_toggle = profile.config.get("theme_toggle", True) is not False
@@ -314,7 +372,7 @@ def _head_html(profile: Profile, title: str, meta: dict[str, str], component_css
             '<meta charset="utf-8">',
             '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">',
             f"<title>{title}</title>",
-            _favicon_html(profile),
+            _favicon_html(profile, icon),
             f'<script type="application/json" id="pagekit-meta">{meta_json}</script>',
             profile.concat("head.html"),
             f"<style>\n{profile.fonts()}\n{profile.theme()}\n{component_css}\n</style>",
@@ -429,7 +487,10 @@ def build_page(profile: Profile, page: Page) -> None:
         source = expand_tags(source)
     except TagError as exc:
         raise PageError(str(exc)) from exc
-    head = _head_html(profile, title, export_meta, library_css_for(source, profile))
+    try:
+        head = _head_html(profile, title, export_meta, library_css_for(source, profile), icon=page.meta.get("icon", ""))
+    except IconError as exc:
+        raise PageError(f"{page.dir / 'page.toml'}: icon: {exc}") from exc
     summary_html = f'<p class="pk-summary">{html.escape(summary)}</p>' if summary else ""
     values = _shell_values(profile, head, title, summary_html, built, version)
     if page.meta.get("mode") == "free":
