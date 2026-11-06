@@ -35,6 +35,7 @@ from .pages import (
     server_running,
     set_public_url,
 )
+from .tags import outline
 from .pdf import render_pdf
 from .update import UpdateError, check, installed_version, resolve_follow, update, update_settings_file
 from .profiles import (
@@ -136,7 +137,8 @@ def cmd_new(args) -> int:
         _print_profile(profile)
     else:
         _print_profile_header(profile)
-        print("rules unchanged; run `pagekit rules` to see them again")
+        print("rules unchanged (`pagekit rules` shows them). Update content.html with Edit, not a rewrite;")
+        print(f"`pagekit outline {page.slug}` lists its headings and IDs with line numbers.")
     return 0
 
 
@@ -168,6 +170,18 @@ def cmd_build(args) -> int:
 def cmd_check(args) -> int:
     profile = _profile(args)
     return _report_check(profile, load_page(profile, args.slug))
+
+
+def cmd_outline(args) -> int:
+    page = load_page(_profile(args), args.slug)
+    source = page.content.read_text(encoding="utf-8")
+    print(f"content.html: {len(source.splitlines())} lines")
+    for line, level, text in outline(source):
+        if level:
+            print(f"{line:>4}  {'  ' * (level - 2)}h{level}  {text}")
+        else:
+            print(f"{line:>4}  {text}")
+    return 0
 
 
 def cmd_pack(args) -> int:
@@ -416,6 +430,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--mode", choices=("slots", "free"), default="slots")
     page_command("build", cmd_build, "compose index.html and run the checks")
     page_command("check", cmd_check, "run the checks only")
+    page_command("outline", cmd_outline, "list a page's headings and item IDs with their line numbers in content.html")
     page_command("pack", cmd_pack, "write one self-contained HTML file and print its path")
     page_command("send", cmd_send, "pack the page and run the profile's send command on it")
     p = page_command("pdf", cmd_pdf, "write a bookmarked, tagged PDF with headless Chromium")

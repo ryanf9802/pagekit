@@ -5,7 +5,9 @@
 1. `pagekit new SLUG --title T` creates the page, or reopens an existing one to update it in place, keeping
    its path and link. It prints the file to write and the profile's rules. A reopen prints only the paths and a one
    line note; `pagekit rules` prints the rules again.
-2. Write the body to `content.html`, and put images in `assets/`.
+2. Write the body to `content.html`, and put images in `assets/`. To change an existing page, make targeted edits to
+   `content.html` rather than writing it out again; `pagekit outline SLUG` lists its headings and item IDs with line
+   numbers, so you can read just the part you need.
 3. `pagekit build SLUG` composes `index.html` and runs the checks. Fix what they report and build again.
 
 Never edit `index.html`: the next build replaces it.

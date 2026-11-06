@@ -26,6 +26,11 @@ To change how pages look in a project or for the user, use the `setup-profile` s
    are unchanged. Run `pagekit rules` (with the same `--profile`) to see them again, for
    example after the conversation was compacted.
 
+   To update a page, change its `content.html` with targeted edits (the Edit tool). Never
+   write the whole file again: a rewrite costs the page's full length in output for a
+   small change. Run `pagekit outline <slug>` to list the headings and item IDs with
+   their line numbers, then Read only the slice you need (offset and limit).
+
 2. Write the page body to the printed `content.html`, and put images in `assets/`.
    Use `--mode free` on a new page only for something bespoke that the shell gets in the
    way of: there `content.html` is the whole document and must keep `{{head}}` and

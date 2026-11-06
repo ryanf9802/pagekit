@@ -11,6 +11,8 @@ pagekit new SLUG --title T [--summary S] [--mode slots|free]
 pagekit rules             print the theme tokens, components, and profile instructions again
 pagekit build SLUG        compose index.html, then run the checks
 pagekit check SLUG        run the checks only
+pagekit outline SLUG      list the page's headings and item IDs with line numbers in content.html,
+                          so an update can be a targeted edit
 pagekit pack SLUG         write one self-contained file, with images embedded
 pagekit send SLUG         pack, then run the profile's send command
 pagekit pdf SLUG [--out FILE]
