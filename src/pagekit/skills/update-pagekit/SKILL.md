@@ -32,6 +32,7 @@ description: Update pagekit to the latest version and explain what changed, incl
 5. Say which version it moved from and to, as it printed them. Then summarize what changed in a few plain lines, from
    the commit subjects it printed: what they can now do, not the commit list. Name any new components or features, and any change to how pages look.
 
-6. Pages already built keep their old look until rebuilt. If the update changed how pages look, offer to rebuild the
-   ones they still use with `pagekit build SLUG`, run from the folder each page's profile applies to. A rebuild with
-   unchanged content keeps answers and comments.
+6. Pages already built keep their old look until rebuilt, and the update prints how many. If the update changed how
+   pages look, offer to run `pagekit rebuild --all`, from the folder whose profile the pages use. It lists any page it
+   skipped because its profile does not apply there: offer to run it again from that folder. A rebuild with unchanged
+   content keeps answers and comments.

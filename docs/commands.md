@@ -8,6 +8,8 @@ Run `pagekit COMMAND --help` for every option. Page commands accept `--profile`.
 pagekit new SLUG --title T [--summary S] [--mode slots|free]
                           create the page, or reopen it to update in place
 pagekit build SLUG        compose index.html, then run the checks
+pagekit rebuild --all [--dry-run]
+                          rebuild every page built with another version of pagekit
 pagekit check SLUG        run the checks only
 pagekit pack SLUG         write one self-contained file, with images embedded
 pagekit send SLUG         pack, then run the profile's send command

@@ -122,5 +122,5 @@ Say in a few lines what the profile is, where it lives, and where it applies. Th
 
 - For a shared repo profile, tell them to commit `.pagekit/`. Commit it only if they ask.
 - Otherwise, if the folder is worth keeping, suggest version control or a backup.
-- Mention that existing pages keep their old look until rebuilt with `pagekit build SLUG`, and that the check page
-  deletes itself after 30 days.
+- Mention that existing pages keep their old look until rebuilt with `pagekit build SLUG` (or `pagekit rebuild --all`),
+  and that the check page deletes itself after 30 days.
