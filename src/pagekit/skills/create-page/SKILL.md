@@ -42,9 +42,11 @@ To change how pages look in a project or for the user, use the `setup-profile` s
    pagekit build <slug>
    ```
 
-4. Look at it before reporting. Open the printed URL in a browser, including at 390 px
-   wide, where `document.documentElement.scrollWidth` must not exceed the window width,
-   and in dark mode. `pagekit check` cannot see layout.
+4. Look at it before reporting. Run `pagekit check --browser <slug>`: it loads the built
+   page at 390 px wide in light and dark mode and prints any horizontal overflow (with the
+   elements causing it) and console errors, and exits non-zero on either. Fix and rebuild
+   until it passes. Open a browser only for a visual look, or add `--screenshot PATH` for a
+   full-page image. `pagekit check` alone cannot see layout.
 
 5. When the server is up, report the printed `url:` and no other link. Otherwise run
    `pagekit send <slug>` to hand the user the file: a `file://` path does not reach a browser
@@ -52,8 +54,8 @@ To change how pages look in a project or for the user, use the `setup-profile` s
 
 ## Components
 
-Build from the listed components; `pagekit component show NAME` prints one. When none fits,
-build what the page needs and save it so the next page can reuse it:
+Build from the listed components; `pagekit component show NAME...` prints one or several
+(list every name you need in one call). When none fits, build what the page needs and save it so the next page can reuse it:
 
 ```bash
 pagekit component add NAME --when "one line on when to use it" --from FOLDER

@@ -16,11 +16,11 @@ Components keep pages consistent. There are three layers, and each has one job:
 
 ```text
 pagekit component list [--json]
-pagekit component show NAME
+pagekit component show NAME [NAME...]
 pagekit component add NAME --when TEXT --from FOLDER [--update]
 ```
 
-`show` prints a component's markup to copy into a page.
+`show` prints the markup of one or more components to copy into a page, separated by a blank line. Name several to save calls; if any name is unknown, nothing is printed.
 
 ## Adding to the library
 

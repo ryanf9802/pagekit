@@ -2,7 +2,8 @@
 
 To add one, write a function that takes the tag's attributes and the page's headings and returns
 HTML, then list it in _TAGS with the attributes it accepts. <pk-diagram> and <pk-chart> are handled in
-diagrams.py and charts.py, because they read files.
+diagrams.py and charts.py, because they read files. A tag that takes lines of content, like <pk-table>,
+is listed in _BODY_TAGS instead: its function also gets the body and the page line the body starts on.
 """
 
 from __future__ import annotations
@@ -37,7 +38,9 @@ class _Found:
     line: int = 0
 
 
-_TAG_RE = re.compile(r"<pk-([a-z][a-z0-9-]*)((?:\s+[a-z-]+(?:=\"[^\"]*\")?)*)\s*(?:/>|>\s*</pk-\1>)", re.IGNORECASE)
+_TAG_RE = re.compile(
+    r"<pk-([a-z][a-z0-9-]*)((?:\s+[a-z-]+(?:=\"[^\"]*\")?)*)\s*(?:/>|>(.*?)</pk-\1>)", re.IGNORECASE | re.DOTALL
+)
 _FILE_TAGS = {"diagram", "chart"}
 _OPEN_TAG_RE = re.compile(r"<pk-(?!(?:diagram|chart)\b)([a-z][a-z0-9-]*)", re.IGNORECASE)
 _ATTR_RE = re.compile(r"([a-z-]+)(?:=\"([^\"]*)\")?", re.IGNORECASE)
@@ -206,6 +209,45 @@ def _spark(attrs: dict[str, str], headings: list[Heading]) -> str:
     )
 
 
+_CELL_SPLIT_RE = re.compile(r"(?<!\\)\|")
+
+
+def _table(attrs: dict[str, str], body: str, first_line: int) -> str:
+    """Lines of cells split by |, as the same markup the table component shows."""
+    if "<pk-table" in body.lower():
+        raise TagError("<pk-table> is not closed before the next <pk-table> starts: end each one with </pk-table>")
+    rows: list[tuple[int, list[str]]] = []
+    for offset, line in enumerate(body.split("\n")):
+        if line.strip():
+            cells = [cell.replace("\\|", "|").strip() for cell in _CELL_SPLIT_RE.split(line)]
+            rows.append((first_line + offset, cells))
+    if not rows:
+        raise TagError(f"<pk-table> on line {first_line}: no rows; write one line per row with cells split by |")
+    header: list[str] | None = None
+    if "no-header" not in attrs:
+        header = rows.pop(0)[1]
+    width = len(header) if header is not None else max(len(cells) for _, cells in rows)
+    for number, cells in rows:
+        if len(cells) > width:
+            raise TagError(
+                f"<pk-table> line {number}: {len(cells)} cells but the table has {width} columns; "
+                "write a literal | inside a cell as \\|"
+            )
+    out = ['<div class="pk-table-wrap">', "  <table>"]
+    if header is not None:
+        out.append("    <thead><tr>" + "".join(f"<th>{cell}</th>" for cell in header) + "</tr></thead>")
+    out.append("    <tbody>")
+    for _, cells in rows:
+        cells = cells + [""] * (width - len(cells))
+        out.append("      <tr>" + "".join(f"<td>{cell}</td>" for cell in cells) + "</tr>")
+    out += ["    </tbody>", "  </table>", "</div>"]
+    return "\n".join(out)
+
+
+_BODY_TAGS: dict[str, tuple[Callable[[dict[str, str], str, int], str], set[str]]] = {
+    "table": (_table, {"no-header"}),
+}
+
 _TAGS: dict[str, tuple[Callable[[dict[str, str], list[Heading]], str], set[str]]] = {
     "contents": (_contents, {"max-level", "title"}),
     "spark": (_spark, {"values", "label"}),
@@ -217,22 +259,31 @@ def expand_tags(source: str) -> str:
     if not _OPEN_TAG_RE.search(source):
         return source
     updated, headings = _with_ids(source)
+    source = updated
 
     def replace(match: re.Match) -> str:
         name = match.group(1).lower()
         if name in _FILE_TAGS:
             return match.group(0)
-        if name not in _TAGS:
-            raise TagError(f"unknown tag <pk-{name}>: available tags are {', '.join(f'<pk-{t}>' for t in sorted(_TAGS))}")
-        render, allowed = _TAGS[name]
+        if name not in _TAGS and name not in _BODY_TAGS:
+            names = sorted([*_TAGS, *_BODY_TAGS])
+            raise TagError(f"unknown tag <pk-{name}>: available tags are {', '.join(f'<pk-{t}>' for t in names)}")
+        allowed = _TAGS[name][1] if name in _TAGS else _BODY_TAGS[name][1]
         attrs = {key.lower(): value for key, value in _ATTR_RE.findall(match.group(2))}
         unknown = sorted(set(attrs) - allowed)
         if unknown:
             raise TagError(f"<pk-{name}> has no attribute {unknown[0]!r}: it takes {', '.join(sorted(allowed))}")
-        return render(attrs, headings)
+        body = match.group(3) or ""
+        if name in _BODY_TAGS:
+            return _BODY_TAGS[name][0](attrs, body, source.count("\n", 0, match.start(3)) + 1)
+        if body.strip():
+            raise TagError(f"<pk-{name}> takes no content: write it as <pk-{name}></pk-{name}>")
+        return _TAGS[name][0](attrs, headings)
 
-    expanded = _TAG_RE.sub(replace, updated)
+    expanded = _TAG_RE.sub(replace, source)
     leftover = _OPEN_TAG_RE.search(expanded)
+    if leftover and leftover.group(1).lower() in _BODY_TAGS:
+        raise TagError(f"<pk-{leftover.group(1)}> is never closed: end it with </pk-{leftover.group(1)}>")
     if leftover:
         raise TagError(f'<pk-{leftover.group(1)}> is malformed: write it as <pk-{leftover.group(1)} name="value"></pk-{leftover.group(1)}>')
     return expanded

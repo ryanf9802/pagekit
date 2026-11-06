@@ -222,3 +222,46 @@ def test_svg_shapes_are_unknown_tags_outside_an_svg(home: Path) -> None:
     page.content.write_text("<path d='M0 0'/>")
     with pytest.raises(PageError, match="<path"):
         build_page(profile, page)
+
+
+def run_show(*names: str) -> int:
+    from pagekit.cli import main
+
+    return main(["component", "show", *names])
+
+
+def test_show_one_component_prints_just_that_component(home: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    component = find_component(load_profile(None), "table")
+    assert run_show("table") == 0
+    assert capsys.readouterr().out == component.html.read_text(encoding="utf-8").rstrip() + "\n" + (
+        f"\n/* {component.css} (added to pages automatically) */\n" + component.css.read_text(encoding="utf-8").rstrip() + "\n"
+        if component.css
+        else ""
+    )
+
+
+def test_show_several_components_in_the_order_given(home: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    assert run_show("table") == 0
+    table = capsys.readouterr().out
+    assert run_show("chart") == 0
+    chart = capsys.readouterr().out
+    assert run_show("chart", "table") == 0
+    assert capsys.readouterr().out == chart + "\n" + table
+
+
+def test_show_names_every_unknown_component_and_prints_nothing_else(
+    home: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert run_show("table", "nope", "chart", "missing") == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "'nope'" in captured.err and "'missing'" in captured.err
+    assert run_show("nope") == 1
+    assert "no component named 'nope'" in capsys.readouterr().err
+
+
+def test_show_prints_a_repeated_name_once(home: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    assert run_show("table") == 0
+    table = capsys.readouterr().out
+    assert run_show("table", "table") == 0
+    assert capsys.readouterr().out == table
