@@ -20,6 +20,19 @@ Never edit `index.html`: the next build replaces it.
 
 Choose with `--mode` when creating the page.
 
+## A page's own tab icon
+
+Every page shows the profile's icon in the browser tab, so several open pages look alike. Give one its own with
+`--icon`, naming a [Lucide icon](icons.md):
+
+```bash
+pagekit new q3-review --title "Q3 review" --icon chart-bar
+```
+
+`pagekit icons WORD` finds names. The icon is drawn in the profile's accent color, and in its dark accent when the
+browser is dark. It is kept when the page is reopened, `--icon NAME` changes it, and `--icon ""` goes back to the
+profile's icon. A name that does not exist is refused and nothing is created.
+
 ## Images
 
 Reference images as `assets/<file>`. The build adds a width and height to each PNG, JPEG, GIF, or WebP that

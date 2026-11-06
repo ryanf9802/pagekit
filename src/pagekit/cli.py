@@ -135,7 +135,7 @@ def _print_check(result: CheckResult) -> int:
 def cmd_new(args) -> int:
     prune_if_due()
     profile = _profile(args)
-    page, created = new_page(profile, args.slug, args.title, args.summary, args.mode)
+    page, created = new_page(profile, args.slug, args.title, args.summary, args.mode, args.icon)
     print(("created" if created else "exists, updating in place") + f": {page.dir}")
     print(f"write: {page.content}")
     print(f"assets: {page.assets}")
@@ -505,6 +505,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = page_command("new", cmd_new, "create a page, or reopen it to update in place, and print the house rules")
     p.add_argument("--title")
     p.add_argument("--summary")
+    p.add_argument("--icon", help="a Lucide icon for this page's browser tab (find one with pagekit icons WORD); \"\" goes back to the profile's")
     p.add_argument("--mode", choices=("slots", "free"), default="slots")
     page_command("build", cmd_build, "compose index.html and run the checks")
     p = sub.add_parser("rebuild", help="rebuild every page built with another version of pagekit")

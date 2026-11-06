@@ -179,6 +179,20 @@ def expand_icons(document: str, profile=None) -> str:
     return f"{document}{sprite}" if end < 0 else f"{document[:end]}{sprite}\n{document[end:]}"
 
 
+def tab_icon_svg(name: str, light: str, dark: str) -> str:
+    """One Lucide icon as a standalone SVG for a browser tab, inked `light`, or `dark` when the browser is dark."""
+    icons = _icons()
+    if name not in icons:
+        near = [found for found in search_icons(name) if found in icons][:5]
+        hint = f" Did you mean: {', '.join(near)}?" if near else ""
+        raise IconError(f"no Lucide icon named {name!r}.{hint} `pagekit icons WORD` searches them.")
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
+        f'stroke="{light}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+        f"<style>@media (prefers-color-scheme: dark) {{ svg {{ stroke: {dark}; }} }}</style>{icons[name]['body']}</svg>"
+    )
+
+
 def search_icons(query: str, profile=None) -> list[str]:
     """The profile's own icons, then exact tags and name matches, then partial tags."""
     words = query.lower().split()

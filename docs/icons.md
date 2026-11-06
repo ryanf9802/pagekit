@@ -25,6 +25,11 @@ A profile adds icons in its `icons/` folder. They are used the same way and take
 | `icons/NAME-dark.svg` | Optional dark-mode version. Print always uses a light version. |
 | `icons/NAME-print.png` | Optional image for print, about 128 px. |
 
+## As a tab icon
+
+A page can use a Lucide icon as its browser [tab icon](pages.md#a-pages-own-tab-icon), set with
+`pagekit new SLUG --icon NAME`. Your own icons are not used for this.
+
 ## Size in PDFs
 
 A page stores each icon once and points to it, so hundreds of marks stay small: a plain Lucide icon costs about

@@ -5,7 +5,7 @@ Run `pagekit COMMAND --help` for every option. Page commands accept `--profile`.
 ## Pages
 
 ```text
-pagekit new SLUG --title T [--summary S] [--mode slots|free]
+pagekit new SLUG --title T [--summary S] [--icon NAME] [--mode slots|free]
                           create the page, or reopen it to update in place; a reopen prints
                           the paths and one line, not the rules
 pagekit rules [--tokens]  print the components and profile instructions again; --tokens prints only the
