@@ -708,6 +708,7 @@
   }
   matchBarColor();
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", matchBarColor);
+  window.addEventListener("pagekit:theme", matchBarColor);
 
   /* Tap any image or diagram for a full-screen preview. Built on the native dialog, which
      handles focus, Esc, and stacking above the sticky bars. */

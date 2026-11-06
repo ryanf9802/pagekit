@@ -97,6 +97,11 @@ With no profile, pages carry the pagekit logo, name, and ember colors. Every par
 - **The footer** reads "Made with pagekit" (with pagekit linked to the repo) until a profile sets `footer`. `pagekit init --brand` sets it to the brand.
 - **The header and footer** are the same on every page, and a profile changes them in one place. Restyle them in
   `theme.css`, such as `.pk-logo { width: 30px; height: 30px; }`, or replace the layout in `template.html`.
+- **The light and dark toggle** is a header icon that cycles between following the system, light, and dark. The
+  choice is remembered in the browser and applies to every page. It works by switching the theme's
+  `@media screen and (prefers-color-scheme: dark)` rules on or off, so any profile's theme works with no extra
+  rules, and printing stays light. The page's root gets `data-theme="light"` or `"dark"` while a choice is made,
+  for styles that need it. Set `theme_toggle = false` to leave it out.
 - **The page index** at the server root uses the same header and footer with the built-in profile, because it lists
   pages from every profile.
 
@@ -122,6 +127,7 @@ drawn as outlines. Source files for other uses are in [`docs/brand/`](brand/), a
 | `brand` | Name in the header, unless `wordmark.svg` replaces it |
 | `footer` | Footer text, required on every page |
 | `copyright` | Adds a copyright notice for this holder to the footer |
+| `theme_toggle` | Set to `false` to leave the light and dark toggle out of the header |
 | `version_stamp` | Set to `false` to leave the version number out of the footer. Pages still record it for `pagekit rebuild --all` |
 | `ascii_only` | Treat non-ASCII characters as an error |
 | `allowed_hosts` | Hosts a page may load external resources from |

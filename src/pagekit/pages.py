@@ -305,6 +305,9 @@ def _render(template: str, values: dict[str, str]) -> str:
 
 def _head_html(profile: Profile, title: str, meta: dict[str, str], component_css: str = "", extra: str = "") -> str:
     meta_json = json.dumps(meta).replace("<", "\\u003c")
+    # After the styles, so a saved choice of light or dark applies before the page is first drawn.
+    theme_toggle = profile.config.get("theme_toggle", True) is not False
+    theme_script = f"<script>\n{_asset_text('theme.js')}\n</script>" if theme_toggle else ""
     return "\n".join(
         part
         for part in (
@@ -315,6 +318,7 @@ def _head_html(profile: Profile, title: str, meta: dict[str, str], component_css
             f'<script type="application/json" id="pagekit-meta">{meta_json}</script>',
             profile.concat("head.html"),
             f"<style>\n{profile.fonts()}\n{profile.theme()}\n{component_css}\n</style>",
+            theme_script,
             extra,
         )
         if part
