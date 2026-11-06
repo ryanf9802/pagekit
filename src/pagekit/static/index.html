@@ -7,6 +7,8 @@
 <script>
 (function () {
   var pages = [];
+  /* With one profile, naming it on every card says nothing. */
+  var severalProfiles = false;
   var list = document.getElementById("list");
   var q = document.getElementById("q");
   var profile = document.getElementById("profile");
@@ -25,37 +27,110 @@
     return el;
   }
 
+  /* Whole days until a page is deleted, counting any part of a day as one. */
+  function daysLeft(expires) {
+    return Math.ceil((expires * 1000 - Date.now()) / 86400000);
+  }
+
+  function expiry(p) {
+    if (p.pinned) return span("Saved", "pk-badge pk-badge-info");
+    if (!p.expires) return null;
+    var days = daysLeft(p.expires);
+    var text = days <= 0 ? "Expires today" : days === 1 ? "Expires tomorrow" : "Expires in " + days + " days";
+    var el = span(text, days <= 3 ? "pk-badge pk-badge-warning" : "");
+    el.title = "Expires " + date(p.expires);
+    return el;
+  }
+
+  /* The theme the index is showing, whether chosen with its toggle or followed from the system. */
+  function scheme() {
+    var chosen = document.documentElement.getAttribute("data-theme");
+    return chosen || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  }
+
+  function thumbnailUrl(img) {
+    return img.getAttribute("data-base") + "?scheme=" + scheme();
+  }
+
+  /* A picture of the page's first screen, drawn by the server in the index's theme. Without a browser to draw it,
+     the card has none. */
+  function thumbnail(p) {
+    if (p.profile === "saved") return null;
+    var box = document.createElement("div");
+    box.className = "ix-thumb";
+    var img = document.createElement("img");
+    img.alt = "";
+    img.loading = "lazy";
+    img.setAttribute("data-base", "/api/thumb/" + encodeURIComponent(p.profile) + "/" + encodeURIComponent(p.slug));
+    img.src = thumbnailUrl(img) + "&v=" + encodeURIComponent(p.updated);
+    img.setAttribute("data-version", p.updated);
+    img.addEventListener("error", function () { box.remove(); });
+    box.appendChild(img);
+    return box;
+  }
+
+  function refreshThumbnails() {
+    Array.prototype.forEach.call(document.querySelectorAll(".ix-thumb img"), function (img) {
+      var next = thumbnailUrl(img) + "&v=" + encodeURIComponent(img.getAttribute("data-version"));
+      if (img.getAttribute("src") !== next) img.src = next;
+    });
+  }
+
+  function card(p) {
+    var li = document.createElement("li");
+    li.className = "ix-item";
+    var a = document.createElement("a");
+    a.href = p.url;
+    a.title = p.title;
+    var thumb = thumbnail(p);
+    if (thumb) a.appendChild(thumb);
+    var body = document.createElement("div");
+    body.className = "ix-body";
+    var title = document.createElement("div");
+    title.className = "ix-title";
+    title.textContent = p.title;
+    body.appendChild(title);
+    if (p.summary) {
+      var summary = document.createElement("div");
+      summary.className = "ix-summary";
+      summary.textContent = p.summary;
+      body.appendChild(summary);
+    }
+    var meta = document.createElement("div");
+    meta.className = "ix-meta";
+    if (severalProfiles) meta.appendChild(span(p.profile, "pk-badge"));
+    var when = expiry(p);
+    if (when) meta.appendChild(when);
+    meta.appendChild(span("Updated " + date(p.updated)));
+    if (p.session) meta.appendChild(span("From " + p.session));
+    body.appendChild(meta);
+    a.appendChild(body);
+    li.appendChild(a);
+    return li;
+  }
+
+  function heading(text) {
+    var li = document.createElement("li");
+    li.className = "ix-group";
+    li.textContent = text;
+    return li;
+  }
+
   function render() {
     var term = q.value.trim().toLowerCase();
     var shown = pages.filter(function (p) {
       if (profile.value && p.profile !== profile.value) return false;
       return !term || (p.title + " " + p.summary + " " + p.slug).toLowerCase().indexOf(term) !== -1;
     });
-    list.replaceChildren.apply(list, shown.map(function (p) {
-      var li = document.createElement("li");
-      li.className = "ix-item";
-      var a = document.createElement("a");
-      a.href = p.url;
-      var title = document.createElement("div");
-      title.className = "ix-title";
-      title.textContent = p.title;
-      a.appendChild(title);
-      if (p.summary) {
-        var summary = document.createElement("div");
-        summary.className = "ix-summary";
-        summary.textContent = p.summary;
-        a.appendChild(summary);
-      }
-      var meta = document.createElement("div");
-      meta.className = "ix-meta";
-      meta.appendChild(span(p.profile, "pk-badge"));
-      meta.appendChild(span("Updated " + date(p.updated)));
-      meta.appendChild(span(p.expires ? "Expires " + date(p.expires) : "Kept"));
-      if (p.session) meta.appendChild(span("From " + p.session));
-      a.appendChild(meta);
-      li.appendChild(a);
-      return li;
-    }));
+    /* Saved pages come first, since they never expire out of this list. */
+    var saved = shown.filter(function (p) { return p.pinned; });
+    var recent = shown.filter(function (p) { return !p.pinned; });
+    var items = [];
+    if (saved.length && recent.length) items.push(heading("Saved"));
+    saved.forEach(function (p) { items.push(card(p)); });
+    if (saved.length && recent.length) items.push(heading("Recent"));
+    recent.forEach(function (p) { items.push(card(p)); });
+    list.replaceChildren.apply(list, items);
     empty.hidden = shown.length > 0;
     var noun = pages.length === 1 ? " page" : " pages";
     count.textContent = (shown.length === pages.length ? "" : shown.length + " of ") + pages.length + noun;
@@ -65,6 +140,7 @@
     fetch("/api/pages").then(function (r) { return r.json(); }).then(function (data) {
       pages = data.sort(function (a, b) { return a.updated < b.updated ? 1 : -1; });
       var names = Array.from(new Set(pages.map(function (p) { return p.profile; }))).sort();
+      severalProfiles = names.length > 1;
       var current = profile.value;
       profile.replaceChildren(profile.options[0]);
       names.forEach(function (name) {
@@ -78,6 +154,8 @@
     });
   }
 
+  window.addEventListener("pagekit:theme", refreshThumbnails);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", refreshThumbnails);
   q.addEventListener("input", render);
   profile.addEventListener("change", render);
   window.addEventListener("focus", load);
