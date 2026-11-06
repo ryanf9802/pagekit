@@ -66,6 +66,7 @@ uv tool install --editable .
 
 # Make a page, from anywhere.
 pagekit new hello --title "Hello"     # prints the file to write and the house rules
+                                      # (pagekit rules shows the rules again)
 pagekit build hello                   # composes the page and checks it
 ```
 

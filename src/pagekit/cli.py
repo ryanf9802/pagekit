@@ -57,6 +57,11 @@ def _profile(args) -> Profile:
 
 
 def _print_profile(profile: Profile) -> None:
+    _print_profile_header(profile)
+    _print_rules(profile)
+
+
+def _print_profile_header(profile: Profile) -> None:
     print(f"profile: {profile.name}")
     if profile.config.get("when"):
         print(f"when: {profile.config['when']}")
@@ -64,6 +69,9 @@ def _print_profile(profile: Profile) -> None:
     print("layers: " + " > ".join(str(d) for d in profile.dirs[: len(profile.dirs) - len(profile.overrides)]))
     if profile.overrides:
         print("overrides: " + " > ".join(str(d) for d in profile.overrides))
+
+
+def _print_rules(profile: Profile) -> None:
     _print_other_profiles(profile)
     print("theme tokens: " + ", ".join(profile.tokens()))
     print("components (pagekit component show NAME):")
@@ -124,7 +132,16 @@ def cmd_new(args) -> int:
     print(f"write: {page.content}")
     print(f"assets: {page.assets}")
     print(f"then: pagekit build {page.slug}")
-    _print_profile(profile)
+    if created:
+        _print_profile(profile)
+    else:
+        _print_profile_header(profile)
+        print("rules unchanged; run `pagekit rules` to see them again")
+    return 0
+
+
+def cmd_rules(args) -> int:
+    _print_rules(_profile(args))
     return 0
 
 
@@ -413,6 +430,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--older-than-days", type=float)
     p.add_argument("--dry-run", action="store_true")
     p.set_defaults(fn=cmd_prune)
+
+    p = sub.add_parser("rules", help="print the theme tokens, components, and profile instructions that new prints")
+    p.add_argument("--profile", help=profile_help)
+    p.set_defaults(fn=cmd_rules)
 
     p = sub.add_parser("profile", help="print the resolved profile and its instructions")
     p.add_argument("--profile", help=profile_help)

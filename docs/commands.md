@@ -6,7 +6,9 @@ Run `pagekit COMMAND --help` for every option. Page commands accept `--profile`.
 
 ```text
 pagekit new SLUG --title T [--summary S] [--mode slots|free]
-                          create the page, or reopen it to update in place
+                          create the page, or reopen it to update in place; a reopen prints
+                          the paths and one line, not the rules
+pagekit rules             print the theme tokens, components, and profile instructions again
 pagekit build SLUG        compose index.html, then run the checks
 pagekit check SLUG        run the checks only
 pagekit pack SLUG         write one self-contained file, with images embedded
