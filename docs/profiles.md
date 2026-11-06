@@ -122,6 +122,7 @@ drawn as outlines. Source files for other uses are in [`docs/brand/`](brand/), a
 | `brand` | Name in the header, unless `wordmark.svg` replaces it |
 | `footer` | Footer text, required on every page |
 | `copyright` | Adds a copyright notice for this holder to the footer |
+| `version_stamp` | Set to `false` to leave the version number out of the footer. Pages still record it for `pagekit rebuild --all` |
 | `ascii_only` | Treat non-ASCII characters as an error |
 | `allowed_hosts` | Hosts a page may load external resources from |
 | `interactive` | Set to `false` for pages sent to outside readers: no Copy state button and no comments on item IDs |

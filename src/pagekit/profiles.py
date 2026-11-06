@@ -348,6 +348,19 @@ def load_profile(cwd: Path | None = None, override: str | None = None, overrides
     return Profile(name=name, dirs=[*dirs, *layers], config=config, overrides=layers)
 
 
+def profile_named(name: str, cwd: Path | None = None) -> Profile | None:
+    """The profile with this name that applies from here: this folder's, the repo's others, the personal, or the built-in."""
+    where = cwd or Path.cwd()
+    for override in (None, *(str(path) for path in repo_profiles(where).values()), "personal", "builtin"):
+        try:
+            profile = load_profile(where, override=override)
+        except ProfileError:
+            continue
+        if profile.name == name:
+            return profile
+    return None
+
+
 _STARTER_BRAND = """brand = {brand}
 footer = {brand}
 """
