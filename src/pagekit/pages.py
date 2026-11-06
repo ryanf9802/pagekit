@@ -750,8 +750,8 @@ def _save_dir(profile: Profile) -> Path:
     return base / str(save.get("subdir", ""))
 
 
-def _embedded_identity(path: Path) -> tuple[str, str] | None:
-    """The (profile, slug) a packed page was built from, read from its head."""
+def _embedded_meta(path: Path) -> dict | None:
+    """The metadata a built page carries in its head, or None when there is none."""
     with path.open(encoding="utf-8", errors="replace") as handle:
         head = handle.read(8192)
     match = re.search(r'id="pagekit-meta">(.*?)</script>', head)
@@ -761,7 +761,21 @@ def _embedded_identity(path: Path) -> tuple[str, str] | None:
         meta = json.loads(match.group(1))
     except ValueError:
         return None
-    return meta.get("profile", ""), meta.get("slug", "")
+    return meta if isinstance(meta, dict) else None
+
+
+def _embedded_identity(path: Path) -> tuple[str, str] | None:
+    """The (profile, slug) a packed page was built from, read from its head."""
+    meta = _embedded_meta(path)
+    return None if meta is None else (meta.get("profile", ""), meta.get("slug", ""))
+
+
+def built_stamp(index: Path) -> dict[str, str] | None:
+    """When a built page was built and a fingerprint of its content, which an open copy compares against."""
+    meta = _embedded_meta(index) if index.is_file() else None
+    if meta is None:
+        return None
+    return {"built": str(meta.get("built", "")), "rev": str(meta.get("rev", ""))}
 
 
 @dataclass
