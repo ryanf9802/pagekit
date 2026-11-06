@@ -4,7 +4,7 @@ import pytest
 
 from pagekit.cli import main
 
-RULES_MARKERS = ("theme tokens:", "components (pagekit component show NAME):", "--- profile instructions ---")
+RULES_MARKERS = ("theme tokens:", "components (pagekit component show NAME...):", "--- profile instructions ---")
 
 
 def _run(capsys: pytest.CaptureFixture[str], *argv: str) -> str:
