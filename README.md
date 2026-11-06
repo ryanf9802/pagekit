@@ -9,6 +9,12 @@
 
 **Self-contained HTML pages for coding agents.**
 
+[![CI](https://github.com/ryanf9802/pagekit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ryanf9802/pagekit/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/ryanf9802/pagekit?sort=semver)](https://github.com/ryanf9802/pagekit/releases/latest)
+[![Released](https://img.shields.io/github/release-date/ryanf9802/pagekit)](https://github.com/ryanf9802/pagekit/releases)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](CONTRIBUTING.md#project-rules)
+[![License: MIT](https://img.shields.io/github/license/ryanf9802/pagekit)](LICENSE)
+
 Ask your agent for a page instead of a wall of terminal text. You get one plain file that works offline, prints well,
 and reads well on a phone, and you can answer on the page and send your answers straight back to the agent.
 
@@ -45,6 +51,38 @@ you [set up a profile](#set-up-a-profile).
 - **Checked.** Every build catches missing images, lost answers, and words you have banned before you see the page.
 - **Nothing to run.** A built page is one plain file. The Python standard library is the only dependency, the page
   index server is optional, and pages expire after 30 days unless you save them.
+
+## Make it yours
+
+Out of the box, pages carry the pagekit look. A [profile](docs/profiles.md) changes all of it: logo, colors, fonts,
+header and footer, even the shape of the page. Same components, same checks, a different brand. Below, the default
+page, then three made-up companies with profiles of their own.
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/profile-default.png" alt="A pagekit page in the default pagekit look: ember orange accents, white cards, and a plain header" width="440">
+      <br><sub><b>pagekit</b>, the default look</sub>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/profile-northwind.png" alt="A page for a private bank in navy and gold, with a serif headline, a navy header, and gold rules" width="440">
+      <br><sub><b>Northwind Capital</b>, a private bank</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/profile-basalt.png" alt="A dark terminal-style page for a developer tools company, in monospace type with green accents and a status strip under the header" width="440">
+      <br><sub><b>Basalt Labs</b>, developer tools</sub>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/profile-marigold.png" alt="A loud, playful page for a design studio, with a yellow header, black outlines, hard shadows, and pastel tiles" width="440">
+      <br><sub><b>Marigold Studio</b>, a design studio</sub>
+    </td>
+  </tr>
+</table>
+
+Every profile still works in light and dark, on a phone, and in print. To make one, see
+[Set up a profile](#set-up-a-profile).
 
 ## Why pagekit
 
