@@ -10,12 +10,11 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib import resources
 from pathlib import Path
-from urllib.parse import parse_qs, unquote, urlsplit
+from urllib.parse import unquote, urlsplit
 
 from .pages import SAVED_DIR, PageError, built_stamp, iter_pages, list_saved, load_page_dir, pages_root, prune_pages, public_url, render_index
 from .pdf import find_chrome, render_pdf
 from .profiles import load_profile
-from .thumbnail import ensure_thumbnail
 
 _LOCAL_HOST = re.compile(r"^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$")
 _PAGE_PATH = re.compile(r"^/p/([a-z0-9-]+)/([a-z0-9-]+)(/.*)?$")
@@ -30,7 +29,6 @@ _APP_FILES = {
 _PRUNE_INTERVAL_SECONDS = 600.0
 _BUILT_PATH = re.compile(r"^/api/built/([a-z0-9-]+)/([a-z0-9-]+)$")
 _PDF_PATH = re.compile(r"^/api/pdf/([a-z0-9-]+)/([a-z0-9-]+)$")
-_THUMB_PATH = re.compile(r"^/api/thumb/([a-z0-9-]+)/([a-z0-9-]+)$")
 _MAX_STATE_BYTES = 2_000_000
 
 
@@ -60,7 +58,9 @@ def make_handler():
             self.send_response(status)
             self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(len(body)))
-            for key, value in {"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", **(extra or {})}.items():
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            for key, value in (extra or {}).items():
                 self.send_header(key, value)
             self.end_headers()
             if body and self.command != "HEAD":
@@ -102,17 +102,6 @@ def make_handler():
                 return self._json(200, {"available": bool(find_chrome())})
             if path == "/api/pages":
                 return self._json(200, [p.to_json() for p in iter_pages() if p.index.is_file()] + list_saved())
-            if match := _THUMB_PATH.match(path):
-                profile, slug = match.groups()
-                if profile == SAVED_DIR:
-                    return self._json(404, {"error": "no thumbnail"})
-                scheme = (parse_qs(urlsplit(self.path).query).get("scheme") or ["light"])[0]
-                try:
-                    target = ensure_thumbnail(load_page_dir(pages_root() / profile / slug), scheme)
-                except PageError:
-                    return self._json(404, {"error": "no thumbnail"})
-                # The index asks with the page's updated time, so a rebuilt page is a new address.
-                return self._send(200, target.read_bytes(), "image/png", {"Cache-Control": "max-age=86400"})
             if match := _BUILT_PATH.match(path):
                 # An open page polls this to learn it has been rebuilt.
                 target = _resolve_page_file(match.group(1), match.group(2), "index.html")

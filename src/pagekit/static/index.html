@@ -7,7 +7,7 @@
 <script>
 (function () {
   var pages = [];
-  /* With one profile, naming it on every card says nothing. */
+  /* With one profile, naming it on every row says nothing. */
   var severalProfiles = false;
   var list = document.getElementById("list");
   var q = document.getElementById("q");
@@ -20,10 +20,11 @@
     return String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getDate()).padStart(2, "0") + "/" + d.getFullYear();
   }
 
-  function span(text, className) {
+  function cell(text, className, label) {
     var el = document.createElement("span");
     el.textContent = text;
-    if (className) el.className = className;
+    el.className = className;
+    if (label) el.setAttribute("aria-label", label);
     return el;
   }
 
@@ -32,87 +33,44 @@
     return Math.ceil((expires * 1000 - Date.now()) / 86400000);
   }
 
-  function expiry(p) {
-    if (p.pinned) return span("Saved", "pk-badge pk-badge-info");
-    if (!p.expires) return null;
+  /* Saved pages never expire. Any other page says how long it has left, in amber when it is nearly gone. */
+  function status(p) {
+    if (p.pinned) return cell("Saved", "ix-status ix-saved");
+    if (!p.expires) return cell("", "ix-status");
     var days = daysLeft(p.expires);
-    var text = days <= 0 ? "Expires today" : days === 1 ? "Expires tomorrow" : "Expires in " + days + " days";
-    var el = span(text, days <= 3 ? "pk-badge pk-badge-warning" : "");
-    el.title = "Expires " + date(p.expires);
-    return el;
+    var text = days <= 0 ? "today" : days === 1 ? "tomorrow" : "in " + days + " days";
+    return cell(text, "ix-status" + (days <= 3 ? " ix-soon" : ""), "Expires " + text);
   }
 
-  /* The theme the index is showing, whether chosen with its toggle or followed from the system. */
-  function scheme() {
-    var chosen = document.documentElement.getAttribute("data-theme");
-    return chosen || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-  }
-
-  function thumbnailUrl(img) {
-    return img.getAttribute("data-base") + "?scheme=" + scheme();
-  }
-
-  /* A picture of the page's first screen, drawn by the server in the index's theme. Without a browser to draw it,
-     the card has none. */
-  function thumbnail(p) {
-    if (p.profile === "saved") return null;
-    var box = document.createElement("div");
-    box.className = "ix-thumb";
-    var img = document.createElement("img");
-    img.alt = "";
-    img.loading = "lazy";
-    img.setAttribute("data-base", "/api/thumb/" + encodeURIComponent(p.profile) + "/" + encodeURIComponent(p.slug));
-    img.src = thumbnailUrl(img) + "&v=" + encodeURIComponent(p.updated);
-    img.setAttribute("data-version", p.updated);
-    img.addEventListener("error", function () { box.remove(); });
-    box.appendChild(img);
-    return box;
-  }
-
-  function refreshThumbnails() {
-    Array.prototype.forEach.call(document.querySelectorAll(".ix-thumb img"), function (img) {
-      var next = thumbnailUrl(img) + "&v=" + encodeURIComponent(img.getAttribute("data-version"));
-      if (img.getAttribute("src") !== next) img.src = next;
-    });
-  }
-
-  function card(p) {
+  function row(p) {
     var li = document.createElement("li");
     li.className = "ix-item";
     var a = document.createElement("a");
+    a.className = "ix-row";
     a.href = p.url;
-    a.title = p.title;
-    var thumb = thumbnail(p);
-    if (thumb) a.appendChild(thumb);
-    var body = document.createElement("div");
-    body.className = "ix-body";
-    var title = document.createElement("div");
-    title.className = "ix-title";
-    title.textContent = p.title;
-    body.appendChild(title);
-    if (p.summary) {
-      var summary = document.createElement("div");
-      summary.className = "ix-summary";
-      summary.textContent = p.summary;
-      body.appendChild(summary);
-    }
-    var meta = document.createElement("div");
-    meta.className = "ix-meta";
-    if (severalProfiles) meta.appendChild(span(p.profile, "pk-badge"));
-    var when = expiry(p);
-    if (when) meta.appendChild(when);
-    meta.appendChild(span("Updated " + date(p.updated)));
-    if (p.session) meta.appendChild(span("From " + p.session));
-    body.appendChild(meta);
-    a.appendChild(body);
+    /* The details that do not get a column. */
+    var details = [p.title];
+    if (p.expires) details.push("Expires " + date(p.expires));
+    if (p.session) details.push("From " + p.session);
+    a.title = details.join("\n");
+    a.appendChild(cell(p.title, "ix-title"));
+    if (severalProfiles) a.appendChild(cell(p.profile, "ix-profile"));
+    a.appendChild(cell(p.summary || "", "ix-summary"));
+    a.appendChild(cell(date(p.updated), "ix-updated", "Updated " + date(p.updated)));
+    a.appendChild(status(p));
     li.appendChild(a);
     return li;
   }
 
-  function heading(text) {
+  function header() {
     var li = document.createElement("li");
-    li.className = "ix-group";
-    li.textContent = text;
+    li.className = "ix-head";
+    li.setAttribute("aria-hidden", "true");
+    li.appendChild(cell("Page", "ix-title"));
+    if (severalProfiles) li.appendChild(cell("Profile", "ix-profile"));
+    li.appendChild(cell("Summary", "ix-summary"));
+    li.appendChild(cell("Updated", "ix-updated"));
+    li.appendChild(cell("Expires", "ix-status"));
     return li;
   }
 
@@ -123,14 +81,10 @@
       return !term || (p.title + " " + p.summary + " " + p.slug).toLowerCase().indexOf(term) !== -1;
     });
     /* Saved pages come first, since they never expire out of this list. */
-    var saved = shown.filter(function (p) { return p.pinned; });
-    var recent = shown.filter(function (p) { return !p.pinned; });
-    var items = [];
-    if (saved.length && recent.length) items.push(heading("Saved"));
-    saved.forEach(function (p) { items.push(card(p)); });
-    if (saved.length && recent.length) items.push(heading("Recent"));
-    recent.forEach(function (p) { items.push(card(p)); });
-    list.replaceChildren.apply(list, items);
+    var items = shown.filter(function (p) { return p.pinned; }).concat(shown.filter(function (p) { return !p.pinned; }));
+    list.classList.toggle("ix-has-profile", severalProfiles);
+    list.hidden = shown.length === 0;
+    list.replaceChildren.apply(list, [header()].concat(items.map(row)));
     empty.hidden = shown.length > 0;
     var noun = pages.length === 1 ? " page" : " pages";
     count.textContent = (shown.length === pages.length ? "" : shown.length + " of ") + pages.length + noun;
@@ -140,7 +94,8 @@
     fetch("/api/pages").then(function (r) { return r.json(); }).then(function (data) {
       pages = data.sort(function (a, b) { return a.updated < b.updated ? 1 : -1; });
       var names = Array.from(new Set(pages.map(function (p) { return p.profile; }))).sort();
-      severalProfiles = names.length > 1;
+      /* A saved copy sits under "saved", which is a place and not a profile. */
+      severalProfiles = names.filter(function (name) { return name !== "saved"; }).length > 1;
       var current = profile.value;
       profile.replaceChildren(profile.options[0]);
       names.forEach(function (name) {
@@ -154,8 +109,6 @@
     });
   }
 
-  window.addEventListener("pagekit:theme", refreshThumbnails);
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", refreshThumbnails);
   q.addEventListener("input", render);
   profile.addEventListener("change", render);
   window.addEventListener("focus", load);
