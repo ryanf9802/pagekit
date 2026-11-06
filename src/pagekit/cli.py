@@ -37,6 +37,7 @@ from .pages import (
     set_public_url,
     stale_pages,
 )
+from .browsercheck import check_in_browser, exit_code, format_results
 from .pdf import render_pdf
 from .update import UpdateError, check, installed_version, resolve_follow, update, update_settings_file
 from .profiles import (
@@ -121,7 +122,7 @@ def _print_check(result: CheckResult) -> int:
     for warning in result.warnings:
         print(f"warning: {warning}")
     if result.ok:
-        print(f"check: ok (phone width needs a browser: scrollWidth at {PHONE_WIDTH_PX}px)")
+        print("check: ok (phone width needs a browser: pagekit check --browser SLUG)")
         return 0
     print(f"check: {len(result.errors)} error(s)")
     return 1
@@ -213,7 +214,17 @@ def cmd_rebuild(args) -> int:
 
 def cmd_check(args) -> int:
     profile = _profile(args)
-    return _report_check(profile, load_page(profile, args.slug))
+    page = load_page(profile, args.slug)
+    if args.screenshot and not args.browser:
+        raise PageError("--screenshot needs --browser")
+    if not args.browser:
+        return _report_check(profile, page)
+    shot = Path(args.screenshot).expanduser() if args.screenshot else None
+    results = check_in_browser(page, shot)
+    print("\n".join(format_results(results)))
+    if shot:
+        print(f"screenshot: {shot}")
+    return exit_code(results)
 
 
 def cmd_pack(args) -> int:
@@ -479,7 +490,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--all", action="store_true", required=True, help="every stale page, in every profile that applies here")
     p.add_argument("--dry-run", action="store_true", help="list the pages without rebuilding them")
     p.set_defaults(fn=cmd_rebuild)
-    page_command("check", cmd_check, "run the checks only")
+    p = page_command("check", cmd_check, "run the checks only")
+    p.add_argument("--browser", action="store_true", help=f"load the built page in Chrome at {PHONE_WIDTH_PX}px, light and dark, instead")
+    p.add_argument("--screenshot", metavar="PATH", help="with --browser, also write a full-page PNG here")
     page_command("pack", cmd_pack, "write one self-contained HTML file and print its path")
     page_command("send", cmd_send, "pack the page and run the profile's send command on it")
     p = page_command("pdf", cmd_pdf, "write a bookmarked, tagged PDF with headless Chromium")

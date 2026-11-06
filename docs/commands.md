@@ -13,6 +13,9 @@ pagekit build SLUG        compose index.html, then run the checks
 pagekit rebuild --all [--dry-run]
                           rebuild every page built with another version of pagekit
 pagekit check SLUG        run the checks only
+pagekit check --browser SLUG [--screenshot PATH]
+                          load the built page in headless Chrome at 390 px, light and dark; report overflow
+                          and console errors, exit 1 on any; --screenshot also writes a full-page PNG
 pagekit pack SLUG         write one self-contained file, with images embedded
 pagekit send SLUG         pack, then run the profile's send command
 pagekit pdf SLUG [--out FILE]
