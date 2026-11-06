@@ -155,3 +155,28 @@ def test_index_uses_the_same_chrome_as_a_page(home: Path, port: int) -> None:
     assert ".pk-header .pk-logo" not in index and ".pk-header .pk-wordmark" not in index
     assert '<div class="ix-controls" data-pk-ignore>' in index
     assert "<span>Updated " in page and "<span>Updated " not in index
+
+
+def test_built_stamp_follows_a_rebuild(home: Path, port: int) -> None:
+    page = built_page(home)
+    status, body, _ = request(port, "/api/built/default/demo")
+    first = json.loads(body)
+    assert status == 200 and first["built"] and first["rev"]
+    assert f'"built": "{first["built"]}"' in page.index.read_text(encoding="utf-8")
+    page.content.write_text("<p>New words</p>")
+    build_page(load_profile(), page)
+    second = json.loads(request(port, "/api/built/default/demo")[1])
+    assert second["rev"] != first["rev"]
+
+
+def test_built_stamp_is_not_found_for_unknown_or_unbuilt_pages(home: Path, port: int) -> None:
+    new_page(load_profile(), "draft", "Draft", "", "slots")
+    assert request(port, "/api/built/default/draft")[0] == 404
+    assert request(port, "/api/built/default/missing")[0] == 404
+    assert request(port, "/api/built/saved/anything")[0] == 404
+
+
+def test_pages_watch_for_a_rebuild_only_when_served(home: Path, port: int) -> None:
+    built_page(home)
+    page = request(port, "/p/default/demo/")[1].decode()
+    assert "/api/built/" in page and "pk-reload" in page
