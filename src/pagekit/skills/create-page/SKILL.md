@@ -22,6 +22,10 @@ To change how pages look in a project or for the user, use the `setup-profile` s
    profiles here, pick the one whose `when` fits the page, without asking, and add
    `--profile NAME` to every command for that page.
 
+   Reopening a page that already exists prints only the paths and a note that the rules
+   are unchanged. Run `pagekit rules` (with the same `--profile`) to see them again, for
+   example after the conversation was compacted.
+
 2. Write the page body to the printed `content.html`, and put images in `assets/`.
    Use `--mode free` on a new page only for something bespoke that the shell gets in the
    way of: there `content.html` is the whole document and must keep `{{head}}` and

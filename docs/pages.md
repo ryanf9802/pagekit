@@ -3,7 +3,8 @@
 ## The workflow
 
 1. `pagekit new SLUG --title T` creates the page, or reopens an existing one to update it in place, keeping
-   its path and link. It prints the file to write and the profile's rules.
+   its path and link. It prints the file to write and the profile's rules. A reopen prints only the paths and a one
+   line note; `pagekit rules` prints the rules again.
 2. Write the body to `content.html`, and put images in `assets/`.
 3. `pagekit build SLUG` composes `index.html` and runs the checks. Fix what they report and build again.
 
