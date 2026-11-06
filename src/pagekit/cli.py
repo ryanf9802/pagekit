@@ -21,6 +21,7 @@ from .pages import (
     Page,
     PageError,
     build_page,
+    build_version,
     check_page,
     iter_pages,
     list_saved,
@@ -34,7 +35,9 @@ from .pages import (
     send_page,
     server_running,
     set_public_url,
+    stale_pages,
 )
+from .browsercheck import check_in_browser, exit_code, format_results
 from .tags import outline
 from .pdf import render_pdf
 from .update import UpdateError, check, installed_version, resolve_follow, update, update_settings_file
@@ -47,6 +50,7 @@ from .profiles import (
     load_profile,
     local_profile_dir,
     personal_dir,
+    profile_named,
     projects_file,
     register_project,
     repo_profiles,
@@ -74,7 +78,7 @@ def _print_profile_header(profile: Profile) -> None:
 
 def _print_rules(profile: Profile) -> None:
     _print_other_profiles(profile)
-    print("components (pagekit component show NAME):")
+    print("components (pagekit component show NAME...):")
     for component in list_components(profile):
         print(f"  {component.name}: {component.when}")
     instructions = profile.instructions()
@@ -122,7 +126,7 @@ def _print_check(result: CheckResult) -> int:
     for warning in result.warnings:
         print(f"warning: {warning}")
     if result.ok:
-        print(f"check: ok (phone width needs a browser: scrollWidth at {PHONE_WIDTH_PX}px)")
+        print("check: ok (phone width needs a browser: pagekit check --browser SLUG)")
         return 0
     print(f"check: {len(result.errors)} error(s)")
     return 1
@@ -154,19 +158,25 @@ def cmd_rules(args) -> int:
     return 0
 
 
-def cmd_build(args) -> int:
-    prune_if_due()
-    profile = _profile(args)
-    page = load_page(profile, args.slug)
+def _build_and_check(profile: Profile, page: Page) -> CheckResult:
+    """Build and check, keeping the last good page when the profile's own check refuses the new one."""
     previous = page.index.read_bytes() if page.index.is_file() else None
     build_page(profile, page)
     result = check_page(profile, page)
     if result.hook_failed:
-        # A page the profile refuses never becomes the live version.
         if previous is None:
             page.index.unlink()
         else:
             page.index.write_bytes(previous)
+    return result
+
+
+def cmd_build(args) -> int:
+    prune_if_due()
+    profile = _profile(args)
+    page = load_page(profile, args.slug)
+    result = _build_and_check(profile, page)
+    if result.hook_failed:
         _print_check(result)
         print("not updated: the profile's check refused this build")
         return 1
@@ -174,9 +184,56 @@ def cmd_build(args) -> int:
     return _print_check(result)
 
 
+def cmd_rebuild(args) -> int:
+    prune_if_due()
+    current = build_version()
+    stale = stale_pages(current)
+    if not stale:
+        print(f"every built page is at version {current}" if current != "unknown" else "this install has no version to compare")
+        return 0
+    verb = "would rebuild" if args.dry_run else "rebuilding"
+    print(f"{len(stale)} page(s) built with another version than {current}: {verb}")
+    failed = skipped = 0
+    for page in stale:
+        label = f"{page.profile}/{page.slug}"
+        if args.dry_run:
+            print(f"  {label}")
+            continue
+        profile = profile_named(page.profile)
+        if profile is None:
+            skipped += 1
+            print(f"  {label}: skipped, profile {page.profile} does not apply here (run from the folder that has it)")
+            continue
+        try:
+            result = _build_and_check(profile, page)
+        except PageError as exc:
+            failed += 1
+            print(f"  {label}: failed, {exc}")
+            continue
+        if result.ok:
+            print(f"  {label}: rebuilt")
+        else:
+            failed += 1
+            kept = "kept the old page" if result.hook_failed else "built, with errors"
+            print(f"  {label}: {kept}, {len(result.errors)} error(s): pagekit check {page.slug} --profile {page.profile}")
+    if not args.dry_run:
+        print(f"rebuilt {len(stale) - failed - skipped}, skipped {skipped}, failed {failed}")
+    return 1 if failed else 0
+
+
 def cmd_check(args) -> int:
     profile = _profile(args)
-    return _report_check(profile, load_page(profile, args.slug))
+    page = load_page(profile, args.slug)
+    if args.screenshot and not args.browser:
+        raise PageError("--screenshot needs --browser")
+    if not args.browser:
+        return _report_check(profile, page)
+    shot = Path(args.screenshot).expanduser() if args.screenshot else None
+    results = check_in_browser(page, shot)
+    print("\n".join(format_results(results)))
+    if shot:
+        print(f"screenshot: {shot}")
+    return exit_code(results)
 
 
 def cmd_outline(args) -> int:
@@ -234,11 +291,23 @@ def cmd_component_list(args) -> int:
 
 
 def cmd_component_show(args) -> int:
-    component = find_component(_profile(args), args.name)
-    print(component.html.read_text(encoding="utf-8").rstrip())
-    if component.css:
-        print(f"\n/* {component.css} (added to pages automatically) */")
-        print(component.css.read_text(encoding="utf-8").rstrip())
+    profile = _profile(args)
+    names = list(dict.fromkeys(args.names))
+    known = {c.name for c in list_components(profile)}
+    missing = [name for name in names if name not in known]
+    if len(missing) == 1:
+        find_component(profile, missing[0])
+    if missing:
+        listed = ", ".join(repr(name) for name in missing)
+        raise ComponentError(f"no components named {listed}: see pagekit component list")
+    for index, name in enumerate(names):
+        component = find_component(profile, name)
+        if index:
+            print()
+        print(component.html.read_text(encoding="utf-8").rstrip())
+        if component.css:
+            print(f"\n/* {component.css} (added to pages automatically) */")
+            print(component.css.read_text(encoding="utf-8").rstrip())
     return 0
 
 
@@ -388,7 +457,9 @@ def cmd_update(args) -> int:
         print("restarted the server")
     elif result.server:
         print("the server is still running the old version: restart it")
-    print("pages already built keep their old look until you run pagekit build SLUG")
+    behind = len(stale_pages(build_version()))
+    if behind:
+        print(f"{behind} page(s) were built with an older version and keep their old look: run pagekit rebuild --all")
     return 0
 
 
@@ -436,7 +507,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--summary")
     p.add_argument("--mode", choices=("slots", "free"), default="slots")
     page_command("build", cmd_build, "compose index.html and run the checks")
-    page_command("check", cmd_check, "run the checks only")
+    p = sub.add_parser("rebuild", help="rebuild every page built with another version of pagekit")
+    p.add_argument("--all", action="store_true", required=True, help="every stale page, in every profile that applies here")
+    p.add_argument("--dry-run", action="store_true", help="list the pages without rebuilding them")
+    p.set_defaults(fn=cmd_rebuild)
+    p = page_command("check", cmd_check, "run the checks only")
+    p.add_argument("--browser", action="store_true", help=f"load the built page in Chrome at {PHONE_WIDTH_PX}px, light and dark, instead")
+    p.add_argument("--screenshot", metavar="PATH", help="with --browser, also write a full-page PNG here")
     page_command("outline", cmd_outline, "list a page's headings and item IDs with their line numbers in content.html")
     page_command("pack", cmd_pack, "write one self-contained HTML file and print its path")
     page_command("send", cmd_send, "pack the page and run the profile's send command on it")
@@ -478,8 +555,8 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--json", action="store_true")
     q.add_argument("--profile", help=profile_help)
     q.set_defaults(fn=cmd_component_list)
-    q = component.add_parser("show", help="print a component's markup and styles")
-    q.add_argument("name")
+    q = component.add_parser("show", help="print the markup and styles of one or more components")
+    q.add_argument("names", nargs="+", metavar="NAME")
     q.add_argument("--profile", help=profile_help)
     q.set_defaults(fn=cmd_component_show)
     q = component.add_parser(

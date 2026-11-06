@@ -371,3 +371,23 @@ def test_no_release_yet_points_to_the_main_flag(repos, tmp_path, monkeypatch, ca
     assert main(["update"]) == 1
     err = capsys.readouterr().err
     assert "no release has been published yet" in err and "--main" in err
+
+
+def test_update_says_how_many_pages_were_built_with_an_older_version(repos, monkeypatch, capsys) -> None:
+    author, _ = repos
+    commit(author, "src/pagekit/feature.txt", "x", "add a feature")
+    git(author, "push", "-q", "origin", "main")
+    release(author, "v0.1.1")
+    monkeypatch.setattr("pagekit.cli.stale_pages", lambda current: ["one", "two"])
+    assert main(["update"]) == 0
+    assert "2 page(s) were built with an older version and keep their old look: run pagekit rebuild --all" in capsys.readouterr().out
+
+
+def test_update_is_quiet_about_pages_when_none_are_stale(repos, monkeypatch, capsys) -> None:
+    author, _ = repos
+    commit(author, "src/pagekit/feature.txt", "x", "add a feature")
+    git(author, "push", "-q", "origin", "main")
+    release(author, "v0.1.1")
+    monkeypatch.setattr("pagekit.cli.stale_pages", lambda current: [])
+    assert main(["update"]) == 0
+    assert "rebuild --all" not in capsys.readouterr().out

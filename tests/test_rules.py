@@ -4,7 +4,7 @@ import pytest
 
 from pagekit.cli import main
 
-RULES_MARKERS = ("components (pagekit component show NAME):", "--- profile instructions ---")
+RULES_MARKERS = ("components (pagekit component show NAME...):", "--- profile instructions ---")
 
 
 def _run(capsys: pytest.CaptureFixture[str], *argv: str) -> str:
@@ -41,7 +41,7 @@ def test_reopen_prints_a_short_note_and_no_rules(home, capsys) -> None:
 def test_rules_prints_what_a_first_new_prints_after_the_paths(home, capsys) -> None:
     first = _new(capsys)
     rules = _run(capsys, "rules")
-    assert rules.startswith("components (pagekit component show NAME):")
+    assert rules.startswith("components (pagekit component show NAME...):")
     assert first.endswith(rules)
 
 

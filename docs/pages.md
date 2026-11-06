@@ -51,8 +51,11 @@ Every build runs these checks, and `pagekit check` runs them alone.
 - Inline styles and `<style>` blocks
 - Classes that no theme or component defines
 
-Free-mode pages skip the last three. Real phone-width layout needs a browser, so check that by eye at 390 px,
-where `document.documentElement.scrollWidth` should not exceed the window width.
+Free-mode pages skip the last three. Real phone-width layout needs a browser, so run `pagekit check --browser SLUG`.
+It loads the built page in headless Chrome at 390 px, in light and dark mode, and prints whether
+`document.documentElement.scrollWidth` exceeds the window width, the elements that overflow (at most 5; tables, code,
+and wide diagrams that scroll on their own are ignored), and any console errors. It exits 1 if anything is wrong.
+`--screenshot PATH` also writes a full-page PNG. It needs Chrome, found the same way as for diagrams and PDFs.
 
 ## Sharing
 

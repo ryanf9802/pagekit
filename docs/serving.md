@@ -14,6 +14,14 @@ Set `PAGEKIT_PORT` or pass `--port` to use another port. The server listens on l
 an **All pages** icon in the header, back to the index. Packed and saved copies have no index, so they have no
 link, and it does not print.
 
+## When a page is rebuilt
+
+A page open from the server checks every few seconds whether it has been rebuilt, while its tab is in view. When it
+has, a small notice appears with a **Reload** button. The page never reloads by itself. Answers you typed are kept in
+the browser, so a rebuild with the same content loses nothing. If the content changed, answers you have not copied
+belong to the old page, and the notice says reloading clears them. Downloaded and saved copies have no server and show
+nothing.
+
 ## Starting at login
 
 `install-service` needs systemd, which covers most Linux systems and WSL with systemd enabled. Elsewhere, have the

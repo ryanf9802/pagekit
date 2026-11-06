@@ -475,6 +475,60 @@ def test_a_mistake_in_a_tag_stops_the_build(home: Path, body: str, message: str)
         make(load_profile(), body=body)
 
 
+_TABLE_FULL = (
+    '<div class="pk-table-wrap"><table><thead><tr><th>ID</th><th>Idea</th></tr></thead>'
+    '<tbody><tr><td><span class="pk-id">N-01</span></td><td>Shorten output</td></tr>'
+    "<tr><td>N-02</td><td>Fewer <code>tags</code></td></tr></tbody></table></div>"
+)
+
+
+def _squeezed(document: str) -> str:
+    return re.sub(r">\s+<", "><", document)
+
+
+def test_table_tag_matches_the_hand_written_component(home: Path) -> None:
+    body = (
+        '<pk-table>\nID | Idea\n<span class="pk-id">N-01</span> | Shorten output\n\n'
+        "N-02 | Fewer <code>tags</code>\n</pk-table>"
+    )
+    document = make(load_profile(), body=body).index.read_text()
+    assert _squeezed(document).count(_TABLE_FULL) == 1 and "pk-table>" not in document
+    assert _squeezed(make(load_profile(), slug="full", body=_TABLE_FULL).index.read_text()).count(_TABLE_FULL) == 1
+
+
+def test_table_tag_no_header_makes_every_line_a_body_row(home: Path) -> None:
+    document = make(load_profile(), body="<pk-table no-header>\nA | B\nC | D\n</pk-table>").index.read_text()
+    assert "<thead><tr>" not in document and document.count("<tr><td>") == 2
+
+
+def test_table_tag_pads_short_rows_and_keeps_escaped_pipes(home: Path) -> None:
+    document = make(load_profile(), body="<pk-table>\nA | B | C\none\nx \\| y | z\n</pk-table>").index.read_text()
+    assert "<tr><td>one</td><td></td><td></td></tr>" in document
+    assert "<tr><td>x | y</td><td>z</td><td></td></tr>" in document
+
+
+def test_two_table_tags_on_one_page(home: Path) -> None:
+    body = "<pk-table>\nA\n1\n</pk-table><p>Between</p><pk-table>\nB\n2\n</pk-table>"
+    document = make(load_profile(), body=body).index.read_text()
+    assert document.count('class="pk-table-wrap"') == 2 and "<th>A</th>" in document and "<th>B</th>" in document
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        ("<p>x</p>\n<pk-table>\nA | B\n1 | 2 | 3\n</pk-table>", r"line 4: 3 cells but the table has 2 columns"),
+        ("<pk-table>\nA | B\n1 | 2\n", "never closed"),
+        ("<pk-table>\nA\n<pk-table>\nB\n</pk-table>", "not closed before the next"),
+        ("<pk-table>\n\n</pk-table>", "no rows"),
+        ('<pk-table title="x">\nA\n</pk-table>', "no attribute 'title'"),
+        ("<pk-contents>text</pk-contents><h2>A</h2>", "takes no content"),
+    ],
+)
+def test_a_mistake_in_a_table_tag_stops_the_build(home: Path, body: str, message: str) -> None:
+    with pytest.raises(PageError, match=message):
+        make(load_profile(), body=body)
+
+
 def test_the_default_brand_stays_under_the_weight_limits(home: Path) -> None:
     assert load_profile().brand_warnings() == []
 

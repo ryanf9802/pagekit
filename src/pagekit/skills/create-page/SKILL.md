@@ -36,9 +36,10 @@ use the `setup-profile` skill.
    pagekit build <slug>
    ```
 
-4. Look at it before reporting: open the printed URL in a browser, at 390 px wide (where
-   `document.documentElement.scrollWidth` must not exceed the window width) and in dark mode.
-   `pagekit check` cannot see layout.
+4. Look at it before reporting. Run `pagekit check --browser <slug>`: it loads the page at
+   390 px wide in light and dark mode, prints any horizontal overflow and console errors,
+   and exits non-zero on either. Fix and rebuild until it passes. Open a browser only for
+   a visual look, or add `--screenshot PATH` for a full-page image.
 
 5. When the server is up, report the printed `url:` and no other link. Otherwise run
    `pagekit send <slug>` to hand over the file (a `file://` path does not reach another
@@ -46,7 +47,8 @@ use the `setup-profile` skill.
 
 ## Components
 
-`pagekit component show NAME` prints a listed component. When none fits, save what you build:
+`pagekit component show NAME...` prints one or several: name every component you need in one
+call. When none fits, save what you build:
 
 ```bash
 pagekit component add NAME --when "one line on when to use it" --from FOLDER
