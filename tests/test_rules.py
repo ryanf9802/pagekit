@@ -4,7 +4,7 @@ import pytest
 
 from pagekit.cli import main
 
-RULES_MARKERS = ("theme tokens:", "components (pagekit component show NAME):", "--- profile instructions ---")
+RULES_MARKERS = ("theme tokens:", "components (pagekit component show NAME...):", "--- profile instructions ---")
 
 
 def _run(capsys: pytest.CaptureFixture[str], *argv: str) -> str:
@@ -29,7 +29,9 @@ def test_reopen_prints_a_short_note_and_no_rules(home, capsys) -> None:
     assert out.startswith("exists, updating in place: ")
     for prefix in ("write: ", "assets: ", "then: pagekit build demo", "profile: "):
         assert prefix in out
-    assert "rules unchanged; run `pagekit rules` to see them again" in out
+    assert "rules unchanged (`pagekit rules` shows them)" in out
+    assert "`pagekit outline demo`" in out
+    assert "not a rewrite" in out
     for marker in RULES_MARKERS:
         assert marker not in out
     assert out.isascii()

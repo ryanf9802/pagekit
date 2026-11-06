@@ -16,6 +16,8 @@ pagekit check SLUG        run the checks only
 pagekit check --browser SLUG [--screenshot PATH]
                           load the built page in headless Chrome at 390 px, light and dark; report overflow
                           and console errors, exit 1 on any; --screenshot also writes a full-page PNG
+pagekit outline SLUG      list the page's headings and item IDs with line numbers in content.html,
+                          so an update can be a targeted edit
 pagekit pack SLUG         write one self-contained file, with images embedded
 pagekit send SLUG         pack, then run the profile's send command
 pagekit pdf SLUG [--out FILE]

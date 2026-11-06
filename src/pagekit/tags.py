@@ -35,6 +35,7 @@ class _Found:
     id: str
     text: str
     skip: bool
+    line: int = 0
 
 
 _TAG_RE = re.compile(
@@ -53,6 +54,9 @@ class _Headings(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.found: list[_Found] = []
         self.ids: set[str] = set()
+        self.items: list[tuple[int, str]] = []
+        self._item_line = 0
+        self._item_text: list[str] = []
         self._current: _Found | None = None
         self._text: list[str] = []
         self._line_starts = [0]
@@ -63,9 +67,13 @@ class _Headings(HTMLParser):
         values = dict(attrs)
         if values.get("id"):
             self.ids.add(str(values["id"]))
+        line, column = self.getpos()
+        if tag in ("figure", "article") and values.get("id"):
+            self.items.append((line, str(values["id"])))
+        if tag == "span" and "pk-id" in str(values.get("class") or "").split():
+            self._item_line, self._item_text = line, []
         match = _HEADING_RE.match(tag)
         if match:
-            line, column = self.getpos()
             self._current = _Found(
                 int(match.group(1)),
                 self._line_starts[line - 1] + column,
@@ -73,14 +81,21 @@ class _Headings(HTMLParser):
                 str(values.get("id") or ""),
                 "",
                 _NO_CONTENTS in values,
+                line,
             )
             self._text = []
 
     def handle_data(self, data: str) -> None:
         if self._current:
             self._text.append(data)
+        if self._item_line:
+            self._item_text.append(data)
 
     def handle_endtag(self, tag: str) -> None:
+        if self._item_line and tag == "span":
+            if text := " ".join("".join(self._item_text).split()):
+                self.items.append((self._item_line, text))
+            self._item_line = 0
         if self._current and _HEADING_RE.match(tag):
             self._current.text = " ".join("".join(self._text).split())
             self.found.append(self._current)
@@ -109,6 +124,19 @@ def _with_ids(source: str) -> tuple[str, list[Heading]]:
         at = item.offset + len(f"<h{item.level}")
         updated = f'{updated[:at]} id="{item.id}"{updated[at:]}'
     return updated, [Heading(f.level, f.id, f.text) for f in parser.found if not f.skip and f.text]
+
+
+def outline(source: str) -> list[tuple[int, int, str]]:
+    """The h2 to h4 headings and item IDs of a page's content as (line, level, text), in page order.
+
+    The level is 0 for an item ID.
+    """
+    parser = _Headings(source)
+    parser.feed(source)
+    parser.close()
+    rows = [(f.line, f.level, f.text) for f in parser.found if 2 <= f.level <= 4 and f.text]
+    rows.extend((line, 0, text) for line, text in parser.items)
+    return sorted(rows, key=lambda row: row[0])
 
 
 def _contents(attrs: dict[str, str], headings: list[Heading]) -> str:
