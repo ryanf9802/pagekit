@@ -8,7 +8,8 @@ margin setting: the body prints as a table whose header and footer groups repeat
 
 For this to hold in your own work:
 
-- Keep a profile's dark tokens under `@media screen and (prefers-color-scheme: dark)`.
+- Keep a profile's dark tokens under `@media screen and (prefers-color-scheme: dark)`. The header's light and dark
+  toggle works by switching those rules, so dark values placed anywhere else would ignore the toggle and could print dark.
 - Use `<thead>` so a table's header row repeats across sheets.
 
 ## Bookmarked PDFs
