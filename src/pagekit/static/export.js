@@ -619,6 +619,59 @@
     addPdfButton(headerBar, home);
   }
 
+  /* A served page notices when it is rebuilt and offers a reload. It never reloads on its own, so nothing the
+     reader has typed is lost without their say. A downloaded copy has no server and does nothing. */
+  function watchRebuild() {
+    var parts = location.pathname.split("/");
+    if (!/^https?:$/.test(location.protocol) || parts[1] !== "p" || !meta.built || !meta.rev) return;
+    var url = "/api/built/" + parts[2] + "/" + parts[3];
+    var notice = null;
+    var text = null;
+    var stopped = false;
+
+    function show(stamp) {
+      /* New content resets answers that were not copied, since they belong to the old page. */
+      var loses = stamp.rev !== meta.rev && currentState() !== copiedState;
+      if (!notice) {
+        notice = document.createElement("div");
+        notice.className = "pk-reload";
+        notice.setAttribute("role", "status");
+        text = document.createElement("span");
+        var reload = document.createElement("button");
+        reload.type = "button";
+        reload.className = "pk-button";
+        reload.textContent = "Reload";
+        reload.addEventListener("click", function () {
+          /* The browser's own prompt still guards answers that would be lost. */
+          if (!loses) leavingForIndex = true;
+          location.reload();
+        });
+        notice.appendChild(text);
+        notice.appendChild(reload);
+        document.body.appendChild(notice);
+      }
+      text.textContent = loses
+        ? "Rebuilt with new content. Reloading clears answers you have not copied."
+        : "This page was rebuilt.";
+    }
+
+    function check() {
+      if (stopped || document.visibilityState !== "visible") return;
+      fetch(url, { cache: "no-store" }).then(function (response) {
+        if (response.status === 404) { stopped = true; return null; }
+        return response.ok ? response.json() : null;
+      }).then(function (stamp) {
+        if (stamp && stamp.built && (stamp.built !== meta.built || stamp.rev !== meta.rev)) show(stamp);
+      }).catch(function () {
+        /* The server may be restarting: try again on the next tick. */
+      });
+    }
+
+    setInterval(check, 5000);
+    document.addEventListener("visibilitychange", check);
+  }
+  watchRebuild();
+
   if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", placeCommentSheet);
     window.visualViewport.addEventListener("scroll", placeCommentSheet);

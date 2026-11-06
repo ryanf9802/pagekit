@@ -72,7 +72,10 @@ pagekit update --main     # follow the main branch instead, to try changes befor
 
 `pagekit update` runs from the clone, and stops without changing anything if the clone has uncommitted changes or is on
 another branch. It never moves a clone backwards, so a clone ahead of the newest release (after `--main`) stays put. It
-names any new skill to link. Pages already built keep their old look until you run `pagekit build SLUG`.
+names any new skill to link. Pages already built keep their old look until they are rebuilt, and the update says how
+many. Run `pagekit rebuild --all` to rebuild every page made with an older version, or `pagekit build SLUG` for one.
+Run it from a folder whose profile the pages use, since a repo's profile applies only there, and it says which pages
+it skipped. A rebuild with unchanged content keeps answers and comments.
 
 To make one machine follow `main` every time, such as the machine you develop pagekit on, put this in
 `~/.pagekit/update.toml`:

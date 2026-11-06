@@ -12,7 +12,7 @@ from importlib import resources
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from .pages import SAVED_DIR, PageError, iter_pages, list_saved, load_page_dir, pages_root, prune_pages, public_url, render_index
+from .pages import SAVED_DIR, PageError, built_stamp, iter_pages, list_saved, load_page_dir, pages_root, prune_pages, public_url, render_index
 from .pdf import find_chrome, render_pdf
 from .profiles import load_profile
 
@@ -27,6 +27,7 @@ _APP_FILES = {
     "/icon-512.png": ("icon-512.png", "image/png"),
 }
 _PRUNE_INTERVAL_SECONDS = 600.0
+_BUILT_PATH = re.compile(r"^/api/built/([a-z0-9-]+)/([a-z0-9-]+)$")
 _PDF_PATH = re.compile(r"^/api/pdf/([a-z0-9-]+)/([a-z0-9-]+)$")
 _MAX_STATE_BYTES = 2_000_000
 
@@ -101,6 +102,11 @@ def make_handler():
                 return self._json(200, {"available": bool(find_chrome())})
             if path == "/api/pages":
                 return self._json(200, [p.to_json() for p in iter_pages() if p.index.is_file()] + list_saved())
+            if match := _BUILT_PATH.match(path):
+                # An open page polls this to learn it has been rebuilt.
+                target = _resolve_page_file(match.group(1), match.group(2), "index.html")
+                stamp = built_stamp(target) if target else None
+                return self._json(200, stamp) if stamp else self._json(404, {"error": "not found"})
             if match := _SAVED_PATH.match(path):
                 target = pages_root() / SAVED_DIR / match.group(1)
                 if target.is_file():
