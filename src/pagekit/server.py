@@ -10,7 +10,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib import resources
 from pathlib import Path
-from urllib.parse import unquote, urlsplit
+from urllib.parse import parse_qs, unquote, urlsplit
 
 from .pages import SAVED_DIR, PageError, built_stamp, iter_pages, list_saved, load_page_dir, pages_root, prune_pages, public_url, render_index
 from .pdf import find_chrome, render_pdf
@@ -106,8 +106,9 @@ def make_handler():
                 profile, slug = match.groups()
                 if profile == SAVED_DIR:
                     return self._json(404, {"error": "no thumbnail"})
+                scheme = (parse_qs(urlsplit(self.path).query).get("scheme") or ["light"])[0]
                 try:
-                    target = ensure_thumbnail(load_page_dir(pages_root() / profile / slug))
+                    target = ensure_thumbnail(load_page_dir(pages_root() / profile / slug), scheme)
                 except PageError:
                     return self._json(404, {"error": "no thumbnail"})
                 # The index asks with the page's updated time, so a rebuilt page is a new address.

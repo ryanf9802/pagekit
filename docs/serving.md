@@ -16,15 +16,20 @@ link, and it does not print.
 
 ### What the index shows
 
-Each page is a card with a picture of its first screen, its title and summary, its profile, the days left before it
-is deleted, and when it was updated. A page you have saved or pinned shows **Kept** and is listed first, under its
-own heading, since it never expires out of the list. The days left turn amber at three or fewer. The search box
-looks at titles, summaries, and names, and the profile menu narrows it further.
+Each page is a compact card with a picture of its first screen, its title and summary, the days left before it is
+deleted, and when it was updated. The profile is named on a card only when there is more than one. A page you have
+saved or pinned shows **Saved** and is listed first, under its own heading, since it never expires out of the list.
+The days left turn amber at three or fewer. On a phone each card is a short row with a small picture beside the text.
+The search box looks at titles, summaries, and names, and the profile menu narrows it further.
 
 The pictures are drawn by the server with Chrome or Chromium, the first time the index asks for one, and are kept as
 `thumb.png` beside the page. A rebuilt page gets a new one. With no browser installed, the cards simply have no
 picture. Drawing one takes a few seconds, one page at a time, so an index of many pages fills in over its first
-visit and is quick after that. The pictures are always drawn in light colors, and saved copies have none.
+visit and is quick after that.
+
+The picture matches the theme the index is showing, so a dark index shows dark pictures. The dark one is drawn, as
+`thumb-dark.png`, only the first time the index is shown dark, and changing the theme with the header icon swaps the
+pictures. Saved copies have none.
 
 ## When a page is rebuilt
 

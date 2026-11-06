@@ -18,7 +18,7 @@ from pagekit.browser import find_chrome
 from pagekit.pages import PageError, build_page, new_page, pages_root
 from pagekit.profiles import load_profile
 from pagekit.server import make_server
-from pagekit.thumbnail import THUMBNAIL_NAME, ensure_thumbnail
+from pagekit.thumbnail import THUMBNAIL_NAME, THUMBNAIL_NAMES, ensure_thumbnail
 
 REAL_CHROME = find_chrome()  # Found now, since the home fixture hides anything installed under the real home.
 
@@ -108,6 +108,35 @@ def test_a_rebuilt_page_gets_a_new_thumbnail(chrome: Path) -> None:
 
 
 @pytest.mark.posix
+def test_the_dark_thumbnail_is_drawn_with_dark_mode_on_and_kept_apart_from_the_light_one(chrome: Path, port: int) -> None:
+    page = built_page()
+    get(port, "/api/thumb/default/demo")
+    assert "--force-dark-mode" not in Path(f"{chrome}.args").read_text()
+    status, body, _ = get(port, "/api/thumb/default/demo?scheme=dark")
+    assert status == 200 and body.startswith(b"\x89PNG")
+    assert "--force-dark-mode" in Path(f"{chrome}.args").read_text()
+    assert (page.dir / THUMBNAIL_NAMES["dark"]).is_file() and (page.dir / THUMBNAIL_NAMES["light"]).is_file()
+    # Each is drawn once, and the dark one only because it was asked for.
+    get(port, "/api/thumb/default/demo?scheme=dark")
+    get(port, "/api/thumb/default/demo?scheme=light")
+    assert calls(chrome) == 2
+
+
+@pytest.mark.posix
+def test_only_the_theme_asked_for_is_drawn(chrome: Path, port: int) -> None:
+    page = built_page()
+    get(port, "/api/thumb/default/demo")
+    assert not (page.dir / THUMBNAIL_NAMES["dark"]).exists()
+
+
+@pytest.mark.posix
+def test_an_unknown_theme_has_no_thumbnail(chrome: Path, port: int) -> None:
+    built_page()
+    assert get(port, "/api/thumb/default/demo?scheme=sepia")[0] == 404
+    assert calls(chrome) == 0
+
+
+@pytest.mark.posix
 def test_requests_for_the_same_page_at_once_draw_it_once(chrome: Path, port: int, monkeypatch: pytest.MonkeyPatch) -> None:
     built_page()
     monkeypatch.setenv("FAKE_DELAY", "0.4")
@@ -155,11 +184,13 @@ def test_unknown_unbuilt_and_saved_pages_have_no_thumbnail(chrome: Path, port: i
     assert calls(chrome) == 0
 
 
-def test_the_index_asks_for_thumbnails_groups_kept_pages_and_counts_days(home: Path, port: int) -> None:
+def test_the_index_asks_for_thumbnails_groups_saved_pages_and_counts_days(home: Path, port: int) -> None:
     index = get(port, "/")[1].decode()
-    assert "/api/thumb/" in index and "?v=" in index
+    assert "/api/thumb/" in index and "&v=" in index
     assert '"Expires in " + days + " days"' in index and "Expires tomorrow" in index and "Expires today" in index
-    assert 'heading("Kept")' in index and 'heading("Recent")' in index
+    assert 'heading("Saved")' in index and 'heading("Recent")' in index and "Kept" not in index
+    # The picture follows the theme the index is showing, including a change made with its toggle.
+    assert '"?scheme=" + scheme()' in index and 'addEventListener("pagekit:theme", refreshThumbnails)' in index
     # A page with no browser to draw it simply has no picture.
     assert 'img.addEventListener("error", function () { box.remove(); })' in index
 
@@ -191,5 +222,7 @@ def test_the_index_shows_days_left_and_a_kept_group_in_a_real_browser(
                             stdin=subprocess.DEVNULL, timeout=90)
     dom = result.stdout
     assert len(re.findall(r'class="ix-item"', dom)) == 2
-    assert 'class="ix-group">Kept<' in dom and 'class="ix-group">Recent<' in dom
-    assert "Expires in 30 days" in dom and ">Kept</span>" in dom
+    assert 'class="ix-group">Saved<' in dom and 'class="ix-group">Recent<' in dom
+    assert "Expires in 30 days" in dom and ">Saved</span>" in dom and "Kept" not in dom
+    # With a single profile, its name is not repeated on every card.
+    assert 'class="pk-badge">default<' not in dom

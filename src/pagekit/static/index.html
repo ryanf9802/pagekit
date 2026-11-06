@@ -7,6 +7,8 @@
 <script>
 (function () {
   var pages = [];
+  /* With one profile, naming it on every card says nothing. */
+  var severalProfiles = false;
   var list = document.getElementById("list");
   var q = document.getElementById("q");
   var profile = document.getElementById("profile");
@@ -31,7 +33,8 @@
   }
 
   function expiry(p) {
-    if (!p.expires) return span("Kept", "pk-badge pk-badge-info");
+    if (p.pinned) return span("Saved", "pk-badge pk-badge-info");
+    if (!p.expires) return null;
     var days = daysLeft(p.expires);
     var text = days <= 0 ? "Expires today" : days === 1 ? "Expires tomorrow" : "Expires in " + days + " days";
     var el = span(text, days <= 3 ? "pk-badge pk-badge-warning" : "");
@@ -39,7 +42,18 @@
     return el;
   }
 
-  /* A picture of the page's first screen, drawn by the server. Without a browser to draw it, the card has none. */
+  /* The theme the index is showing, whether chosen with its toggle or followed from the system. */
+  function scheme() {
+    var chosen = document.documentElement.getAttribute("data-theme");
+    return chosen || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  }
+
+  function thumbnailUrl(img) {
+    return img.getAttribute("data-base") + "?scheme=" + scheme();
+  }
+
+  /* A picture of the page's first screen, drawn by the server in the index's theme. Without a browser to draw it,
+     the card has none. */
   function thumbnail(p) {
     if (p.profile === "saved") return null;
     var box = document.createElement("div");
@@ -47,10 +61,19 @@
     var img = document.createElement("img");
     img.alt = "";
     img.loading = "lazy";
-    img.src = "/api/thumb/" + encodeURIComponent(p.profile) + "/" + encodeURIComponent(p.slug) + "?v=" + encodeURIComponent(p.updated);
+    img.setAttribute("data-base", "/api/thumb/" + encodeURIComponent(p.profile) + "/" + encodeURIComponent(p.slug));
+    img.src = thumbnailUrl(img) + "&v=" + encodeURIComponent(p.updated);
+    img.setAttribute("data-version", p.updated);
     img.addEventListener("error", function () { box.remove(); });
     box.appendChild(img);
     return box;
+  }
+
+  function refreshThumbnails() {
+    Array.prototype.forEach.call(document.querySelectorAll(".ix-thumb img"), function (img) {
+      var next = thumbnailUrl(img) + "&v=" + encodeURIComponent(img.getAttribute("data-version"));
+      if (img.getAttribute("src") !== next) img.src = next;
+    });
   }
 
   function card(p) {
@@ -58,6 +81,7 @@
     li.className = "ix-item";
     var a = document.createElement("a");
     a.href = p.url;
+    a.title = p.title;
     var thumb = thumbnail(p);
     if (thumb) a.appendChild(thumb);
     var body = document.createElement("div");
@@ -74,8 +98,9 @@
     }
     var meta = document.createElement("div");
     meta.className = "ix-meta";
-    meta.appendChild(span(p.profile, "pk-badge"));
-    meta.appendChild(expiry(p));
+    if (severalProfiles) meta.appendChild(span(p.profile, "pk-badge"));
+    var when = expiry(p);
+    if (when) meta.appendChild(when);
     meta.appendChild(span("Updated " + date(p.updated)));
     if (p.session) meta.appendChild(span("From " + p.session));
     body.appendChild(meta);
@@ -97,13 +122,13 @@
       if (profile.value && p.profile !== profile.value) return false;
       return !term || (p.title + " " + p.summary + " " + p.slug).toLowerCase().indexOf(term) !== -1;
     });
-    /* Pages that are kept come first, since they never expire out of this list. */
-    var kept = shown.filter(function (p) { return !p.expires; });
-    var recent = shown.filter(function (p) { return p.expires; });
+    /* Saved pages come first, since they never expire out of this list. */
+    var saved = shown.filter(function (p) { return p.pinned; });
+    var recent = shown.filter(function (p) { return !p.pinned; });
     var items = [];
-    if (kept.length && recent.length) items.push(heading("Kept"));
-    kept.forEach(function (p) { items.push(card(p)); });
-    if (kept.length && recent.length) items.push(heading("Recent"));
+    if (saved.length && recent.length) items.push(heading("Saved"));
+    saved.forEach(function (p) { items.push(card(p)); });
+    if (saved.length && recent.length) items.push(heading("Recent"));
     recent.forEach(function (p) { items.push(card(p)); });
     list.replaceChildren.apply(list, items);
     empty.hidden = shown.length > 0;
@@ -115,6 +140,7 @@
     fetch("/api/pages").then(function (r) { return r.json(); }).then(function (data) {
       pages = data.sort(function (a, b) { return a.updated < b.updated ? 1 : -1; });
       var names = Array.from(new Set(pages.map(function (p) { return p.profile; }))).sort();
+      severalProfiles = names.length > 1;
       var current = profile.value;
       profile.replaceChildren(profile.options[0]);
       names.forEach(function (name) {
@@ -128,6 +154,8 @@
     });
   }
 
+  window.addEventListener("pagekit:theme", refreshThumbnails);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", refreshThumbnails);
   q.addEventListener("input", render);
   profile.addEventListener("change", render);
   window.addEventListener("focus", load);

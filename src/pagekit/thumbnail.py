@@ -15,7 +15,9 @@ _TIMEOUT_SECONDS = 30
 # The first screen of a desktop browser, drawn at half size: a 500 by 350 picture. Chrome does not go below 0.5.
 _WINDOW = "1000,700"
 _SCALE = "0.5"
-THUMBNAIL_NAME = "thumb.png"
+# One picture for each theme the index can be in, kept beside the page. The dark one is drawn only when it is wanted.
+THUMBNAIL_NAMES = {"light": "thumb.png", "dark": "thumb-dark.png"}
+THUMBNAIL_NAME = THUMBNAIL_NAMES["light"]
 # One browser at a time, so an index showing many pages never starts them all at once.
 _LOCK = threading.Lock()
 
@@ -24,11 +26,13 @@ def _fresh(target: Path, page: Page) -> bool:
     return target.is_file() and target.stat().st_mtime >= page.index.stat().st_mtime
 
 
-def ensure_thumbnail(page: Page) -> Path:
-    """The page's thumbnail, drawn now when there is none, or when the page has been rebuilt since."""
+def ensure_thumbnail(page: Page, scheme: str = "light") -> Path:
+    """The page's thumbnail in `light` or `dark`, drawn now when there is none or the page has been rebuilt since."""
+    if scheme not in THUMBNAIL_NAMES:
+        raise PageError(f"no such thumbnail theme: {scheme!r}")
     if not page.index.is_file():
         raise PageError(f"not built: run pagekit build {page.slug}")
-    target = page.dir / THUMBNAIL_NAME
+    target = page.dir / THUMBNAIL_NAMES[scheme]
     if _fresh(target, page):
         return target
     chrome = find_chrome()
@@ -50,6 +54,8 @@ def ensure_thumbnail(page: Page) -> Path:
                     f"--window-size={_WINDOW}",
                     f"--force-device-scale-factor={_SCALE}",
                     f"--user-data-dir={profile}",
+                    # Makes the page's own dark styles apply, the way a dark system setting would.
+                    *(["--force-dark-mode"] if scheme == "dark" else []),
                     f"--screenshot={output}",
                     page.index.as_uri(),
                 ]
