@@ -5,11 +5,11 @@
 .ix-controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
 .ix-controls input { flex: 1 1 220px; }
 .ix-controls select { flex: 0 1 180px; }
-/* One row to a page: title, summary, when it was updated, and when it expires. */
+/* One row to a page: title, when it was updated, and when it expires. */
 .ix-list { list-style: none; margin: 0; padding: 0; background: var(--pk-surface); border: 1px solid var(--pk-border); border-radius: var(--pk-radius); overflow: hidden; }
 .ix-list[hidden] { display: none; }
-.ix-head, .ix-row { display: grid; grid-template-columns: minmax(120px, 1.2fr) minmax(0, 2.4fr) 88px 92px; gap: 12px; align-items: baseline; padding: 6px 12px; }
-.ix-has-profile .ix-head, .ix-has-profile .ix-row { grid-template-columns: minmax(120px, 1.2fr) 96px minmax(0, 2.4fr) 88px 92px; }
+.ix-head, .ix-row { display: grid; grid-template-columns: minmax(120px, 1fr) 88px 92px; gap: 12px; align-items: baseline; padding: 6px 12px; }
+.ix-has-profile .ix-head, .ix-has-profile .ix-row { grid-template-columns: 96px minmax(120px, 1fr) 88px 92px; }
 .ix-head { background: var(--pk-surface-2); border-bottom: 1px solid var(--pk-border); color: var(--pk-muted); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
 .ix-row { color: inherit; font-size: 0.875rem; line-height: 1.45; text-decoration: none; }
 .ix-item + .ix-item .ix-row { border-top: 1px solid var(--pk-border); }
@@ -17,20 +17,19 @@
 .ix-row:focus-visible { outline: 2px solid var(--pk-accent); outline-offset: -2px; }
 .ix-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ix-row:hover .ix-title { color: var(--pk-accent); }
-.ix-summary, .ix-profile { color: var(--pk-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ix-profile { color: var(--pk-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ix-status, .ix-updated { color: var(--pk-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ix-updated, .ix-status { text-align: right; }
 .ix-saved { color: var(--pk-accent); font-weight: 600; }
 .ix-soon { color: var(--pk-warning); font-weight: 600; }
-/* On a phone a row is two short lines: title and expiry, then summary and date. */
+/* On a phone a row is one short line: title, date, and expiry. */
 @media (max-width: 600px) {
   .ix-head { display: none; }
-  .ix-row, .ix-has-profile .ix-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "title status" "summary updated"; gap: 0 12px; padding: 7px 12px; }
-  .ix-has-profile .ix-row { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "title title status" "profile summary updated"; }
+  .ix-row, .ix-has-profile .ix-row { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "title updated status"; gap: 0 12px; padding: 7px 12px; }
+  .ix-has-profile .ix-row { grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "profile title updated status"; }
   .ix-title { grid-area: title; }
   .ix-status { grid-area: status; }
   .ix-profile { grid-area: profile; font-size: 0.75rem; }
-  .ix-summary { grid-area: summary; font-size: 0.8125rem; }
   .ix-updated { grid-area: updated; font-size: 0.75rem; }
   .ix-status { font-size: 0.8125rem; }
 }

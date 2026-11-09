@@ -86,10 +86,11 @@ def test_a_real_browser_lists_saved_pages_first_with_days_left(home: Path, port:
     # Saved first, though the other was updated no earlier.
     assert dom.index("Saved one") < dom.index("Recent one")
     assert '<span class="ix-status ix-saved">Saved</span>' in dom and ">in 30 days<" in dom
-    assert "About Saved one" in dom and "About Recent one" in dom
+    assert "About Saved one" not in dom and "About Recent one" not in dom
     # One profile: its name is not repeated on every row, and nothing draws a picture.
     assert not has_profile_column(dom) and 'class="ix-profile"' not in dom and "ix-thumb" not in dom
-    assert re.search(r'class="ix-head"[^>]*>.*?Page.*?Summary.*?Updated.*?Expires', dom, re.DOTALL)
+    assert re.search(r'class="ix-head"[^>]*>.*?Page.*?Updated.*?Expires', dom, re.DOTALL)
+    assert "Summary" not in dom and "ix-summary" not in dom
 
 
 @pytest.mark.skipif(not REAL_CHROME, reason="needs Chrome or Chromium")
