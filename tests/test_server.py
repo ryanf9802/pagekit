@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import http.client
 import json
+import re
 import threading
 from collections.abc import Iterator
 from pathlib import Path
@@ -36,6 +37,51 @@ def built_page(home: Path):
     (page.assets / "a.png").write_bytes(b"png")
     build_page(profile, page)
     return page
+
+
+def post(port: int, path: str, body: bytes, headers: dict | None = None) -> tuple[int, bytes, http.client.HTTPResponse]:
+    connection = http.client.HTTPConnection("127.0.0.1", port)
+    connection.request("POST", path, body=body, headers=headers or {})
+    response = connection.getresponse()
+    return response.status, response.read(), response
+
+
+def test_downloads_one_html_file_with_answers_and_no_browser(home: Path, port: int, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PATH", str(home))
+    monkeypatch.delenv("PAGEKIT_CHROME", raising=False)
+    page = built_page(home)
+    status, body, response = post(port, "/api/html/default/demo", b'{"notes": "</script><b>hi"}')
+    assert status == 200
+    assert response.headers["Content-Type"] == "text/html; charset=utf-8"
+    assert 'filename="demo.html"' in response.headers["Content-Disposition"]
+    document = body.decode()
+    assert 'src="data:image/png;base64,cG5n"' in document and "assets/a.png" not in document
+    assert 'window.pagekitAnswers = {"notes": "\\u003c/script>\\u003cb>hi"}' in document
+    assert document.index("window.pagekitAnswers") < document.index("</head>")
+    # Each download is its own copy, so copies opened side by side keep their answers apart.
+    second = post(port, "/api/html/default/demo", b"{}")[1].decode()
+    copies = [re.search(r'window\.pagekitCopy = "([0-9a-f]+)"', text) for text in (document, second)]
+    assert all(copies) and copies[0].group(1) != copies[1].group(1)
+    assert "window.pagekitAnswers = " not in page.index.read_text()
+
+
+@pytest.mark.parametrize(
+    ("path", "body", "code"),
+    [
+        ("/api/html/default/missing", b"{}", 404),
+        ("/api/html/saved/demo", b"{}", 404),
+        ("/api/html/default/demo", b"not json", 400),
+        ("/api/zip/default/demo", b"{}", 404),
+    ],
+)
+def test_html_download_refuses_bad_requests(home: Path, port: int, path: str, body: bytes, code: int) -> None:
+    built_page(home)
+    assert post(port, path, body)[0] == code
+
+
+def test_html_download_refuses_a_foreign_origin(home: Path, port: int) -> None:
+    built_page(home)
+    assert post(port, "/api/html/default/demo", b"{}", {"Origin": "http://evil.example"})[0] == 403
 
 
 def test_index_and_api_list_pages(home: Path, port: int) -> None:

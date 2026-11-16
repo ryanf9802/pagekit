@@ -12,7 +12,7 @@ from importlib import resources
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from .pages import SAVED_DIR, PageError, built_stamp, iter_pages, list_saved, load_page_dir, pages_root, prune_pages, public_url, render_index
+from .pages import SAVED_DIR, PageError, built_stamp, iter_pages, list_saved, load_page_dir, packed_document, pages_root, prune_pages, public_url, render_index
 from .pdf import find_chrome, render_pdf
 from .profiles import load_profile
 
@@ -28,7 +28,8 @@ _APP_FILES = {
 }
 _PRUNE_INTERVAL_SECONDS = 600.0
 _BUILT_PATH = re.compile(r"^/api/built/([a-z0-9-]+)/([a-z0-9-]+)$")
-_PDF_PATH = re.compile(r"^/api/pdf/([a-z0-9-]+)/([a-z0-9-]+)$")
+# The download button posts here: a PDF, or the page packed into one HTML file.
+_DOWNLOAD_PATH = re.compile(r"^/api/(pdf|html)/([a-z0-9-]+)/([a-z0-9-]+)$")
 _MAX_STATE_BYTES = 2_000_000
 
 
@@ -127,9 +128,10 @@ def make_handler():
             """Answers arrive in the body, because only the viewer's browser holds them."""
             if not self._guard():
                 return
-            match = _PDF_PATH.match(urlsplit(self.path).path)
-            if not match or match.group(1) == SAVED_DIR:
+            match = _DOWNLOAD_PATH.match(urlsplit(self.path).path)
+            if not match or match.group(2) == SAVED_DIR:
                 return self._json(404, {"error": "not found"})
+            kind, profile, slug = match.groups()
             length = int(self.headers.get("Content-Length") or 0)
             if length > _MAX_STATE_BYTES:
                 return self._json(413, {"error": "too large"})
@@ -137,17 +139,19 @@ def make_handler():
                 state = json.loads(self.rfile.read(length) or b"{}")
             except ValueError:
                 return self._json(400, {"error": "bad json"})
-            directory = pages_root() / match.group(1) / match.group(2)
+            state = state if isinstance(state, dict) else None
             try:
-                page = load_page_dir(directory)
-                with tempfile.TemporaryDirectory(prefix="pagekit-pdf-") as folder:
-                    target = render_pdf(page, Path(folder) / "page.pdf", state if isinstance(state, dict) else None)
-                    data = target.read_bytes()
+                page = load_page_dir(pages_root() / profile / slug)
+                if kind == "html":
+                    data, ctype = packed_document(page, state).encode("utf-8"), "text/html; charset=utf-8"
+                else:
+                    with tempfile.TemporaryDirectory(prefix="pagekit-pdf-") as folder:
+                        data, ctype = render_pdf(page, Path(folder) / "page.pdf", state).read_bytes(), "application/pdf"
             except PageError as exc:
                 missing = str(exc).startswith("no page at")
                 return self._json(404 if missing else 500, {"error": str(exc)})
-            disposition = f'attachment; filename="{match.group(2)}.pdf"'
-            self._send(200, data, "application/pdf", {"Content-Disposition": disposition})
+            disposition = f'attachment; filename="{slug}.{kind}"'
+            self._send(200, data, ctype, {"Content-Disposition": disposition})
 
     return Handler
 

@@ -671,6 +671,7 @@ def test_pack_inlines_assets(home: Path) -> None:
     document = pack_page(page).read_text()
     assert "assets/" not in document.split("</style>")[-1].split("<script>")[0]
     assert document.count("base64,cG5n") == 2
+    assert "window.pagekitAnswers = " not in document  # only a download from the page carries answers
 
 
 def test_pack_inlines_a_stylesheet_url(home: Path) -> None:

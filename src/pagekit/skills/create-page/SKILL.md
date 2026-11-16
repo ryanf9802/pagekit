@@ -90,7 +90,8 @@ the user has not exported, so collect them first. A rebuild with unchanged conte
 
 ## Sharing and keeping
 
-- `pagekit pdf <slug>` writes a bookmarked PDF; served pages have a **Download PDF** button.
+- `pagekit pdf <slug>` writes a bookmarked PDF; served pages have a **Download** button that offers
+  a PDF or one HTML file, both with the answers typed on the page.
 - `pagekit pack <slug>` writes one self-contained file; `pagekit send <slug>` hands it to the
   profile's share command.
 - Pages are deleted 30 days after their last update. When the user says to save or keep a

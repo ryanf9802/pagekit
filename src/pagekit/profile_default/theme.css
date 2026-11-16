@@ -153,7 +153,7 @@ p { margin: 0 0 12px; }
 .pk-brand:not(:empty) ~ .pk-header-title { padding-left: 12px; border-left: 1px solid var(--pk-border); }
 .pk-brand:empty ~ .pk-header-title, .pk-scrolled .pk-header-title { opacity: 1; }
 /* Header controls are icons, named by a label on hover or keyboard focus. */
-.pk-theme, .pk-home, .pk-pdf {
+.pk-theme, .pk-home, .pk-download {
   position: relative;
   flex: none;
   display: inline-flex;
@@ -171,12 +171,12 @@ p { margin: 0 0 12px; }
   cursor: pointer;
 }
 .pk-home { margin-left: auto; margin-right: -8px; }
-.pk-pdf { margin-left: auto; }
-.pk-pdf + .pk-home { margin-left: -8px; }
+.pk-download { margin-left: auto; }
+.pk-download + .pk-home { margin-left: -8px; }
 .pk-theme { margin-left: auto; }
-.pk-theme + .pk-pdf, .pk-theme + .pk-home { margin-left: -8px; }
-.pk-theme .pk-icon, .pk-home .pk-icon, .pk-pdf .pk-icon { display: block; width: 20px; height: 20px; }
-.pk-theme::after, .pk-home::after, .pk-pdf::after {
+.pk-theme + .pk-download, .pk-theme + .pk-home { margin-left: -8px; }
+.pk-theme .pk-icon, .pk-home .pk-icon, .pk-download .pk-icon { display: block; width: 20px; height: 20px; }
+.pk-theme::after, .pk-home::after, .pk-download::after {
   content: attr(data-label);
   position: absolute;
   top: calc(100% + 6px);
@@ -192,14 +192,51 @@ p { margin: 0 0 12px; }
   opacity: 0;
   pointer-events: none;
 }
-.pk-theme:focus-visible::after, .pk-home:focus-visible::after, .pk-pdf:focus-visible::after, .pk-pdf:disabled::after, .pk-pdf-failed::after { opacity: 1; }
+.pk-theme:focus-visible::after, .pk-home:focus-visible::after, .pk-download:focus-visible::after, .pk-download:disabled::after, .pk-download-failed::after { opacity: 1; }
 @media (hover: hover) {
-  .pk-theme:hover, .pk-home:hover, .pk-pdf:hover:not(:disabled) { background: var(--pk-surface-2); }
-  .pk-theme:hover::after, .pk-home:hover::after, .pk-pdf:hover::after { opacity: 1; }
+  .pk-theme:hover, .pk-home:hover, .pk-download:hover:not(:disabled) { background: var(--pk-surface-2); }
+  .pk-theme:hover::after, .pk-home:hover::after, .pk-download:hover::after { opacity: 1; }
 }
-.pk-pdf:disabled { color: var(--pk-muted); cursor: default; }
-.pk-pdf:disabled .pk-icon { animation: pk-pulse 1s ease-in-out infinite; }
-.pk-pdf-failed { color: var(--pk-danger); }
+.pk-download:disabled { color: var(--pk-muted); cursor: default; }
+.pk-download:disabled .pk-icon { animation: pk-pulse 1s ease-in-out infinite; }
+.pk-download-failed { color: var(--pk-danger); }
+/* The open menu covers the button's label, so the label steps aside. */
+.pk-download[aria-expanded="true"]::after { opacity: 0; }
+.pk-download-menu {
+  position: fixed;
+  top: var(--pk-y, 0);
+  right: var(--pk-right, 8px);
+  z-index: 30;
+  display: grid;
+  width: min(280px, calc(100vw - 16px));
+  padding: 4px;
+  background: var(--pk-surface);
+  border: 1px solid var(--pk-border);
+  border-radius: var(--pk-radius);
+  box-shadow: 0 6px 24px rgb(16 24 40 / 18%);
+}
+.pk-download-menu[hidden] { display: none; }
+.pk-download-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  background: none;
+  border: 0;
+  border-radius: var(--pk-radius-small);
+  color: var(--pk-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pk-download-item .pk-icon { flex: none; width: 20px; height: 20px; margin-top: 1px; color: var(--pk-accent); }
+.pk-download-item:hover:not(:disabled), .pk-download-item:focus-visible { background: var(--pk-surface-2); }
+.pk-download-item:focus-visible { outline: 2px solid var(--pk-accent); outline-offset: -2px; }
+.pk-download-item:disabled { cursor: default; }
+.pk-download-item:disabled .pk-icon, .pk-download-item:disabled .pk-download-label { color: var(--pk-muted); }
+.pk-download-text { display: grid; gap: 2px; }
+.pk-download-label { font-size: 0.9375rem; font-weight: 600; }
+.pk-download-hint { color: var(--pk-muted); font-size: 0.8125rem; }
 .pk-reload {
   position: fixed;
   top: calc(var(--pk-bar-height) + 8px);
@@ -747,7 +784,8 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
   /* Keeps diagram text readable: a wide diagram scrolls inside its card instead of shrinking. */
   .pk-diagram svg.pk-diagram-wide { min-width: var(--pk-diagram-w); }
   .pk-header .pk-bar { display: contents; }
-  .pk-home, .pk-pdf { width: 40px; height: 44px; margin-block: -4px; }
+  .pk-home, .pk-download { width: 40px; height: 44px; margin-block: -4px; }
+  .pk-download-item { min-height: 52px; align-items: center; }
   .pk-home { margin-right: -10px; }
   .pk-header { padding-top: max(8px, env(safe-area-inset-top)); gap: 8px; transition: transform 180ms ease; }
   .pk-footer { padding-bottom: max(8px, env(safe-area-inset-bottom)); transition: transform 180ms ease; }
@@ -831,7 +869,7 @@ img.pk-preview-item { width: auto; height: auto; border-radius: 2px; }
     line-height: 1.2;
   }
   .pk-footer .pk-bar { display: block; }
-  .pk-footer .pk-button, #pk-export-status, .pk-export-fallback, .pk-comment, .pk-comment-count, .pk-theme, .pk-home, .pk-pdf, .pk-reload, .pk-preview { display: none; }
+  .pk-footer .pk-button, #pk-export-status, .pk-export-fallback, .pk-comment, .pk-comment-count, .pk-theme, .pk-home, .pk-download, .pk-download-menu, .pk-reload, .pk-preview { display: none; }
   .pk-has-comment { color: var(--pk-muted); }
   .pk-has-comment::after { display: none; }
   .pk-main { display: table-row-group; }

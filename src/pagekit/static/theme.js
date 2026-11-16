@@ -102,7 +102,7 @@
     button.type = "button";
     button.className = "pk-theme";
     /* First among the header controls. The others are added after it, or before the page index link. */
-    bar.insertBefore(button, bar.querySelector(".pk-pdf, .pk-home"));
+    bar.insertBefore(button, bar.querySelector(".pk-download, .pk-home"));
     show(current);
     button.addEventListener("click", function () {
       current = MODES[(MODES.indexOf(current) + 1) % MODES.length];

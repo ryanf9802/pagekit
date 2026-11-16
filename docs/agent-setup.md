@@ -58,7 +58,7 @@ Tell the person that from now on they can ask any connected agent for a page.
 ## 4. Offer the page index
 
 Explain the choice in one or two sentences: pages are plain files and work without a server, while the server adds an
-index of all their pages, shareable links on their own machines, and a **Download PDF** button. Then ask which they
+index of all their pages, shareable links on their own machines, and a **Download** button for a PDF or one HTML file. Then ask which they
 want:
 
 | Choice | What to do |

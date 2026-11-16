@@ -50,7 +50,7 @@ def test_a_profile_can_leave_the_toggle_out(home: Path) -> None:
 
 def test_the_toggle_is_styled_like_the_other_header_controls_and_never_prints(home: Path) -> None:
     theme = (builtin_dir() / "theme.css").read_text(encoding="utf-8")
-    assert ".pk-theme, .pk-home, .pk-pdf {" in theme
+    assert ".pk-theme, .pk-home, .pk-download {" in theme
     assert re.search(r"@media print \{.*\.pk-theme,", theme, re.DOTALL)
 
 

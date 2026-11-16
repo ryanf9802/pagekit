@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import json
 import subprocess
 import tempfile
 import uuid
 from pathlib import Path
 
 from .browser import find_chrome
-from .pages import Page, PageError
+from .pages import Page, PageError, answers_script
 
 _TIMEOUT_SECONDS = 120
 DEFAULT_PDF_MARGIN = "0.15in 0.25in"
@@ -25,9 +24,7 @@ def render_pdf(page: Page, target: Path, state: dict | None = None) -> Path:
     margin = str(page.meta.get("pdf_margin") or DEFAULT_PDF_MARGIN)
     # Last in the head, so it wins over the profile's Ctrl+P margins.
     additions = f"<style>@page {{ margin: {margin}; }}</style>"
-    if state:
-        payload = json.dumps(state).replace("<", "\\u003c")
-        additions += f"<script>window.pagekitPrintState = {payload};</script>"
+    additions += answers_script(state)
     document = page.index.read_text(encoding="utf-8").replace("</head>", f"{additions}\n</head>", 1)
     # Beside the original, so its relative asset links still resolve.
     working = page.dir / f".print-{uuid.uuid4().hex}.html"

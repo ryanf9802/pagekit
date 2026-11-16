@@ -73,7 +73,9 @@ and wide diagrams that scroll on their own are ignored), and any console errors.
 ## Sharing
 
 - **A link**, when the [page index](serving.md) is running. Builds print it.
-- **One file:** `pagekit pack SLUG` writes a self-contained file with images embedded.
+- **One file:** `pagekit pack SLUG` writes a self-contained file with images embedded. On a served page, the
+  **Download** button in the header, then **HTML file**, saves the same file to your downloads, with the answers
+  typed on the page carried in. Answers typed in the downloaded copy later are kept by the browser that opens it.
 - **Your own channel:** `pagekit send SLUG` packs the page and runs the profile's
   [send command](profiles.md#send).
 - **A PDF:** see [Printing and PDFs](printing.md).

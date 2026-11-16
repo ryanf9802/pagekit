@@ -15,6 +15,7 @@ import socket
 import subprocess
 import time
 import tomllib
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from html.parser import HTMLParser
@@ -758,12 +759,19 @@ def check_page(profile: Profile, page: Page) -> CheckResult:
     return CheckResult(errors + hook_errors, warnings, hook_failed=bool(hook_errors))
 
 
-def pack_page(page: Page) -> Path:
-    """One self-contained HTML file with assets as data URIs, for sharing."""
+def answers_script(state: dict | None) -> str:
+    """Answers held in the reader's browser, handed to a copy that has no storage of its own (a PDF, a download).
+    Each copy gets its own id, so two downloaded copies opened from the same folder keep their answers apart."""
+    if state is None:
+        return ""
+    payload = json.dumps(state).replace("<", "\\u003c")
+    return f'<script>window.pagekitAnswers = {payload}; window.pagekitCopy = "{uuid.uuid4().hex}";</script>'
+
+
+def packed_document(page: Page, state: dict | None = None) -> str:
+    """The built page as one self-contained document, assets as data URIs, with any answers carried in."""
     if not page.index.is_file():
         raise PageError(f"not built: run pagekit build {page.slug}")
-    if page.content.stat().st_mtime > page.index.stat().st_mtime:
-        raise PageError(f"stale: content.html changed after the last build, run pagekit build {page.slug}")
     assets_root = page.assets.resolve()
 
     def uri(ref: str) -> str | None:
@@ -781,6 +789,15 @@ def pack_page(page: Page) -> Path:
         return f'url("{data}")' if data else match.group(0)
 
     document = ASSET_URL_RE.sub(replace_url, ASSET_ATTR_RE.sub(replace_attr, page.index.read_text(encoding="utf-8")))
+    script = answers_script(state)
+    return document.replace("</head>", f"{script}\n</head>", 1) if script else document
+
+
+def pack_page(page: Page) -> Path:
+    """One self-contained HTML file with assets as data URIs, for sharing."""
+    document = packed_document(page)
+    if page.content.stat().st_mtime > page.index.stat().st_mtime:
+        raise PageError(f"stale: content.html changed after the last build, run pagekit build {page.slug}")
     target = page.dir / f"{page.slug}.pack.html"
     target.write_text(document, encoding="utf-8")
     return target
