@@ -85,9 +85,9 @@ def test_answers_reach_the_render_safely(chrome: Path, tmp_path: Path) -> None:
     page = built_page()
     render_pdf(page, tmp_path / "out.pdf", {"a": "</script><script>alert(1)</script>"})
     html = Path(f"{chrome}.html").read_text()
-    assert "window.pagekitPrintState" in html
+    assert "window.pagekitAnswers" in html
     assert "alert(1)</script>" not in html
-    assert "window.pagekitPrintState = " not in page.index.read_text()
+    assert "window.pagekitAnswers = " not in page.index.read_text()
 
 
 def test_no_browser_is_a_clear_error(home: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

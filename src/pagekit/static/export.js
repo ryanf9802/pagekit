@@ -6,7 +6,8 @@
   var custom = {};
   var SELECTOR = "input, select, textarea, [contenteditable], details[id], details[data-pk-name]";
   var SKIP = { button: 1, submit: 1, reset: 1, image: 1, hidden: 1, password: 1 };
-  var STORE_KEY = "pagekit:" + meta.profile + "/" + meta.slug + ":" + meta.rev;
+  /* A downloaded copy keeps its own answers, apart from other copies opened from the same folder. */
+  var STORE_KEY = "pagekit:" + meta.profile + "/" + meta.slug + ":" + meta.rev + (window.pagekitCopy ? ":" + window.pagekitCopy : "");
   var labelTimer;
   var narrowScreen = window.matchMedia("(max-width: 640px)");
 
@@ -183,13 +184,14 @@
   }
 
   function restore() {
-    /* A generated PDF has no browser storage, so the server hands it the answers directly. */
-    var state = window.pagekitPrintState || null;
+    /* A PDF or a downloaded copy starts from the answers carried into it. What the reader typed since wins. */
+    var state = null;
     try {
-      state = state || JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+      state = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
     } catch (err) {
-      return;
+      /* Storage can be blocked; carried answers still apply. */
     }
+    state = state || window.pagekitAnswers || null;
     if (!state) return;
     elements().forEach(function (el) {
       var name = nameOf(el);
@@ -561,48 +563,127 @@
     control.setAttribute("aria-label", label);
   }
 
-  /* The server can build a bookmarked PDF, including answers typed on this page. */
-  function addPdfButton(bar, before) {
+  /* The server packs the page as a PDF or as one HTML file, including answers typed on this page.
+     The button asks which. PDF needs Chrome where pagekit runs; HTML always works. */
+  var DOWNLOADS = [
+    { kind: "pdf", icon: '<i data-icon="file-text"></i>', label: "PDF", hint: "For printing, with bookmarks", busy: "Generating PDF..." },
+    { kind: "html", icon: '<i data-icon="file-code"></i>', label: "HTML file", hint: "One file that opens in any browser", busy: "Packing HTML file..." },
+  ];
+
+  function addDownloadButton(bar, before) {
     var parts = location.pathname.split("/");
     if (parts[1] !== "p") return;
-    fetch("/api/pdf").then(function (r) { return r.json(); }).then(function (info) {
-      if (!info.available) return;
-      var pdf = document.createElement("button");
-      pdf.type = "button";
-      pdf.className = "pk-pdf";
-      setBarLabel(pdf, "Download PDF");
-      pdf.innerHTML = '<i data-icon="download"></i>';
-      bar.insertBefore(pdf, before);
-      pdf.addEventListener("click", function () {
-        pdf.disabled = true;
-        pdf.classList.remove("pk-pdf-failed");
-        setBarLabel(pdf, "Generating PDF...");
-        fetch("/api/pdf/" + parts[2] + "/" + parts[3], {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(snapshot()),
-        }).then(function (response) {
-          if (!response.ok) throw new Error("PDF failed");
-          return response.blob();
-        }).then(function (blob) {
-          var link = document.createElement("a");
-          link.href = URL.createObjectURL(blob);
-          link.download = parts[3] + ".pdf";
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          setTimeout(function () { URL.revokeObjectURL(link.href); }, 10000);
-          setBarLabel(pdf, "Download PDF");
-        }).catch(function () {
-          pdf.classList.add("pk-pdf-failed");
-          setBarLabel(pdf, "PDF failed, try again");
-        }).finally(function () {
-          pdf.disabled = false;
-        });
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "pk-download";
+    button.setAttribute("aria-haspopup", "menu");
+    button.setAttribute("aria-expanded", "false");
+    setBarLabel(button, "Download");
+    button.innerHTML = '<i data-icon="download"></i>';
+    bar.insertBefore(button, before);
+
+    var menu = document.createElement("div");
+    menu.className = "pk-download-menu";
+    menu.setAttribute("role", "menu");
+    menu.setAttribute("aria-label", "Download as");
+    menu.setAttribute("data-pk-ignore", "");
+    menu.hidden = true;
+    var items = DOWNLOADS.map(function (choice) {
+      var item = document.createElement("button");
+      item.type = "button";
+      item.setAttribute("role", "menuitem");
+      item.className = "pk-download-item";
+      item.innerHTML = choice.icon +
+        '<span class="pk-download-text"><span class="pk-download-label"></span><span class="pk-download-hint"></span></span>';
+      item.querySelector(".pk-download-label").textContent = choice.label;
+      item.querySelector(".pk-download-hint").textContent = choice.hint;
+      item.addEventListener("click", function () {
+        close(false);
+        download(choice);
       });
-    }).catch(function () {
-      /* No button without a server that can make PDFs. */
+      menu.appendChild(item);
+      return item;
     });
+    document.body.appendChild(menu);
+
+    /* PDF stays offered until the server says it has no Chrome to make one. */
+    fetch("/api/pdf").then(function (r) { return r.json(); }).then(function (info) {
+      if (info.available) return;
+      items[0].disabled = true;
+      items[0].querySelector(".pk-download-hint").textContent = "Needs Chrome or Chromium where pagekit runs";
+    }).catch(function () {});
+
+    function enabled() {
+      return items.filter(function (item) { return !item.disabled; });
+    }
+
+    function open() {
+      var rect = button.getBoundingClientRect();
+      menu.hidden = false;
+      menu.style.setProperty("--pk-y", rect.bottom + 6 + "px");
+      menu.style.setProperty("--pk-right", Math.max(8, document.documentElement.clientWidth - rect.right) + "px");
+      button.setAttribute("aria-expanded", "true");
+      var first = enabled()[0];
+      if (first) first.focus();
+    }
+
+    function close(refocus) {
+      if (menu.hidden) return;
+      menu.hidden = true;
+      button.setAttribute("aria-expanded", "false");
+      if (refocus) button.focus();
+    }
+
+    button.addEventListener("click", function () {
+      if (menu.hidden) open();
+      else close(true);
+    });
+    menu.addEventListener("keydown", function (event) {
+      var list = enabled();
+      var at = list.indexOf(document.activeElement);
+      if (event.key === "Escape" || event.key === "Tab") {
+        if (event.key === "Escape") event.preventDefault();
+        close(event.key === "Escape");
+      } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        var step = event.key === "ArrowDown" ? 1 : list.length - 1;
+        if (list.length) list[(at + step) % list.length].focus();
+      }
+    });
+    document.addEventListener("pointerdown", function (event) {
+      if (!menu.contains(event.target) && !button.contains(event.target)) close(false);
+    });
+    /* The menu is placed against the header, which moves away on a phone. */
+    window.addEventListener("scroll", function () { close(false); }, { passive: true });
+    window.addEventListener("resize", function () { close(false); });
+
+    function download(choice) {
+      button.disabled = true;
+      button.classList.remove("pk-download-failed");
+      setBarLabel(button, choice.busy);
+      fetch("/api/" + choice.kind + "/" + parts[2] + "/" + parts[3], {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(snapshot()),
+      }).then(function (response) {
+        if (!response.ok) throw new Error("download failed");
+        return response.blob();
+      }).then(function (blob) {
+        var link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = parts[3] + "." + choice.kind;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(function () { URL.revokeObjectURL(link.href); }, 10000);
+        setBarLabel(button, "Download");
+      }).catch(function () {
+        button.classList.add("pk-download-failed");
+        setBarLabel(button, "Download failed, try again");
+      }).finally(function () {
+        button.disabled = false;
+      });
+    }
   }
 
   /* A way back to the index, only when served by pagekit: a downloaded copy has no index. */
@@ -616,7 +697,7 @@
     /* Answers are saved in the browser and this stays in the same tab, so no prompt. */
     home.addEventListener("click", function () { leavingForIndex = true; });
     headerBar.appendChild(home);
-    addPdfButton(headerBar, home);
+    addDownloadButton(headerBar, home);
   }
 
   /* A served page notices when it is rebuilt and offers a reload. It never reloads on its own, so nothing the

@@ -1,7 +1,8 @@
 # Serving pages
 
 Serving is optional. Every command works with the server down, and a built page is a plain file. The server adds
-an index of your pages, the **Download PDF** button, and links you can open from elsewhere.
+an index of your pages, a **Download** button that saves a page as a PDF or as one HTML file, and links you can
+open from elsewhere.
 
 ## The page index
 
